@@ -1,0 +1,2511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INFER - 4-Video Experiment</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="alert-container"></div>
+    
+    <!-- Persistent Navigation Bar (visible on all pages except welcome/login/thankyou) -->
+    <nav id="main-navigation" class="main-navigation d-none" style="position: fixed; top: 0; left: 0; right: 0; z-index: 1050; background: white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 0.75rem 0;">
+        <div class="main-container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <button id="nav-dashboard-btn" class="btn btn-primary btn-sm">
+                        <i class="bi bi-house me-1"></i>
+                        <span data-lang-key="back_to_dashboard">Back to Dashboard</span>
+                    </button>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="text-muted me-3 small" id="nav-participant-name"></span>
+                    <div class="language-switcher-container-inline"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Progress Bar Removed -->
+
+    <!-- Page 0: Welcome & Consent -->
+    <div id="page-welcome" class="page-container">
+        <div class="language-switcher-container my-3"></div>
+        <div class="main-container">
+            <div class="header-full-width">
+                <div class="main-container">
+                    <div class="row align-items-center position-relative">
+                        <div class="col-md-4 d-flex align-items-center">
+                            <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                            <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                        </div>
+                        <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                            <h1 data-lang-key="title" class="mb-0">INFER</h1>
+                            <p data-lang-key="subtitle" class="mb-0">An intelligent feedback system for observing classroom videos</p>
+                        </div>
+                        <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h3 data-lang-key="welcome_to_infer" class="mb-3">Welcome to INFER</h3>
+                            <p data-lang-key="welcome_message">Thank you for participating in this study on AI-supported teaching reflection. Over the next 2.5 weeks, you will analyze 4 teaching videos using our INFER system.</p>
+                            
+                            <!-- Browser Recommendation -->
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <span data-lang-key="browser_recommendation">For the best experience, we recommend using <strong>Google Chrome</strong>.</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Data Protection Document (Mandatory Checkbox) -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 data-lang-key="data_protection_header">Data Protection Information</h5>
+                        </div>
+                        <div class="card-body">
+                            <p data-lang-key="data_protection_intro">Please read the data protection information document below.</p>
+                            
+                            <div class="mb-3">
+                                <a href="04_general_participant_information_and_information_on_data_protection_participants.pdf" target="_blank" class="btn btn-outline-primary mb-3" data-lang-key="open_data_protection_doc">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>Open Data Protection Document
+                                </a>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="data-protection-read" required>
+                                    <label class="form-check-label" for="data-protection-read" data-lang-key="data_protection_checkbox">
+                                        I have read and understood the data protection information document.
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Consent for Scientific Use (Mandatory Radio Buttons) -->
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 data-lang-key="data_consent_header">Consent for Scientific Use</h5>
+                        </div>
+                        <div class="card-body">
+                            <p data-lang-key="data_consent_intro">Please read the consent form below and indicate whether you consent to the use of your anonymized data for scientific purposes.</p>
+                            
+                            <div class="mb-3">
+                                <a href="05_consent_form_participants.pdf" target="_blank" class="btn btn-outline-primary mb-3" data-lang-key="open_consent_form">
+                                    <i class="bi bi-file-earmark-pdf me-2"></i>Open Consent Form
+                                </a>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="data-consent" id="data-consent-agree" value="agree" required>
+                                    <label class="form-check-label" for="data-consent-agree" data-lang-key="data_consent_agree">
+                                        I agree to the use of my anonymized data for scientific purposes.
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="data-consent" id="data-consent-disagree" value="disagree" required>
+                                    <label class="form-check-label" for="data-consent-disagree" data-lang-key="data_consent_disagree">
+                                        I do not agree to the use of my anonymized data for scientific purposes.
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <div id="consent-disagreement-message" class="alert alert-info d-none">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <span data-lang-key="consent_disagreement_message">
+                                    You can still participate in the experiment. However, only data from participants who gave consent will be used for scientific purposes.
+                                </span>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <button id="continue-to-login" class="btn btn-primary btn-lg" disabled>
+                                    <i class="bi bi-arrow-right me-2"></i>
+                                    <span data-lang-key="continue_button">Continue</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 1: Login/Resume -->
+    <div id="page-login" class="page-container d-none">
+        <div class="language-switcher-container"></div>
+        <!-- No navigation bar on login page -->
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="title">INFER</h1>
+                        <p class="mb-0" data-lang-key="subtitle">Ein intelligentes Feedback-System zur Beobachtung von Unterricht</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            
+            <div class="row justify-content-center mt-5">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header text-center">
+                            <h4 data-lang-key="login_title">Enter Your Participant Code</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted" data-lang-key="code_help_text">Create a code: First letter of mother's first name + birth month (2 digits) + birth year (2 digits).</p>
+                            <p class="text-muted small" data-lang-key="code_example">Example: Mother named Anna, born in August 1995 → <strong>A0895</strong></p>
+                            
+                            <div class="mb-3">
+                                <label for="participant-code-input" class="form-label" data-lang-key="participant_code_label">Participant Code:</label>
+                                <input type="text" class="form-control" id="participant-code-input" data-lang-key-placeholder="code_placeholder" placeholder="e.g., A0895" maxlength="20" autofocus>
+                            </div>
+                            
+                            <div id="resume-info" class="alert alert-info d-none">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <span id="resume-message"></span>
+                            </div>
+                            
+                            <button id="login-button" class="btn btn-primary btn-lg w-100" data-lang-key="continue_button">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                <span data-lang-key="continue_button">Continue</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 2: Pre-Survey -->
+    <div id="page-presurvey" class="page-container d-none" style="margin-top: 60px;">
+        <!-- Navigation bar will be shown -->
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="pre_survey_title">Pre-Survey</h1>
+                        <p class="mb-0" data-lang-key="pre_survey_subtitle">Please complete the pre-survey before starting</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+                    
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- Pre-survey completion status -->
+                            <div id="presurvey-completed-status" class="alert alert-success mb-4 d-none">
+                                <h6><i class="bi bi-check-circle-fill me-2"></i><span data-lang-key="pre_survey_completed">Pre-Survey Completed</span></h6>
+                                <p class="mb-0" data-lang-key="pre_survey_completed_message">You have already completed the pre-survey. You can review it below or continue to the dashboard.</p>
+                            </div>
+                            
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="pre_survey_title">Pre-Survey</span></h6>
+                                        <p class="text-muted mb-3" id="presurvey-description" data-lang-key="pre_survey_description">Please complete the survey below. This takes about 5-10 minutes.</p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="pre-survey-iframe" src="" width="100%" height="1800px" style="border:none;"></iframe>
+                                        </div>
+                            </div>
+                                </div>
+                                <div id="presurvey-instructions" class="alert alert-success mt-3 mb-0">
+                                    <small><i class="bi bi-check-circle me-1"></i><strong data-lang-key="next_step">Next Step:</strong> 
+                                    <span data-lang-key="pre_survey_instructions">Complete the survey above, then click "Continue to Dashboard" below.</span></small>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="presurvey-completed-check" required>
+                                    <label class="form-check-label" for="presurvey-completed-check" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-presurvey" class="btn btn-success btn-lg" data-lang-key="continue_to_dashboard">Continue to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 3: Dashboard -->
+    <div id="page-dashboard" class="page-container d-none" style="margin-top: 60px;">
+        <!-- Navigation bar will be shown -->
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="dashboard_title">Video-Dashboard</h1>
+                        <p class="mb-0" id="dashboard-subtitle"><span id="dashboard-welcome-text" data-lang-key="dashboard_welcome">Willkommen zurück</span><span id="dashboard-participant-name"></span></p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end">
+                        <div class="language-switcher-container-inline-header"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            
+            <div class="row justify-content-center mt-4">
+                <div class="col-md-10">
+                    <!-- Overall Progress Summary -->
+                    <div class="card mb-4">
+                        <div class="card-body text-center">
+                            <h5 data-lang-key="your_progress">Your Progress</h5>
+                            <div class="progress mb-3" style="height: 30px;">
+                                <div class="progress-bar bg-success" role="progressbar" id="dashboard-progress-bar" style="width: 0%">
+                                    <span id="dashboard-progress-text" data-lang-key="videos_completed">0/4 Videos Completed</span>
+                                </div>
+                            </div>
+                            <p class="text-muted mb-0" data-lang-key="time_limit">You have 2.5 weeks to complete all 4 videos</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Pre-Survey Status Card -->
+                    <div class="card mb-4" id="dashboard-presurvey-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-1"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="pre_survey_title">Pre-Survey</span></h6>
+                                    <p class="text-muted mb-0 small" data-lang-key="pre_survey_description">Complete before starting videos</p>
+                                    <div id="presurvey-warning" class="alert alert-warning mt-2 mb-0 py-2 d-none">
+                                        <small><i class="bi bi-exclamation-triangle me-1"></i><span data-lang-key="presurvey_required">You must complete the pre-survey before accessing video tasks.</span></small>
+                                    </div>
+                                </div>
+                                <div class="ms-3">
+                                    <span id="presurvey-status-badge" class="badge bg-secondary d-block mb-2">Not Started</span>
+                                    <button id="go-to-presurvey-btn" class="btn btn-sm btn-outline-primary w-100" data-lang-key="view_pre_survey">View</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Video Cards Grid -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <h6 class="mb-3"><i class="bi bi-play-circle me-2"></i><span data-lang-key="video_tasks">Video Tasks</span></h6>
+                            <div class="row g-4" id="video-cards-container">
+                                <!-- Video cards will be dynamically generated -->
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Post-Survey Status Card -->
+                    <div class="card mb-4" id="dashboard-postsurvey-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1"><i class="bi bi-clipboard-check me-2"></i><span data-lang-key="final_post_survey_title">Final Post-Survey</span></h6>
+                                    <p class="text-muted mb-0 small" data-lang-key="final_post_survey_description">Complete after all videos are done</p>
+                                </div>
+                                <div>
+                                    <span id="postsurvey-status-badge" class="badge bg-secondary">Not Available</span>
+                                    <button id="start-post-survey" class="btn btn-sm btn-success ms-2 d-none" data-lang-key="start_post_survey">Start</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 4: Video 1 Link Page -->
+    <div id="page-video-link-1" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="video_link_title">Video Link</h1>
+                        <p class="mb-0" id="video-link-1-subtitle" data-lang-key="video_link_subtitle">Access the teaching video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="mb-4" id="video-link-1-name">Video 1</h5>
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="video_link_label">Video Link:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="video-link-1-url" placeholder="" value="" readonly>
+                                    <a id="video-link-1-open-btn" href="#" target="_blank" class="btn btn-outline-primary" data-lang-key="open_video_link">Open Video</a>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="video-link-1-password" class="form-label" data-lang-key="video_password_label">Password (if required):</label>
+                                <input type="text" class="form-control" id="video-link-1-password" placeholder="" value="" readonly>
+                            </div>
+                            <div class="alert alert-info mb-4">
+                                <span data-lang-key="video_watch_instructions">Please click "Open Video" above to watch the video in a new tab. After you finish watching, return here and click the button below.</span>
+                            </div>
+                            <div class="text-center">
+                                <button id="video-link-1-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching">I Finished Watching the Video</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 5: Video 1 Task Page -->
+    <div id="page-video-1" class="page-container d-none video-task-page" data-video-id="video1" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" id="video-1-title" data-lang-key="video_task_title">Video-Aufgabe</h1>
+                        <p class="mb-0" id="video-1-subtitle" data-lang-key="video_task_subtitle">Analysieren Sie Ihre Unterrichtsreflexion und erhalten Sie Feedback</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row">
+                <!-- Settings Panel -->
+                <div class="col-md-2">
+                    <div class="card">
+                        <div class="card-header" data-lang-key="settings">Settings</div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="participant_code_label">Participant Code:</label>
+                                <input type="text" class="form-control" id="video-1-participant-code" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="video_label">Video:</label>
+                                <input type="text" class="form-control" id="video-1-video-name" readonly>
+                            </div>
+                            <div class="language-toggle mb-3">
+                                <label data-lang-key="language">Language:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="video-1-language" id="video-1-lang-en">
+                                    <label class="form-check-label" for="video-1-lang-en">English</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="video-1-language" id="video-1-lang-de" checked>
+                                    <label class="form-check-label" for="video-1-lang-de">Deutsch</label>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm w-100 back-to-dashboard-btn" data-lang-key="back_to_dashboard">
+                                <i class="bi bi-arrow-left me-1"></i><span data-lang-key="back_to_dashboard">Back to Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Input Panel -->
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-lang-key="reflection_input">Student Teacher Reflection</div>
+                        <div class="card-body d-flex flex-column position-relative">
+                            <textarea id="video-1-reflection-text" class="form-control flex-grow-1 mb-3" data-lang-key-placeholder="paste_reflection" placeholder="Paste your reflection here..." spellcheck="false"></textarea>
+                            <div class="input-actions mt-auto">
+                                <button id="video-1-clear-btn" class="btn btn-secondary" data-lang-key="clear">Clear</button>
+                                <div id="video-1-word-count-container" class="text-muted">
+                                    <span id="video-1-word-count">0</span> <span data-lang-key="words">words</span>
+                                </div>
+                                <button id="video-1-generate-btn" class="btn btn-primary" data-lang-key="generate_feedback">Generate Feedback</button>
+                                <button id="video-1-submit-btn" class="btn btn-success btn-lg mt-2" style="display: none;" data-lang-key="submit_final">
+                                    <i class="bi bi-check-circle"></i> <span data-lang-key="submit_final">Submit Final Reflection</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Feedback Panel -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <span data-lang-key="generated_feedback">Generated Feedback</span>
+                        </div>
+                        <div class="card-body d-flex flex-column position-relative">
+                            <div id="video-1-loading-spinner" class="loading-spinner" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div id="video-1-loading-text" class="loading-message mt-3 small text-muted"></div>
+                            </div>
+                            <div id="video-1-percentage-explanation" class="alert alert-info d-none mb-3">
+                                <span data-lang-key="percentage_explanation_simple">Note: Percentages may exceed 100% as text can have multiple codes.</span>
+                            </div>
+                            <div id="video-1-feedback-display" class="form-control h-100 flex-grow-1 mb-3">
+                                <ul class="nav nav-tabs feedback-tabs d-none" id="video-1-feedback-tabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="video-1-extended-tab" data-bs-toggle="tab" data-bs-target="#video-1-feedback-extended-pane" type="button" role="tab">Extended</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="video-1-short-tab" data-bs-toggle="tab" data-bs-target="#video-1-feedback-short-pane" type="button" role="tab">Short</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" id="video-1-feedback-tab-content">
+                                    <div class="tab-pane fade show active" id="video-1-feedback-extended-pane" role="tabpanel">
+                                        <div id="video-1-feedback-extended" class="feedback-content">
+                                            <p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="video-1-feedback-short-pane" role="tabpanel">
+                                        <div id="video-1-feedback-short" class="feedback-content">
+                                            <p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <div class="feedback-options">
+                                    <button id="video-1-copy-btn" class="btn btn-outline-secondary" data-lang-key="copy">
+                                        <i class="bi bi-clipboard"></i> <span data-lang-key="copy">Copy</span>
+                                    </button>
+                                    <button id="video-1-revise-btn" class="btn btn-outline-info" style="display: none;" data-lang-key="revise_reflection">
+                                        <i class="bi bi-pencil-square"></i> <span data-lang-key="revise_reflection">Revise Reflection</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Definitions Section -->
+            <div class="definitions-section mt-4">
+                <div class="definitions-header" data-bs-toggle="collapse" data-bs-target="#video-1-definitions-content" aria-expanded="false" role="button">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-2">
+                                <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+                                <span data-lang-key="learn_key_concepts">Learn the Key Concepts for Better Reflection</span>
+                            </h5>
+                            <p class="mb-0 text-muted" data-lang-key="concepts_help">Understanding these three dimensions will help you write more comprehensive teaching reflections</p>
+                        </div>
+                        <div class="expand-indicator">
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="collapse" id="video-1-definitions-content">
+                    <div class="definitions-grid">
+                        <div class="definition-card description-card">
+                            <div class="definition-icon">📝</div>
+                            <h6 data-lang-key="description">Description</h6>
+                            <p data-lang-key="description_def">Accurately observing and reporting what happened in the classroom - specific behaviors, interactions, and events without interpretation.</p>
+                        </div>
+                        <div class="definition-card explanation-card">
+                            <div class="definition-icon">🔍</div>
+                            <h6 data-lang-key="explanation">Explanation</h6>
+                            <p data-lang-key="explanation_def">Interpreting observed events using educational theory, research, and pedagogical knowledge - understanding why things happened.</p>
+                        </div>
+                        <div class="definition-card prediction-card">
+                            <div class="definition-icon">🔮</div>
+                            <h6 data-lang-key="prediction">Prediction</h6>
+                            <p data-lang-key="prediction_def">Anticipating future outcomes and effects on student learning based on observed teaching practices and their interpretations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 6: Video 2 Link Page -->
+    <div id="page-video-link-2" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="video_link_title">Video Link</h1>
+                        <p class="mb-0" id="video-link-2-subtitle" data-lang-key="video_link_subtitle">Access the teaching video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="mb-4" id="video-link-2-name">Video 2</h5>
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="video_link_label">Video Link:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="video-link-2-url" placeholder="" value="" readonly>
+                                    <a id="video-link-2-open-btn" href="#" target="_blank" class="btn btn-outline-primary" data-lang-key="open_video_link">Open Video</a>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="video-link-2-password" class="form-label" data-lang-key="video_password_label">Password (if required):</label>
+                                <input type="text" class="form-control" id="video-link-2-password" placeholder="" value="" readonly>
+                            </div>
+                            <div class="alert alert-info mb-4">
+                                <span data-lang-key="video_watch_instructions">Please click "Open Video" above to watch the video in a new tab. After you finish watching, return here and click the button below.</span>
+                            </div>
+                            <div class="text-center">
+                                <button id="video-link-2-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching">I Finished Watching the Video</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 7: Video 2 Task Page -->
+    <div id="page-video-2" class="page-container d-none video-task-page" data-video-id="video2" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" id="video-2-title" data-lang-key="video_task_title">Video-Aufgabe</h1>
+                        <p class="mb-0" id="video-2-subtitle" data-lang-key="video_task_subtitle">Analysieren Sie Ihre Unterrichtsreflexion und erhalten Sie Feedback</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row">
+                <!-- Settings Panel -->
+                <div class="col-md-2">
+                    <div class="card">
+                        <div class="card-header" data-lang-key="settings">Settings</div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="participant_code_label">Participant Code:</label>
+                                <input type="text" class="form-control" id="video-2-participant-code" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="video_label">Video:</label>
+                                <input type="text" class="form-control" id="video-2-video-name" readonly>
+                            </div>
+                            <div class="language-toggle mb-3">
+                                <label data-lang-key="language">Language:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="video-2-language" id="video-2-lang-en">
+                                    <label class="form-check-label" for="video-2-lang-en">English</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="video-2-language" id="video-2-lang-de" checked>
+                                    <label class="form-check-label" for="video-2-lang-de">Deutsch</label>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm w-100 back-to-dashboard-btn" data-lang-key="back_to_dashboard">
+                                <i class="bi bi-arrow-left me-1"></i><span data-lang-key="back_to_dashboard">Back to Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Input Panel -->
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-lang-key="reflection_input">Student Teacher Reflection</div>
+                        <div class="card-body d-flex flex-column position-relative">
+                            <textarea id="video-2-reflection-text" class="form-control flex-grow-1 mb-3" data-lang-key-placeholder="paste_reflection" placeholder="Paste your reflection here..." spellcheck="false"></textarea>
+                            <div class="input-actions mt-auto">
+                                <button id="video-2-clear-btn" class="btn btn-secondary" data-lang-key="clear">Clear</button>
+                                <div id="video-2-word-count-container" class="text-muted">
+                                    <span id="video-2-word-count">0</span> <span data-lang-key="words">words</span>
+                                </div>
+                                <button id="video-2-generate-btn" class="btn btn-primary" data-lang-key="generate_feedback">Generate Feedback</button>
+                                <button id="video-2-submit-btn" class="btn btn-success btn-lg mt-2" style="display: none;" data-lang-key="submit_final">
+                                    <i class="bi bi-check-circle"></i> <span data-lang-key="submit_final">Submit Final Reflection</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Feedback Panel -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <span data-lang-key="generated_feedback">Generated Feedback</span>
+                        </div>
+                        <div class="card-body d-flex flex-column position-relative">
+                            <div id="video-2-loading-spinner" class="loading-spinner" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div id="video-2-loading-text" class="loading-message mt-3 small text-muted"></div>
+                            </div>
+                            <div id="video-2-percentage-explanation" class="alert alert-info d-none mb-3">
+                                <span data-lang-key="percentage_explanation_simple">Note: Percentages may exceed 100% as text can have multiple codes.</span>
+                            </div>
+                            <div id="video-2-feedback-display" class="form-control h-100 flex-grow-1 mb-3">
+                                <ul class="nav nav-tabs feedback-tabs d-none" id="video-2-feedback-tabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="video-2-extended-tab" data-bs-toggle="tab" data-bs-target="#video-2-feedback-extended-pane" type="button" role="tab">Extended</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="video-2-short-tab" data-bs-toggle="tab" data-bs-target="#video-2-feedback-short-pane" type="button" role="tab">Short</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" id="video-2-feedback-tab-content">
+                                    <div class="tab-pane fade show active" id="video-2-feedback-extended-pane" role="tabpanel">
+                                        <div id="video-2-feedback-extended" class="feedback-content">
+                                            <p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="video-2-feedback-short-pane" role="tabpanel">
+                                        <div id="video-2-feedback-short" class="feedback-content">
+                                            <p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <div class="feedback-options">
+                                    <button id="video-2-copy-btn" class="btn btn-outline-secondary" data-lang-key="copy">
+                                        <i class="bi bi-clipboard"></i> <span data-lang-key="copy">Copy</span>
+                                    </button>
+                                    <button id="video-2-revise-btn" class="btn btn-outline-info" style="display: none;" data-lang-key="revise_reflection">
+                                        <i class="bi bi-pencil-square"></i> <span data-lang-key="revise_reflection">Revise Reflection</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Definitions Section -->
+            <div class="definitions-section mt-4">
+                <div class="definitions-header" data-bs-toggle="collapse" data-bs-target="#video-2-definitions-content" aria-expanded="false" role="button">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-2">
+                                <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+                                <span data-lang-key="learn_key_concepts">Learn the Key Concepts for Better Reflection</span>
+                            </h5>
+                            <p class="mb-0 text-muted" data-lang-key="concepts_help">Understanding these three dimensions will help you write more comprehensive teaching reflections</p>
+                        </div>
+                        <div class="expand-indicator">
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="collapse" id="video-2-definitions-content">
+                    <div class="definitions-grid">
+                        <div class="definition-card description-card">
+                            <div class="definition-icon">📝</div>
+                            <h6 data-lang-key="description">Description</h6>
+                            <p data-lang-key="description_def">Accurately observing and reporting what happened in the classroom - specific behaviors, interactions, and events without interpretation.</p>
+                        </div>
+                        <div class="definition-card explanation-card">
+                            <div class="definition-icon">🔍</div>
+                            <h6 data-lang-key="explanation">Explanation</h6>
+                            <p data-lang-key="explanation_def">Interpreting observed events using educational theory, research, and pedagogical knowledge - understanding why things happened.</p>
+                        </div>
+                        <div class="definition-card prediction-card">
+                            <div class="definition-icon">🔮</div>
+                            <h6 data-lang-key="prediction">Prediction</h6>
+                            <p data-lang-key="prediction_def">Anticipating future outcomes and effects on student learning based on observed teaching practices and their interpretations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 8: Video 3 Link Page -->
+    <div id="page-video-link-3" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="video_link_title">Video Link</h1>
+                        <p class="mb-0" id="video-link-3-subtitle" data-lang-key="video_link_subtitle">Access the teaching video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="mb-4" id="video-link-3-name">Video 3</h5>
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="video_link_label">Video Link:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="video-link-3-url" placeholder="" value="" readonly>
+                                    <a id="video-link-3-open-btn" href="#" target="_blank" class="btn btn-outline-primary" data-lang-key="open_video_link">Open Video</a>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="video-link-3-password" class="form-label" data-lang-key="video_password_label">Password (if required):</label>
+                                <input type="text" class="form-control" id="video-link-3-password" placeholder="" value="" readonly>
+                            </div>
+                            <div class="alert alert-info mb-4">
+                                <span data-lang-key="video_watch_instructions">Please click "Open Video" above to watch the video in a new tab. After you finish watching, return here and click the button below.</span>
+                            </div>
+                            <div class="text-center">
+                                <button id="video-link-3-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching">I Finished Watching the Video</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 9: Video 3 Task Page -->
+    <div id="page-video-3" class="page-container d-none video-task-page" data-video-id="video3" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" id="video-3-title" data-lang-key="video_task_title">Video-Aufgabe</h1>
+                        <p class="mb-0" id="video-3-subtitle" data-lang-key="video_task_subtitle">Analysieren Sie Ihre Unterrichtsreflexion und erhalten Sie Feedback</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row">
+                <!-- Settings Panel -->
+                <div class="col-md-2">
+                    <div class="card">
+                        <div class="card-header" data-lang-key="settings">Settings</div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="participant_code_label">Participant Code:</label>
+                                <input type="text" class="form-control" id="video-3-participant-code" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="video_label">Video:</label>
+                                <input type="text" class="form-control" id="video-3-video-name" readonly>
+                            </div>
+                            <div class="language-toggle mb-3">
+                                <label data-lang-key="language">Language:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="video-3-language" id="video-3-lang-en">
+                                    <label class="form-check-label" for="video-3-lang-en">English</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="video-3-language" id="video-3-lang-de" checked>
+                                    <label class="form-check-label" for="video-3-lang-de">Deutsch</label>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm w-100 back-to-dashboard-btn" data-lang-key="back_to_dashboard">
+                                <i class="bi bi-arrow-left me-1"></i><span data-lang-key="back_to_dashboard">Back to Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Input Panel -->
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-lang-key="reflection_input">Student Teacher Reflection</div>
+                        <div class="card-body d-flex flex-column position-relative">
+                            <textarea id="video-3-reflection-text" class="form-control flex-grow-1 mb-3" data-lang-key-placeholder="paste_reflection" placeholder="Paste your reflection here..." spellcheck="false"></textarea>
+                            <div class="input-actions mt-auto">
+                                <button id="video-3-clear-btn" class="btn btn-secondary" data-lang-key="clear">Clear</button>
+                                <div id="video-3-word-count-container" class="text-muted">
+                                    <span id="video-3-word-count">0</span> <span data-lang-key="words">words</span>
+                                </div>
+                                <button id="video-3-generate-btn" class="btn btn-primary" data-lang-key="generate_feedback">Generate Feedback</button>
+                                <button id="video-3-submit-btn" class="btn btn-success btn-lg mt-2" style="display: none;" data-lang-key="submit_final">
+                                    <i class="bi bi-check-circle"></i> <span data-lang-key="submit_final">Submit Final Reflection</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Feedback Panel -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <span data-lang-key="generated_feedback">Generated Feedback</span>
+                        </div>
+                        <div class="card-body d-flex flex-column position-relative">
+                            <div id="video-3-loading-spinner" class="loading-spinner" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div id="video-3-loading-text" class="loading-message mt-3 small text-muted"></div>
+                            </div>
+                            <div id="video-3-percentage-explanation" class="alert alert-info d-none mb-3">
+                                <span data-lang-key="percentage_explanation_simple">Note: Percentages may exceed 100% as text can have multiple codes.</span>
+                            </div>
+                            <div id="video-3-feedback-display" class="form-control h-100 flex-grow-1 mb-3">
+                                <ul class="nav nav-tabs feedback-tabs d-none" id="video-3-feedback-tabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="video-3-extended-tab" data-bs-toggle="tab" data-bs-target="#video-3-feedback-extended-pane" type="button" role="tab">Extended</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="video-3-short-tab" data-bs-toggle="tab" data-bs-target="#video-3-feedback-short-pane" type="button" role="tab">Short</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" id="video-3-feedback-tab-content">
+                                    <div class="tab-pane fade show active" id="video-3-feedback-extended-pane" role="tabpanel">
+                                        <div id="video-3-feedback-extended" class="feedback-content">
+                                            <p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="video-3-feedback-short-pane" role="tabpanel">
+                                        <div id="video-3-feedback-short" class="feedback-content">
+                                            <p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <div class="feedback-options">
+                                    <button id="video-3-copy-btn" class="btn btn-outline-secondary" data-lang-key="copy">
+                                        <i class="bi bi-clipboard"></i> <span data-lang-key="copy">Copy</span>
+                                    </button>
+                                    <button id="video-3-revise-btn" class="btn btn-outline-info" style="display: none;" data-lang-key="revise_reflection">
+                                        <i class="bi bi-pencil-square"></i> <span data-lang-key="revise_reflection">Revise Reflection</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Definitions Section -->
+            <div class="definitions-section mt-4">
+                <div class="definitions-header" data-bs-toggle="collapse" data-bs-target="#video-3-definitions-content" aria-expanded="false" role="button">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-2">
+                                <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+                                <span data-lang-key="learn_key_concepts">Learn the Key Concepts for Better Reflection</span>
+                            </h5>
+                            <p class="mb-0 text-muted" data-lang-key="concepts_help">Understanding these three dimensions will help you write more comprehensive teaching reflections</p>
+                        </div>
+                        <div class="expand-indicator">
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="collapse" id="video-3-definitions-content">
+                    <div class="definitions-grid">
+                        <div class="definition-card description-card">
+                            <div class="definition-icon">📝</div>
+                            <h6 data-lang-key="description">Description</h6>
+                            <p data-lang-key="description_def">Accurately observing and reporting what happened in the classroom - specific behaviors, interactions, and events without interpretation.</p>
+                        </div>
+                        <div class="definition-card explanation-card">
+                            <div class="definition-icon">🔍</div>
+                            <h6 data-lang-key="explanation">Explanation</h6>
+                            <p data-lang-key="explanation_def">Interpreting observed events using educational theory, research, and pedagogical knowledge - understanding why things happened.</p>
+                        </div>
+                        <div class="definition-card prediction-card">
+                            <div class="definition-icon">🔮</div>
+                            <h6 data-lang-key="prediction">Prediction</h6>
+                            <p data-lang-key="prediction_def">Anticipating future outcomes and effects on student learning based on observed teaching practices and their interpretations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 10: Video 4 Link Page -->
+    <div id="page-video-link-4" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="video_link_title">Video Link</h1>
+                        <p class="mb-0" id="video-link-4-subtitle" data-lang-key="video_link_subtitle">Access the teaching video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="mb-4" id="video-link-4-name">Video 4</h5>
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="video_link_label">Video Link:</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="video-link-4-url" placeholder="" value="" readonly>
+                                    <a id="video-link-4-open-btn" href="#" target="_blank" class="btn btn-outline-primary" data-lang-key="open_video_link">Open Video</a>
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label for="video-link-4-password" class="form-label" data-lang-key="video_password_label">Password (if required):</label>
+                                <input type="text" class="form-control" id="video-link-4-password" placeholder="" value="" readonly>
+                            </div>
+                            <div class="alert alert-info mb-4">
+                                <span data-lang-key="video_watch_instructions">Please click "Open Video" above to watch the video in a new tab. After you finish watching, return here and click the button below.</span>
+                            </div>
+                            <div class="text-center">
+                                <button id="video-link-4-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching">I Finished Watching the Video</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 11: Video 4 Task Page -->
+    <div id="page-video-4" class="page-container d-none video-task-page" data-video-id="video4" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" id="video-4-title" data-lang-key="video_task_title">Video-Aufgabe</h1>
+                        <p class="mb-0" id="video-4-subtitle" data-lang-key="video_task_subtitle">Analysieren Sie Ihre Unterrichtsreflexion und erhalten Sie Feedback</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row">
+                <!-- Settings Panel -->
+                <div class="col-md-2">
+                    <div class="card">
+                        <div class="card-header" data-lang-key="settings">Settings</div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="participant_code_label">Participant Code:</label>
+                                <input type="text" class="form-control" id="video-4-participant-code" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label" data-lang-key="video_label">Video:</label>
+                                <input type="text" class="form-control" id="video-4-video-name" readonly>
+                            </div>
+                            <div class="language-toggle mb-3">
+                                <label data-lang-key="language">Language:</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="video-4-language" id="video-4-lang-en">
+                                    <label class="form-check-label" for="video-4-lang-en">English</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="video-4-language" id="video-4-lang-de" checked>
+                                    <label class="form-check-label" for="video-4-lang-de">Deutsch</label>
+                                </div>
+                            </div>
+                            <button class="btn btn-outline-secondary btn-sm w-100 back-to-dashboard-btn" data-lang-key="back_to_dashboard">
+                                <i class="bi bi-arrow-left me-1"></i><span data-lang-key="back_to_dashboard">Back to Dashboard</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Input Panel -->
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-header" data-lang-key="reflection_input">Student Teacher Reflection</div>
+                        <div class="card-body d-flex flex-column position-relative">
+                            <textarea id="video-4-reflection-text" class="form-control flex-grow-1 mb-3" data-lang-key-placeholder="paste_reflection" placeholder="Paste your reflection here..." spellcheck="false"></textarea>
+                            <div class="input-actions mt-auto">
+                                <button id="video-4-clear-btn" class="btn btn-secondary" data-lang-key="clear">Clear</button>
+                                <div id="video-4-word-count-container" class="text-muted">
+                                    <span id="video-4-word-count">0</span> <span data-lang-key="words">words</span>
+                                </div>
+                                <button id="video-4-generate-btn" class="btn btn-primary" data-lang-key="generate_feedback">Generate Feedback</button>
+                                <button id="video-4-submit-btn" class="btn btn-success btn-lg mt-2" style="display: none;" data-lang-key="submit_final">
+                                    <i class="bi bi-check-circle"></i> <span data-lang-key="submit_final">Submit Final Reflection</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Feedback Panel -->
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <span data-lang-key="generated_feedback">Generated Feedback</span>
+                        </div>
+                        <div class="card-body d-flex flex-column position-relative">
+                            <div id="video-4-loading-spinner" class="loading-spinner" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <div id="video-4-loading-text" class="loading-message mt-3 small text-muted"></div>
+                            </div>
+                            <div id="video-4-percentage-explanation" class="alert alert-info d-none mb-3">
+                                <span data-lang-key="percentage_explanation_simple">Note: Percentages may exceed 100% as text can have multiple codes.</span>
+                            </div>
+                            <div id="video-4-feedback-display" class="form-control h-100 flex-grow-1 mb-3">
+                                <ul class="nav nav-tabs feedback-tabs d-none" id="video-4-feedback-tabs" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active" id="video-4-extended-tab" data-bs-toggle="tab" data-bs-target="#video-4-feedback-extended-pane" type="button" role="tab">Extended</button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link" id="video-4-short-tab" data-bs-toggle="tab" data-bs-target="#video-4-feedback-short-pane" type="button" role="tab">Short</button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" id="video-4-feedback-tab-content">
+                                    <div class="tab-pane fade show active" id="video-4-feedback-extended-pane" role="tabpanel">
+                                        <div id="video-4-feedback-extended" class="feedback-content">
+                                            <p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>
+                                        </div>
+                                    </div>
+                                    <div class="tab-pane fade" id="video-4-feedback-short-pane" role="tabpanel">
+                                        <div id="video-4-feedback-short" class="feedback-content">
+                                            <p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-auto">
+                                <div class="feedback-options">
+                                    <button id="video-4-copy-btn" class="btn btn-outline-secondary" data-lang-key="copy">
+                                        <i class="bi bi-clipboard"></i> <span data-lang-key="copy">Copy</span>
+                                    </button>
+                                    <button id="video-4-revise-btn" class="btn btn-outline-info" style="display: none;" data-lang-key="revise_reflection">
+                                        <i class="bi bi-pencil-square"></i> <span data-lang-key="revise_reflection">Revise Reflection</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Definitions Section -->
+            <div class="definitions-section mt-4">
+                <div class="definitions-header" data-bs-toggle="collapse" data-bs-target="#video-4-definitions-content" aria-expanded="false" role="button">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="mb-2">
+                                <i class="bi bi-lightbulb-fill text-warning me-2"></i>
+                                <span data-lang-key="learn_key_concepts">Learn the Key Concepts for Better Reflection</span>
+                            </h5>
+                            <p class="mb-0 text-muted" data-lang-key="concepts_help">Understanding these three dimensions will help you write more comprehensive teaching reflections</p>
+                        </div>
+                        <div class="expand-indicator">
+                            <i class="bi bi-chevron-down"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="collapse" id="video-4-definitions-content">
+                    <div class="definitions-grid">
+                        <div class="definition-card description-card">
+                            <div class="definition-icon">📝</div>
+                            <h6 data-lang-key="description">Description</h6>
+                            <p data-lang-key="description_def">Accurately observing and reporting what happened in the classroom - specific behaviors, interactions, and events without interpretation.</p>
+                        </div>
+                        <div class="definition-card explanation-card">
+                            <div class="definition-icon">🔍</div>
+                            <h6 data-lang-key="explanation">Explanation</h6>
+                            <p data-lang-key="explanation_def">Interpreting observed events using educational theory, research, and pedagogical knowledge - understanding why things happened.</p>
+                        </div>
+                        <div class="definition-card prediction-card">
+                            <div class="definition-icon">🔮</div>
+                            <h6 data-lang-key="prediction">Prediction</h6>
+                            <p data-lang-key="prediction_def">Anticipating future outcomes and effects on student learning based on observed teaching practices and their interpretations.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 12-15: Post-Video Surveys (4 individual surveys) -->
+    <!-- Post-Video Survey 1 -->
+    <div id="page-post-video-survey-1" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-1-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-1">
+                                    <label class="form-check-label" for="survey-completed-check-1" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-1" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 2 -->
+    <div id="page-post-video-survey-2" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-2-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-2">
+                                    <label class="form-check-label" for="survey-completed-check-2" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-2" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 3 -->
+    <div id="page-post-video-survey-3" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-3-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-3">
+                                    <label class="form-check-label" for="survey-completed-check-3" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-3" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 4 -->
+    <div id="page-post-video-survey-4" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-4-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-4">
+                                    <label class="form-check-label" for="survey-completed-check-4" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-4" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 12: Post-Survey (Final) -->
+    <div id="page-postsurvey" class="page-container d-none">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="final_post_survey_title">Final Post-Survey</h1>
+                        <p class="mb-0" data-lang-key="final_post_survey_subtitle">Thank you for completing all videos!</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="final_post_survey_title">Final Post-Survey</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="final_post_survey_description">Please complete the final survey below. This takes about 10-15 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-survey-iframe" src="" width="100%" height="1800px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-success mt-3 mb-0">
+                                    <small><i class="bi bi-check-circle me-1"></i><strong data-lang-key="final_step">Final Step:</strong> 
+                                    <span data-lang-key="final_survey_instructions">Complete the survey above, then click "Complete Study" below to finish.</span></small>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="final-survey-completed-check">
+                                    <label class="form-check-label" for="final-survey-completed-check" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="complete-study" class="btn btn-success btn-lg" data-lang-key="complete_study">Complete Study</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 13: Thank You -->
+    <div id="page-thankyou" class="page-container d-none">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="thank_you_title">Thank You!</h1>
+                        <p class="mb-0" data-lang-key="participation_complete">Your participation is complete</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                            <h3 class="mt-4 mb-3" data-lang-key="study_complete">Study Complete!</h3>
+                            <p class="lead" data-lang-key="thank_you_message">Thank you for your time and thoughtful reflections.</p>
+                            <p data-lang-key="contribution_message">Your contributions help improve teacher education and feedback systems.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    
+    <!-- Feedback Style Preference Modal -->
+    <div class="modal fade" id="feedback-preference-modal" tabindex="-1" aria-labelledby="feedback-preference-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedback-preference-modal-label" data-lang-key="choose_feedback_style">Choose Your Preferred Feedback Style</h5>
+                </div>
+                <div class="modal-body">
+                    <p data-lang-key="feedback_style_intro">We generate two types of feedback. Which would you like to see first?</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 feedback-option-card" data-style="extended">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-journal-text text-primary mb-3" style="font-size: 2.5rem;"></i>
+                                    <h6 data-lang-key="extended">Extended Feedback</h6>
+                                    <p class="small text-muted" data-lang-key="extended_description">Detailed academic feedback with comprehensive analysis and educational theory references</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 feedback-option-card" data-style="short">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-card-text text-success mb-3" style="font-size: 2.5rem;"></i>
+                                    <h6 data-lang-key="short">Short Feedback</h6>
+                                    <p class="small text-muted" data-lang-key="short_description">Concise, easy-to-read feedback with key points and practical tips</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3" data-lang-key="can_switch_later">You can switch between both styles anytime using the tabs after feedback is generated.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="select-extended-first" data-lang-key="select_extended">Start with Extended</button>
+                    <button type="button" class="btn btn-outline-success" id="select-short-first" data-lang-key="select_short">Start with Short</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Submission Confirmation Modal -->
+    <div class="modal fade" id="final-submission-modal" tabindex="-1" aria-labelledby="final-submission-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="final-submission-modal-label" data-lang-key="confirm_final_submission">Confirm Final Submission</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <p data-lang-key="final_submission_warning">Are you sure you want to submit your final reflection? After submission, you won't be able to make any more changes to this task.</p>
+                    <p class="text-muted" data-lang-key="final_submission_note">You can continue revising your reflection until you're satisfied, then click this button when you're ready to move on.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-lang-key="continue_editing">Continue Editing</button>
+                    <button type="button" class="btn btn-success" id="confirm-final-submission" data-lang-key="confirm_submit">Yes, Submit Final</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Usage Detection Modal -->
+    <div class="modal fade" id="ai-usage-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span data-lang-key="ai_usage_title">Tab Switch Detected</span>
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p data-lang-key="ai_usage_message">We noticed you switched to another tab. Did you use another AI system (such as ChatGPT) for your work on this task?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="handleAIUsageResponse(true)" data-lang-key="ai_usage_yes">
+                        Yes, I used AI
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="handleAIUsageResponse(false)" data-lang-key="ai_usage_no">
+                        No, I did not use AI
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        setTimeout(() => {
+            if (typeof window.supabase === 'undefined' || !window.supabase) {
+                console.warn('⚠️ Primary Supabase CDN failed, trying backup...');
+                const fallbackScript = document.createElement('script');
+                fallbackScript.src = 'https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
+                fallbackScript.onload = () => {
+                    if (typeof window.supabase !== 'undefined') {
+                        console.log('✅ Supabase loaded from backup CDN');
+                    } else {
+                        console.error('❌ All Supabase CDN sources failed. Running in demo mode.');
+                    }
+                };
+                fallbackScript.onerror = () => {
+                    console.error('❌ Backup Supabase CDN also failed. Running in demo mode.');
+                };
+                document.head.appendChild(fallbackScript);
+            } else {
+                console.log('✅ Supabase library loaded successfully');
+            }
+        }, 1000);
+    </script>
+    <script src="app.js"></script>
+    
+</body>
+</html>
+
+                                            <iframe id="post-video-survey-1-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-1">
+                                    <label class="form-check-label" for="survey-completed-check-1" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-1" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 2 -->
+    <div id="page-post-video-survey-2" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-2-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-2">
+                                    <label class="form-check-label" for="survey-completed-check-2" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-2" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 3 -->
+    <div id="page-post-video-survey-3" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-3-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-3">
+                                    <label class="form-check-label" for="survey-completed-check-3" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-3" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 4 -->
+    <div id="page-post-video-survey-4" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-4-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-4">
+                                    <label class="form-check-label" for="survey-completed-check-4" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-4" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 12: Post-Survey (Final) -->
+    <div id="page-postsurvey" class="page-container d-none">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="final_post_survey_title">Final Post-Survey</h1>
+                        <p class="mb-0" data-lang-key="final_post_survey_subtitle">Thank you for completing all videos!</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="final_post_survey_title">Final Post-Survey</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="final_post_survey_description">Please complete the final survey below. This takes about 10-15 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-survey-iframe" src="" width="100%" height="1800px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-success mt-3 mb-0">
+                                    <small><i class="bi bi-check-circle me-1"></i><strong data-lang-key="final_step">Final Step:</strong> 
+                                    <span data-lang-key="final_survey_instructions">Complete the survey above, then click "Complete Study" below to finish.</span></small>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="final-survey-completed-check">
+                                    <label class="form-check-label" for="final-survey-completed-check" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="complete-study" class="btn btn-success btn-lg" data-lang-key="complete_study">Complete Study</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 13: Thank You -->
+    <div id="page-thankyou" class="page-container d-none">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="thank_you_title">Thank You!</h1>
+                        <p class="mb-0" data-lang-key="participation_complete">Your participation is complete</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                            <h3 class="mt-4 mb-3" data-lang-key="study_complete">Study Complete!</h3>
+                            <p class="lead" data-lang-key="thank_you_message">Thank you for your time and thoughtful reflections.</p>
+                            <p data-lang-key="contribution_message">Your contributions help improve teacher education and feedback systems.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    
+    <!-- Feedback Style Preference Modal -->
+    <div class="modal fade" id="feedback-preference-modal" tabindex="-1" aria-labelledby="feedback-preference-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedback-preference-modal-label" data-lang-key="choose_feedback_style">Choose Your Preferred Feedback Style</h5>
+                </div>
+                <div class="modal-body">
+                    <p data-lang-key="feedback_style_intro">We generate two types of feedback. Which would you like to see first?</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 feedback-option-card" data-style="extended">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-journal-text text-primary mb-3" style="font-size: 2.5rem;"></i>
+                                    <h6 data-lang-key="extended">Extended Feedback</h6>
+                                    <p class="small text-muted" data-lang-key="extended_description">Detailed academic feedback with comprehensive analysis and educational theory references</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 feedback-option-card" data-style="short">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-card-text text-success mb-3" style="font-size: 2.5rem;"></i>
+                                    <h6 data-lang-key="short">Short Feedback</h6>
+                                    <p class="small text-muted" data-lang-key="short_description">Concise, easy-to-read feedback with key points and practical tips</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3" data-lang-key="can_switch_later">You can switch between both styles anytime using the tabs after feedback is generated.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="select-extended-first" data-lang-key="select_extended">Start with Extended</button>
+                    <button type="button" class="btn btn-outline-success" id="select-short-first" data-lang-key="select_short">Start with Short</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Submission Confirmation Modal -->
+    <div class="modal fade" id="final-submission-modal" tabindex="-1" aria-labelledby="final-submission-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="final-submission-modal-label" data-lang-key="confirm_final_submission">Confirm Final Submission</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <p data-lang-key="final_submission_warning">Are you sure you want to submit your final reflection? After submission, you won't be able to make any more changes to this task.</p>
+                    <p class="text-muted" data-lang-key="final_submission_note">You can continue revising your reflection until you're satisfied, then click this button when you're ready to move on.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-lang-key="continue_editing">Continue Editing</button>
+                    <button type="button" class="btn btn-success" id="confirm-final-submission" data-lang-key="confirm_submit">Yes, Submit Final</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Usage Detection Modal -->
+    <div class="modal fade" id="ai-usage-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span data-lang-key="ai_usage_title">Tab Switch Detected</span>
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p data-lang-key="ai_usage_message">We noticed you switched to another tab. Did you use another AI system (such as ChatGPT) for your work on this task?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="handleAIUsageResponse(true)" data-lang-key="ai_usage_yes">
+                        Yes, I used AI
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="handleAIUsageResponse(false)" data-lang-key="ai_usage_no">
+                        No, I did not use AI
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        setTimeout(() => {
+            if (typeof window.supabase === 'undefined' || !window.supabase) {
+                console.warn('⚠️ Primary Supabase CDN failed, trying backup...');
+                const fallbackScript = document.createElement('script');
+                fallbackScript.src = 'https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
+                fallbackScript.onload = () => {
+                    if (typeof window.supabase !== 'undefined') {
+                        console.log('✅ Supabase loaded from backup CDN');
+                    } else {
+                        console.error('❌ All Supabase CDN sources failed. Running in demo mode.');
+                    }
+                };
+                fallbackScript.onerror = () => {
+                    console.error('❌ Backup Supabase CDN also failed. Running in demo mode.');
+                };
+                document.head.appendChild(fallbackScript);
+            } else {
+                console.log('✅ Supabase library loaded successfully');
+            }
+        }, 1000);
+    </script>
+    <script src="app.js"></script>
+    
+</body>
+</html>
+
+                                            <iframe id="post-video-survey-1-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-1">
+                                    <label class="form-check-label" for="survey-completed-check-1" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-1" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 2 -->
+    <div id="page-post-video-survey-2" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-2-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-2">
+                                    <label class="form-check-label" for="survey-completed-check-2" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-2" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 3 -->
+    <div id="page-post-video-survey-3" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-3-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-3">
+                                    <label class="form-check-label" for="survey-completed-check-3" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-3" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Post-Video Survey 4 -->
+    <div id="page-post-video-survey-4" class="page-container d-none" style="margin-top: 60px;">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="post_video_survey_title">Post-Video Survey</h1>
+                        <p class="mb-0" data-lang-key="post_video_survey_subtitle">Please share your thoughts about this video</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="post_video_questionnaire">Post-Video Questionnaire</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="post_video_questionnaire_description">Please complete the questionnaire below. This takes about 3-5 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-video-survey-4-iframe" src="" width="100%" height="1600px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="survey-completed-check-4">
+                                    <label class="form-check-label" for="survey-completed-check-4" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="continue-after-post-video-survey-4" class="btn btn-success btn-lg" data-lang-key="return_to_dashboard">Return to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 12: Post-Survey (Final) -->
+    <div id="page-postsurvey" class="page-container d-none">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="final_post_survey_title">Final Post-Survey</h1>
+                        <p class="mb-0" data-lang-key="final_post_survey_subtitle">Thank you for completing all videos!</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            
+            <div class="row justify-content-center">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="qualtrics-survey-section border rounded p-4 mb-4">
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="mb-2"><i class="bi bi-chat-square-text me-2"></i><span data-lang-key="final_post_survey_title">Final Post-Survey</span></h6>
+                                        <p class="text-muted mb-3" data-lang-key="final_post_survey_description">Please complete the final survey below. This takes about 10-15 minutes. <strong data-lang-key="survey_optional">(Optional)</strong></p>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="qualtrics-iframe-container">
+                                            <iframe id="post-survey-iframe" src="" width="100%" height="1800px" style="border:none;"></iframe>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="alert alert-success mt-3 mb-0">
+                                    <small><i class="bi bi-check-circle me-1"></i><strong data-lang-key="final_step">Final Step:</strong> 
+                                    <span data-lang-key="final_survey_instructions">Complete the survey above, then click "Complete Study" below to finish.</span></small>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <div class="alert alert-warning mb-3">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="final-survey-completed-check">
+                                    <label class="form-check-label" for="final-survey-completed-check" data-lang-key="survey_completed_checkbox">
+                                        I have completed this survey
+                                    </label>
+                                </div>
+                                <div class="text-center">
+                                    <button id="complete-study" class="btn btn-success btn-lg" data-lang-key="complete_study">Complete Study</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Page 13: Thank You -->
+    <div id="page-thankyou" class="page-container d-none">
+        <div class="language-switcher-container"></div>
+        <div class="header-full-width">
+            <div class="main-container">
+                <div class="row align-items-center position-relative">
+                    <div class="col-md-4 d-flex align-items-center">
+                        <img src="University-of-Tubingen-01.png" alt="University of Tübingen" style="height: 50px; margin-right: 15px;">
+                        <img src="UNC_logo.avif" alt="UNC Logo" style="height: 30px;">
+                    </div>
+                    <div class="col-md-8 text-center d-flex flex-column justify-content-center position-absolute" style="left: 50%; transform: translateX(-50%); width: auto;">
+                        <h1 class="mb-0" data-lang-key="thank_you_title">Thank You!</h1>
+                        <p class="mb-0" data-lang-key="participation_complete">Your participation is complete</p>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-center justify-content-end"></div>
+                </div>
+            </div>
+        </div>
+        <div class="main-container">
+            
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-body text-center py-5">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 4rem;"></i>
+                            <h3 class="mt-4 mb-3" data-lang-key="study_complete">Study Complete!</h3>
+                            <p class="lead" data-lang-key="thank_you_message">Thank you for your time and thoughtful reflections.</p>
+                            <p data-lang-key="contribution_message">Your contributions help improve teacher education and feedback systems.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    
+    <!-- Feedback Style Preference Modal -->
+    <div class="modal fade" id="feedback-preference-modal" tabindex="-1" aria-labelledby="feedback-preference-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="feedback-preference-modal-label" data-lang-key="choose_feedback_style">Choose Your Preferred Feedback Style</h5>
+                </div>
+                <div class="modal-body">
+                    <p data-lang-key="feedback_style_intro">We generate two types of feedback. Which would you like to see first?</p>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="card h-100 feedback-option-card" data-style="extended">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-journal-text text-primary mb-3" style="font-size: 2.5rem;"></i>
+                                    <h6 data-lang-key="extended">Extended Feedback</h6>
+                                    <p class="small text-muted" data-lang-key="extended_description">Detailed academic feedback with comprehensive analysis and educational theory references</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 feedback-option-card" data-style="short">
+                                <div class="card-body text-center">
+                                    <i class="bi bi-card-text text-success mb-3" style="font-size: 2.5rem;"></i>
+                                    <h6 data-lang-key="short">Short Feedback</h6>
+                                    <p class="small text-muted" data-lang-key="short_description">Concise, easy-to-read feedback with key points and practical tips</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-muted small mt-3" data-lang-key="can_switch_later">You can switch between both styles anytime using the tabs after feedback is generated.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-primary" id="select-extended-first" data-lang-key="select_extended">Start with Extended</button>
+                    <button type="button" class="btn btn-outline-success" id="select-short-first" data-lang-key="select_short">Start with Short</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Submission Confirmation Modal -->
+    <div class="modal fade" id="final-submission-modal" tabindex="-1" aria-labelledby="final-submission-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="final-submission-modal-label" data-lang-key="confirm_final_submission">Confirm Final Submission</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center mb-3">
+                        <i class="bi bi-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+                    </div>
+                    <p data-lang-key="final_submission_warning">Are you sure you want to submit your final reflection? After submission, you won't be able to make any more changes to this task.</p>
+                    <p class="text-muted" data-lang-key="final_submission_note">You can continue revising your reflection until you're satisfied, then click this button when you're ready to move on.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-lang-key="continue_editing">Continue Editing</button>
+                    <button type="button" class="btn btn-success" id="confirm-final-submission" data-lang-key="confirm_submit">Yes, Submit Final</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Usage Detection Modal -->
+    <div class="modal fade" id="ai-usage-modal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header bg-warning text-dark">
+                    <h5 class="modal-title">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <span data-lang-key="ai_usage_title">Tab Switch Detected</span>
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <p data-lang-key="ai_usage_message">We noticed you switched to another tab. Did you use another AI system (such as ChatGPT) for your work on this task?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" onclick="handleAIUsageResponse(true)" data-lang-key="ai_usage_yes">
+                        Yes, I used AI
+                    </button>
+                    <button type="button" class="btn btn-success" onclick="handleAIUsageResponse(false)" data-lang-key="ai_usage_no">
+                        No, I did not use AI
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js"></script>
+    <script>
+        setTimeout(() => {
+            if (typeof window.supabase === 'undefined' || !window.supabase) {
+                console.warn('⚠️ Primary Supabase CDN failed, trying backup...');
+                const fallbackScript = document.createElement('script');
+                fallbackScript.src = 'https://unpkg.com/@supabase/supabase-js@2.39.7/dist/umd/supabase.min.js';
+                fallbackScript.onload = () => {
+                    if (typeof window.supabase !== 'undefined') {
+                        console.log('✅ Supabase loaded from backup CDN');
+                    } else {
+                        console.error('❌ All Supabase CDN sources failed. Running in demo mode.');
+                    }
+                };
+                fallbackScript.onerror = () => {
+                    console.error('❌ Backup Supabase CDN also failed. Running in demo mode.');
+                };
+                document.head.appendChild(fallbackScript);
+            } else {
+                console.log('✅ Supabase library loaded successfully');
+            }
+        }, 1000);
+    </script>
+    <script src="app.js"></script>
+    
+</body>
+</html>
