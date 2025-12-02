@@ -1844,6 +1844,190 @@ async function handleGenerateFeedback() {
     }
 }
 
+// ============================================================================
+// SIMPLE FEEDBACK PROMPT (Control Group - No PV Analysis)
+// ============================================================================
+function getSimpleFeedbackPrompt(language, style) {
+    if (language === 'de') {
+        return "Ich schreibe eine Antwort, um ein Video über Unterricht zu analysieren. Gib mir Feedback.";
+    } else {
+        return "I am writing a response to analyze a video about teaching. Give me feedback.";
+    }
+}
+
+async function generateSimpleFeedbackForControl(reflection, language, style) {
+    const systemPrompt = "You are a helpful assistant.";
+    const userPrompt = getSimpleFeedbackPrompt(language, style);
+    
+    const requestData = {
+        model: 'gpt-4o',
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `${userPrompt}\n\n${reflection}` }
+        ],
+        temperature: 0,
+        max_tokens: 1000
+    };
+    
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        return result.choices[0].message.content;
+    } catch (error) {
+        console.error('Error in generateSimpleFeedbackForControl:', error);
+        throw error;
+    }
+}
+
+// Format simple feedback (basic HTML formatting)
+function formatSimpleFeedback(text) {
+    if (!text) return '';
+    
+    // Convert markdown-style formatting to HTML
+    let formatted = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n- /g, '</p><ul><li>')
+        .replace(/\n• /g, '</p><ul><li>')
+        .replace(/<\/li>\n/g, '</li>')
+        .replace(/\n/g, '<br>');
+    
+    // Wrap in paragraph
+    formatted = '<p>' + formatted + '</p>';
+    
+    // Clean up any broken lists
+    formatted = formatted.replace(/<\/p><ul>/g, '</p><ul>');
+    formatted = formatted.replace(/<\/li><p>/g, '</li></ul><p>');
+    
+    return `<div class="simple-feedback">${formatted}</div>`;
+}
+
+// Save simple reflection to database (without PV analysis)
+async function saveSimpleReflectionToDatabase(reflection, feedbackExtended, feedbackShort, videoNum) {
+    if (!supabase || !currentParticipant) return;
+    
+    try {
+        const { data, error } = await supabase
+            .from('reflections')
+            .insert([{
+                session_id: currentSessionId,
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                task_id: currentVideoId,
+                language: currentLanguage,
+                reflection_text: reflection,
+                // No PV analysis for control group
+                analysis_percentages: { 
+                    raw: { description: 0, explanation: 0, prediction: 0, professional_vision: 0, other: 100 },
+                    priority: { description: 0, explanation: 0, prediction: 0, professional_vision: 0, other: 100 },
+                    note: 'Control group - no PV analysis'
+                },
+                weakest_component: null,
+                feedback_extended: feedbackExtended,
+                feedback_short: feedbackShort,
+                revision_number: currentTaskState.revisionCount || 1,
+                parent_reflection_id: currentTaskState.parentReflectionId || null
+            }])
+            .select()
+            .single();
+        
+        if (error) {
+            console.error('Error saving simple reflection:', error);
+        } else {
+            currentTaskState.currentReflectionId = data?.id;
+            currentTaskState.parentReflectionId = data?.id;
+        }
+    } catch (error) {
+        console.error('Error in saveSimpleReflectionToDatabase:', error);
+    }
+}
+
+// Generate simple feedback only
+async function generateSimpleFeedbackOnly(reflection, videoNum, loadingInterval) {
+    const ids = getVideoElementIds(videoNum);
+    const loadingSpinner = document.getElementById(ids.loadingSpinner);
+    const generateBtn = document.getElementById(ids.generateBtn);
+    
+    try {
+        // Generate simple feedback (academic and user-friendly versions)
+        // Note: Control group just gets generic feedback, we use same content or slightly varied prompt for "styles" if needed
+        // For simplicity, we use the same prompt logic but maybe instruct for "detailed" vs "concise" if we wanted
+        // But user just said "Give me feedback".
+        // We'll request it twice to fill both tabs, potentially with slightly different system prompts if needed, 
+        // or just run it twice. To be safe and support the UI, let's use "academic" and "user-friendly" style params
+        // which our getSimpleFeedbackPrompt doesn't distinguish yet.
+        // Let's just call it twice.
+        
+        const [feedbackExtendedText, feedbackShortText] = await Promise.all([
+            generateSimpleFeedbackForControl(reflection, currentLanguage, 'academic'),
+            generateSimpleFeedbackForControl(reflection, currentLanguage, 'user-friendly')
+        ]);
+        
+        // Display feedback
+        const feedbackExtended = document.getElementById(ids.feedbackExtended);
+        const feedbackShort = document.getElementById(ids.feedbackShort);
+        
+        if (feedbackExtended) {
+            feedbackExtended.innerHTML = formatSimpleFeedback(feedbackExtendedText);
+        }
+        if (feedbackShort) {
+            feedbackShort.innerHTML = formatSimpleFeedback(feedbackShortText);
+        }
+        
+        // Show feedback tabs
+        const feedbackTabs = document.getElementById(ids.feedbackTabs);
+        if (feedbackTabs) feedbackTabs.classList.remove('d-none');
+        
+        // Hide percentage explanation (not relevant for control group)
+        const percentageExplanation = document.getElementById(ids.percentageExplanation);
+        if (percentageExplanation) percentageExplanation.classList.add('d-none');
+        
+        // Show revise and submit buttons
+        const reviseBtn = document.getElementById(ids.reviseBtn);
+        const submitBtn = document.getElementById(ids.submitBtn);
+        if (reviseBtn) reviseBtn.classList.remove('d-none');
+        if (submitBtn) submitBtn.classList.remove('d-none');
+        
+        // Update state
+        currentTaskState.feedbackGenerated = true;
+        currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
+        
+        // Save to database (without PV scores)
+        await saveSimpleReflectionToDatabase(reflection, feedbackExtendedText, feedbackShortText, videoNum);
+        
+        // Log event
+        logEvent('simple_feedback_generated', {
+            participant_name: currentParticipant,
+            video_id: currentVideoId,
+            language: currentLanguage,
+            reflection_length: reflection.length,
+            revision_count: currentTaskState.revisionCount,
+            study_condition: STUDY_CONDITION
+        });
+        
+        // Start tracking feedback viewing
+        startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
+        
+    } catch (error) {
+        console.error('Error generating simple feedback:', error);
+        showAlert('Error generating feedback. Please try again.', 'danger');
+    } finally {
+        clearInterval(loadingInterval);
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (generateBtn) generateBtn.disabled = false;
+    }
+}
+
 // Generate feedback for specific video page
 async function generateFeedbackForVideo(reflection, videoNum) {
     const ids = getVideoElementIds(videoNum);
@@ -1865,6 +2049,12 @@ async function generateFeedbackForVideo(reflection, videoNum) {
     }, 8000);
     
     try {
+        // CONTROL GROUP: Use simple feedback without PV analysis
+        if (typeof USE_SIMPLE_FEEDBACK !== 'undefined' && USE_SIMPLE_FEEDBACK) {
+            await generateSimpleFeedbackOnly(reflection, videoNum, loadingInterval);
+            return;
+        }
+
         // Step 0: Check for duplicate reflection
         const previousReflection = sessionStorage.getItem(`reflection-${currentVideoId}`);
         if (previousReflection && previousReflection.trim() === reflection.trim()) {
