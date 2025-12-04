@@ -1491,11 +1491,12 @@ async function loadPreviousReflectionAndFeedback(videoId) {
             
             // Load previous feedback if available
             if (reflection.feedback_extended || reflection.feedback_short) {
-                const feedbackExtended = document.getElementById('task-feedback-extended');
-                const feedbackShort = document.getElementById('task-feedback-short');
-                const feedbackTabs = document.getElementById('task-feedback-tabs');
-                const reviseBtn = document.getElementById('task-revise-btn');
-                const submitBtn = document.getElementById('task-submit-final');
+                const ids = getVideoElementIds(videoNum);
+                const feedbackExtended = document.getElementById(ids.feedbackExtended);
+                const feedbackShort = document.getElementById(ids.feedbackShort);
+                const feedbackTabs = document.getElementById(ids.feedbackTabs);
+                const reviseBtn = document.getElementById(ids.reviseBtn);
+                const submitBtn = document.getElementById(ids.submitBtn);
                 
                 if (reflection.feedback_extended && feedbackExtended) {
                     const analysisResult = reflection.analysis_percentages ? {
@@ -2322,12 +2323,13 @@ async function generateFeedback(reflection) {
                 is_non_relevant: isNonRelevant
             });
             
-            const feedbackExtended = document.getElementById('task-feedback-extended');
-            const feedbackShort = document.getElementById('task-feedback-short');
+            const ids = getVideoElementIds(videoNum);
+            const feedbackExtended = document.getElementById(ids.feedbackExtended);
+            const feedbackShort = document.getElementById(ids.feedbackShort);
             if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
             if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
             
-            const feedbackTabs = document.getElementById('task-feedback-tabs');
+            const feedbackTabs = document.getElementById(ids.feedbackTabs);
             if (feedbackTabs) feedbackTabs.classList.remove('d-none');
             
             clearInterval(loadingInterval);
@@ -2336,8 +2338,8 @@ async function generateFeedback(reflection) {
             return;
         }
         
-        // Step 3: Display analysis distribution
-        displayAnalysisDistribution(analysisResult);
+        // Step 3: Display analysis distribution (using video-specific function)
+        displayAnalysisDistributionForVideo(analysisResult, videoNum);
         
         // Step 4: Generate both feedback styles
         const [extendedFeedback, shortFeedback] = await Promise.all([
@@ -2388,30 +2390,31 @@ async function generateFeedback(reflection) {
         // Step 7: Store reflection for duplicate detection
         sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
         
-        // Step 8: Display feedback
-        const feedbackExtended = document.getElementById('task-feedback-extended');
-        const feedbackShort = document.getElementById('task-feedback-short');
+        // Step 8: Display feedback (using video-specific IDs)
+        const ids = getVideoElementIds(videoNum);
+        const feedbackExtended = document.getElementById(ids.feedbackExtended);
+        const feedbackShort = document.getElementById(ids.feedbackShort);
         if (feedbackExtended) feedbackExtended.innerHTML = formatStructuredFeedback(finalExtendedFeedback, analysisResult);
         if (feedbackShort) feedbackShort.innerHTML = formatStructuredFeedback(finalShortFeedback, analysisResult);
         
-        // Step 9: Show tabs
-        const feedbackTabs = document.getElementById('task-feedback-tabs');
+        // Step 9: Show tabs (using video-specific IDs)
+        const feedbackTabs = document.getElementById(ids.feedbackTabs);
         if (feedbackTabs) feedbackTabs.classList.remove('d-none');
         
         if (userPreferredFeedbackStyle === 'short') {
-            document.getElementById('task-short-tab')?.click();
+            document.getElementById(ids.shortTab)?.click();
         } else {
-            document.getElementById('task-extended-tab')?.click();
+            document.getElementById(ids.extendedTab)?.click();
         }
         
         // Start feedback viewing tracking
         startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
         
-        // Step 10: Show revise and submit buttons
-        const reviseBtn = document.getElementById('task-revise-btn');
-        const submitBtn = document.getElementById('task-submit-final');
-        if (reviseBtn) reviseBtn.style.display = 'inline-block';
-        if (submitBtn) submitBtn.style.display = 'block';
+        // Step 10: Show revise and submit buttons (using correct video-specific IDs)
+        const reviseBtn = document.getElementById(ids.reviseBtn);
+        const submitBtn = document.getElementById(ids.submitBtn);
+        if (reviseBtn) reviseBtn.classList.remove('d-none');
+        if (submitBtn) submitBtn.classList.remove('d-none');
         
         currentTaskState.feedbackGenerated = true;
         
