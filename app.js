@@ -1,20 +1,22 @@
 // INFER - 4-Video Experiment Version
-// STUDY VERSION: Beta (Treatment Group 2)
-// - Videos 2 & 3: Full INFER feedback with PV analysis
+// STUDY VERSION: Gamma (Control Group)
+// - Videos 2 & 3: SIMPLE feedback (no PV analysis, just general feedback)
 // - Videos 1 & 4: Reflection only (no AI feedback)
 // - All surveys mandatory
+// - Uses same interface as treatment groups but with simplified prompt
 //
 // DATA COLLECTION:
-// - All binary classification results stored in Supabase database
 // - All user interactions (clicks, navigations) logged to Supabase
-// - Reflection data and feedback stored in Supabase
+// - Reflection data and simple feedback stored in Supabase
 // - Progress tracking in participant_progress table
+// - NO binary classification scores (no PV analysis)
 
 // ============================================================================
 // STUDY CONDITION - DO NOT MODIFY
 // ============================================================================
-const STUDY_CONDITION = 'treatment_2';
-const STUDY_VERSION = 'beta';
+const STUDY_CONDITION = 'control';
+const STUDY_VERSION = 'gamma';
+const USE_SIMPLE_FEEDBACK = true; // Control group uses simple prompt
 // ============================================================================
 
 // Constants and configuration
@@ -1842,6 +1844,169 @@ async function handleGenerateFeedback() {
     }
 }
 
+// ============================================================================
+// CONTROL GROUP: Simple Feedback Generation (No PV Analysis)
+// ============================================================================
+
+function getSimpleFeedbackPrompt(language, style) {
+    if (language === 'de') {
+        return "Ich schreibe eine Antwort, um ein Video über Unterricht zu analysieren. Gib mir Feedback.";
+    } else {
+        return "I am writing a response to analyze a video about teaching. Give me feedback.";
+    }
+}
+
+async function generateSimpleFeedbackForControl(reflection, language, style) {
+    const systemPrompt = "You are a helpful assistant."; 
+    const userPrompt = getSimpleFeedbackPrompt(language, style);
+    
+    const requestData = {
+        model: 'gpt-4o',
+        messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `${userPrompt}\n\n${reflection}` }
+        ],
+        temperature: 0,
+        max_tokens: 1000
+    };
+    
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        return result.choices[0].message.content;
+    } catch (error) {
+        console.error('Error in generateSimpleFeedbackForControl:', error);
+        throw error;
+    }
+}
+
+function formatSimpleFeedback(text) {
+    if (!text) return '';
+    let formatted = text
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n\n/g, '</p><p>')
+        .replace(/\n- /g, '</p><ul><li>')
+        .replace(/\n• /g, '</p><ul><li>')
+        .replace(/<\/li>\n/g, '</li>')
+        .replace(/\n/g, '<br>');
+    formatted = '<p>' + formatted + '</p>';
+    formatted = formatted.replace(/<\/p><ul>/g, '</p><ul>');
+    formatted = formatted.replace(/<\/li><p>/g, '</li></ul><p>');
+    return `<div class="simple-feedback">${formatted}</div>`;
+}
+
+async function saveSimpleReflectionToDatabase(reflection, feedbackExtended, feedbackShort, videoNum) {
+    if (!supabase || !currentParticipant) return;
+    try {
+        const { data, error } = await supabase
+            .from('reflections')
+            .insert([{
+                session_id: currentSessionId,
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                task_id: currentVideoId,
+                language: currentLanguage,
+                reflection_text: reflection,
+                analysis_percentages: { 
+                    raw: { description: 0, explanation: 0, prediction: 0, professional_vision: 0, other: 100 },
+                    priority: { description: 0, explanation: 0, prediction: 0, professional_vision: 0, other: 100 },
+                    note: 'Control group - no PV analysis'
+                },
+                weakest_component: null,
+                feedback_extended: feedbackExtended,
+                feedback_short: feedbackShort,
+                revision_number: currentTaskState.revisionCount || 1,
+                parent_reflection_id: currentTaskState.parentReflectionId || null
+            }])
+            .select()
+            .single();
+        if (error) {
+            console.error('Error saving simple reflection:', error);
+        } else {
+            currentTaskState.currentReflectionId = data?.id;
+            currentTaskState.parentReflectionId = data?.id;
+        }
+    } catch (error) {
+        console.error('Error in saveSimpleReflectionToDatabase:', error);
+    }
+}
+
+async function generateSimpleFeedbackOnly(reflection, videoNum, loadingInterval) {
+    const ids = getVideoElementIds(videoNum);
+    const loadingSpinner = document.getElementById(ids.loadingSpinner);
+    const generateBtn = document.getElementById(ids.generateBtn);
+    
+    try {
+        if (reflection.split(/\s+/).length < 20) {
+            const warningMessage = currentLanguage === 'en'
+                ? "⚠️ Your reflection is very short. Please write at least 50 words."
+                : "⚠️ Ihre Reflexion ist sehr kurz. Bitte schreiben Sie mindestens 50 Wörter.";
+            const feedbackExtended = document.getElementById(ids.feedbackExtended);
+            const feedbackShort = document.getElementById(ids.feedbackShort);
+            if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
+            if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
+            document.getElementById(ids.feedbackTabs).classList.remove('d-none');
+            clearInterval(loadingInterval);
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (generateBtn) generateBtn.disabled = false;
+            return;
+        }
+        
+        const [feedbackExtendedText, feedbackShortText] = await Promise.all([
+            generateSimpleFeedbackForControl(reflection, currentLanguage, 'academic'),
+            generateSimpleFeedbackForControl(reflection, currentLanguage, 'user-friendly')
+        ]);
+        
+        document.getElementById(ids.feedbackExtended).innerHTML = formatSimpleFeedback(feedbackExtendedText);
+        document.getElementById(ids.feedbackShort).innerHTML = formatSimpleFeedback(feedbackShortText);
+        document.getElementById(ids.feedbackTabs).classList.remove('d-none');
+        document.getElementById(ids.percentageExplanation).classList.add('d-none');
+        
+        // Use video-specific IDs for buttons
+        const reviseBtn = document.getElementById(ids.reviseBtn);
+        const submitBtn = document.getElementById(ids.submitBtn);
+        if (reviseBtn) reviseBtn.classList.remove('d-none');
+        if (submitBtn) {
+            submitBtn.classList.remove('d-none');
+            submitBtn.disabled = false;
+        }
+        
+        currentTaskState.feedbackGenerated = true;
+        currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
+        
+        await saveSimpleReflectionToDatabase(reflection, feedbackExtendedText, feedbackShortText, videoNum);
+        
+        logEvent('simple_feedback_generated', {
+            participant_name: currentParticipant,
+            video_id: currentVideoId,
+            language: currentLanguage,
+            reflection_length: reflection.length,
+            revision_count: currentTaskState.revisionCount,
+            study_condition: STUDY_CONDITION
+        });
+        
+        startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
+        
+    } catch (error) {
+        console.error('Error generating simple feedback:', error);
+        showAlert('Error generating feedback. Please try again.', 'danger');
+    } finally {
+        clearInterval(loadingInterval);
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (generateBtn) generateBtn.disabled = false;
+    }
+}
+
 // Generate feedback for specific video page
 async function generateFeedbackForVideo(reflection, videoNum) {
     const ids = getVideoElementIds(videoNum);
@@ -1863,6 +2028,12 @@ async function generateFeedbackForVideo(reflection, videoNum) {
     }, 8000);
     
     try {
+        // CONTROL GROUP: Use simple feedback without PV analysis
+        if (typeof USE_SIMPLE_FEEDBACK !== 'undefined' && USE_SIMPLE_FEEDBACK) {
+            await generateSimpleFeedbackOnly(reflection, videoNum, loadingInterval);
+            return;
+        }
+        
         // Step 0: Check for duplicate reflection
         const previousReflection = sessionStorage.getItem(`reflection-${currentVideoId}`);
         if (previousReflection && previousReflection.trim() === reflection.trim()) {
