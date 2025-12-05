@@ -1,22 +1,20 @@
 // INFER - 4-Video Experiment Version
-// STUDY VERSION: Gamma (Control Group)
-// - Videos 2 & 3: SIMPLE feedback (no PV analysis, just general feedback)
+// STUDY VERSION: Beta (Treatment Group 2)
+// - Videos 2 & 3: Full INFER feedback with PV analysis
 // - Videos 1 & 4: Reflection only (no AI feedback)
 // - All surveys mandatory
-// - Uses same interface as treatment groups but with simplified prompt
 //
 // DATA COLLECTION:
+// - All binary classification results stored in Supabase database
 // - All user interactions (clicks, navigations) logged to Supabase
-// - Reflection data and simple feedback stored in Supabase
+// - Reflection data and feedback stored in Supabase
 // - Progress tracking in participant_progress table
-// - NO binary classification scores (no PV analysis)
 
 // ============================================================================
 // STUDY CONDITION - DO NOT MODIFY
 // ============================================================================
-const STUDY_CONDITION = 'control';
-const STUDY_VERSION = 'gamma';
-const USE_SIMPLE_FEEDBACK = true; // Control group uses simple prompt
+const STUDY_CONDITION = 'treatment_2';
+const STUDY_VERSION = 'beta';
 // ============================================================================
 
 // Constants and configuration
@@ -829,9 +827,9 @@ async function handleLogin() {
         
         logEvent('participant_registered', {
             participant_name: participantCode,
+            assigned_condition: condition,
             treatment_group: STUDY_CONDITION,
-            study_version: STUDY_VERSION,
-            assigned_condition: condition
+            study_version: STUDY_VERSION
         });
         
         // Hide resume message for new users
@@ -886,7 +884,7 @@ async function createParticipantProgress(participantName, condition) {
             .insert([{
                 participant_name: participantName,
                 assigned_condition: condition,
-                treatment_group: STUDY_CONDITION,
+                treatment_group: STUDY_CONDITION, // treatment_1, treatment_2, or control
                 videos_completed: [],
                 pre_survey_completed: false,
                 post_survey_completed: false,
@@ -1491,12 +1489,11 @@ async function loadPreviousReflectionAndFeedback(videoId) {
             
             // Load previous feedback if available
             if (reflection.feedback_extended || reflection.feedback_short) {
-                const ids = getVideoElementIds(videoNum);
-                const feedbackExtended = document.getElementById(ids.feedbackExtended);
-                const feedbackShort = document.getElementById(ids.feedbackShort);
-                const feedbackTabs = document.getElementById(ids.feedbackTabs);
-                const reviseBtn = document.getElementById(ids.reviseBtn);
-                const submitBtn = document.getElementById(ids.submitBtn);
+                const feedbackExtended = document.getElementById('task-feedback-extended');
+                const feedbackShort = document.getElementById('task-feedback-short');
+                const feedbackTabs = document.getElementById('task-feedback-tabs');
+                const reviseBtn = document.getElementById('task-revise-btn');
+                const submitBtn = document.getElementById('task-submit-final');
                 
                 if (reflection.feedback_extended && feedbackExtended) {
                     const analysisResult = reflection.analysis_percentages ? {
@@ -1845,190 +1842,6 @@ async function handleGenerateFeedback() {
     }
 }
 
-// ============================================================================
-// SIMPLE FEEDBACK PROMPT (Control Group - No PV Analysis)
-// ============================================================================
-function getSimpleFeedbackPrompt(language, style) {
-    if (language === 'de') {
-        return "Ich schreibe eine Antwort, um ein Video über Unterricht zu analysieren. Gib mir Feedback.";
-    } else {
-        return "I am writing a response to analyze a video about teaching. Give me feedback.";
-    }
-}
-
-async function generateSimpleFeedbackForControl(reflection, language, style) {
-    const systemPrompt = "You are a helpful assistant.";
-    const userPrompt = getSimpleFeedbackPrompt(language, style);
-    
-    const requestData = {
-        model: 'gpt-4o',
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `${userPrompt}\n\n${reflection}` }
-        ],
-        temperature: 0,
-        max_tokens: 1000
-    };
-    
-    try {
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        return result.choices[0].message.content;
-    } catch (error) {
-        console.error('Error in generateSimpleFeedbackForControl:', error);
-        throw error;
-    }
-}
-
-// Format simple feedback (basic HTML formatting)
-function formatSimpleFeedback(text) {
-    if (!text) return '';
-    
-    // Convert markdown-style formatting to HTML
-    let formatted = text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n- /g, '</p><ul><li>')
-        .replace(/\n• /g, '</p><ul><li>')
-        .replace(/<\/li>\n/g, '</li>')
-        .replace(/\n/g, '<br>');
-    
-    // Wrap in paragraph
-    formatted = '<p>' + formatted + '</p>';
-    
-    // Clean up any broken lists
-    formatted = formatted.replace(/<\/p><ul>/g, '</p><ul>');
-    formatted = formatted.replace(/<\/li><p>/g, '</li></ul><p>');
-    
-    return `<div class="simple-feedback">${formatted}</div>`;
-}
-
-// Save simple reflection to database (without PV analysis)
-async function saveSimpleReflectionToDatabase(reflection, feedbackExtended, feedbackShort, videoNum) {
-    if (!supabase || !currentParticipant) return;
-    
-    try {
-        const { data, error } = await supabase
-            .from('reflections')
-            .insert([{
-                session_id: currentSessionId,
-                participant_name: currentParticipant,
-                video_id: currentVideoId,
-                task_id: currentVideoId,
-                language: currentLanguage,
-                reflection_text: reflection,
-                // No PV analysis for control group
-                analysis_percentages: { 
-                    raw: { description: 0, explanation: 0, prediction: 0, professional_vision: 0, other: 100 },
-                    priority: { description: 0, explanation: 0, prediction: 0, professional_vision: 0, other: 100 },
-                    note: 'Control group - no PV analysis'
-                },
-                weakest_component: null,
-                feedback_extended: feedbackExtended,
-                feedback_short: feedbackShort,
-                revision_number: currentTaskState.revisionCount || 1,
-                parent_reflection_id: currentTaskState.parentReflectionId || null
-            }])
-            .select()
-            .single();
-        
-        if (error) {
-            console.error('Error saving simple reflection:', error);
-        } else {
-            currentTaskState.currentReflectionId = data?.id;
-            currentTaskState.parentReflectionId = data?.id;
-        }
-    } catch (error) {
-        console.error('Error in saveSimpleReflectionToDatabase:', error);
-    }
-}
-
-// Generate simple feedback only
-async function generateSimpleFeedbackOnly(reflection, videoNum, loadingInterval) {
-    const ids = getVideoElementIds(videoNum);
-    const loadingSpinner = document.getElementById(ids.loadingSpinner);
-    const generateBtn = document.getElementById(ids.generateBtn);
-    
-    try {
-        // Generate simple feedback (academic and user-friendly versions)
-        // Note: Control group just gets generic feedback, we use same content or slightly varied prompt for "styles" if needed
-        // For simplicity, we use the same prompt logic but maybe instruct for "detailed" vs "concise" if we wanted
-        // But user just said "Give me feedback".
-        // We'll request it twice to fill both tabs, potentially with slightly different system prompts if needed, 
-        // or just run it twice. To be safe and support the UI, let's use "academic" and "user-friendly" style params
-        // which our getSimpleFeedbackPrompt doesn't distinguish yet.
-        // Let's just call it twice.
-        
-        const [feedbackExtendedText, feedbackShortText] = await Promise.all([
-            generateSimpleFeedbackForControl(reflection, currentLanguage, 'academic'),
-            generateSimpleFeedbackForControl(reflection, currentLanguage, 'user-friendly')
-        ]);
-        
-        // Display feedback
-        const feedbackExtended = document.getElementById(ids.feedbackExtended);
-        const feedbackShort = document.getElementById(ids.feedbackShort);
-        
-        if (feedbackExtended) {
-            feedbackExtended.innerHTML = formatSimpleFeedback(feedbackExtendedText);
-        }
-        if (feedbackShort) {
-            feedbackShort.innerHTML = formatSimpleFeedback(feedbackShortText);
-        }
-        
-        // Show feedback tabs
-        const feedbackTabs = document.getElementById(ids.feedbackTabs);
-        if (feedbackTabs) feedbackTabs.classList.remove('d-none');
-        
-        // Hide percentage explanation (not relevant for control group)
-        const percentageExplanation = document.getElementById(ids.percentageExplanation);
-        if (percentageExplanation) percentageExplanation.classList.add('d-none');
-        
-        // Show revise and submit buttons
-        const reviseBtn = document.getElementById(ids.reviseBtn);
-        const submitBtn = document.getElementById(ids.submitBtn);
-        if (reviseBtn) reviseBtn.classList.remove('d-none');
-        if (submitBtn) submitBtn.classList.remove('d-none');
-        
-        // Update state
-        currentTaskState.feedbackGenerated = true;
-        currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
-        
-        // Save to database (without PV scores)
-        await saveSimpleReflectionToDatabase(reflection, feedbackExtendedText, feedbackShortText, videoNum);
-        
-        // Log event
-        logEvent('simple_feedback_generated', {
-            participant_name: currentParticipant,
-            video_id: currentVideoId,
-            language: currentLanguage,
-            reflection_length: reflection.length,
-            revision_count: currentTaskState.revisionCount,
-            study_condition: STUDY_CONDITION
-        });
-        
-        // Start tracking feedback viewing
-        startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
-        
-    } catch (error) {
-        console.error('Error generating simple feedback:', error);
-        showAlert('Error generating feedback. Please try again.', 'danger');
-    } finally {
-        clearInterval(loadingInterval);
-        if (loadingSpinner) loadingSpinner.style.display = 'none';
-        if (generateBtn) generateBtn.disabled = false;
-    }
-}
-
 // Generate feedback for specific video page
 async function generateFeedbackForVideo(reflection, videoNum) {
     const ids = getVideoElementIds(videoNum);
@@ -2050,12 +1863,6 @@ async function generateFeedbackForVideo(reflection, videoNum) {
     }, 8000);
     
     try {
-        // CONTROL GROUP: Use simple feedback without PV analysis
-        if (typeof USE_SIMPLE_FEEDBACK !== 'undefined' && USE_SIMPLE_FEEDBACK) {
-            await generateSimpleFeedbackOnly(reflection, videoNum, loadingInterval);
-            return;
-        }
-
         // Step 0: Check for duplicate reflection
         const previousReflection = sessionStorage.getItem(`reflection-${currentVideoId}`);
         if (previousReflection && previousReflection.trim() === reflection.trim()) {
@@ -2323,13 +2130,12 @@ async function generateFeedback(reflection) {
                 is_non_relevant: isNonRelevant
             });
             
-            const ids = getVideoElementIds(videoNum);
-            const feedbackExtended = document.getElementById(ids.feedbackExtended);
-            const feedbackShort = document.getElementById(ids.feedbackShort);
+            const feedbackExtended = document.getElementById('task-feedback-extended');
+            const feedbackShort = document.getElementById('task-feedback-short');
             if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
             if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
             
-            const feedbackTabs = document.getElementById(ids.feedbackTabs);
+            const feedbackTabs = document.getElementById('task-feedback-tabs');
             if (feedbackTabs) feedbackTabs.classList.remove('d-none');
             
             clearInterval(loadingInterval);
@@ -2338,8 +2144,8 @@ async function generateFeedback(reflection) {
             return;
         }
         
-        // Step 3: Display analysis distribution (using video-specific function)
-        displayAnalysisDistributionForVideo(analysisResult, videoNum);
+        // Step 3: Display analysis distribution
+        displayAnalysisDistribution(analysisResult);
         
         // Step 4: Generate both feedback styles
         const [extendedFeedback, shortFeedback] = await Promise.all([
@@ -2390,31 +2196,30 @@ async function generateFeedback(reflection) {
         // Step 7: Store reflection for duplicate detection
         sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
         
-        // Step 8: Display feedback (using video-specific IDs)
-        const ids = getVideoElementIds(videoNum);
-        const feedbackExtended = document.getElementById(ids.feedbackExtended);
-        const feedbackShort = document.getElementById(ids.feedbackShort);
+        // Step 8: Display feedback
+        const feedbackExtended = document.getElementById('task-feedback-extended');
+        const feedbackShort = document.getElementById('task-feedback-short');
         if (feedbackExtended) feedbackExtended.innerHTML = formatStructuredFeedback(finalExtendedFeedback, analysisResult);
         if (feedbackShort) feedbackShort.innerHTML = formatStructuredFeedback(finalShortFeedback, analysisResult);
         
-        // Step 9: Show tabs (using video-specific IDs)
-        const feedbackTabs = document.getElementById(ids.feedbackTabs);
+        // Step 9: Show tabs
+        const feedbackTabs = document.getElementById('task-feedback-tabs');
         if (feedbackTabs) feedbackTabs.classList.remove('d-none');
         
         if (userPreferredFeedbackStyle === 'short') {
-            document.getElementById(ids.shortTab)?.click();
+            document.getElementById('task-short-tab')?.click();
         } else {
-            document.getElementById(ids.extendedTab)?.click();
+            document.getElementById('task-extended-tab')?.click();
         }
         
         // Start feedback viewing tracking
         startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
         
-        // Step 10: Show revise and submit buttons (using correct video-specific IDs)
-        const reviseBtn = document.getElementById(ids.reviseBtn);
-        const submitBtn = document.getElementById(ids.submitBtn);
-        if (reviseBtn) reviseBtn.classList.remove('d-none');
-        if (submitBtn) submitBtn.classList.remove('d-none');
+        // Step 10: Show revise and submit buttons
+        const reviseBtn = document.getElementById('task-revise-btn');
+        const submitBtn = document.getElementById('task-submit-final');
+        if (reviseBtn) reviseBtn.style.display = 'inline-block';
+        if (submitBtn) submitBtn.style.display = 'block';
         
         currentTaskState.feedbackGenerated = true;
         
@@ -3696,3 +3501,1007 @@ window.addEventListener('beforeunload', () => {
         participant_name: currentParticipant || null
     });
 });
+            }
+            
+            const result = await response.json();
+            if (!result.choices || !result.choices[0]) {
+                console.error(`Binary classifier attempt ${attempt + 1}: Invalid response format`, result);
+                continue;
+            }
+            const output = result.choices[0].message.content.trim();
+            
+            if (output === '1' || output === '0') {
+                return parseInt(output);
+            }
+            
+            if (output.includes('1')) return 1;
+            if (output.includes('0')) return 0;
+            
+            console.warn(`Binary classifier attempt ${attempt + 1}: Unexpected output: "${output}"`);
+            
+        } catch (error) {
+            console.warn(`Binary classifier attempt ${attempt + 1} failed:`, error);
+        }
+    }
+    
+    console.error('All binary classifier attempts failed, defaulting to 0');
+    return 0;
+}
+
+function calculatePercentages(classificationResults) {
+    const totalWindows = classificationResults.length;
+    
+    if (totalWindows === 0) {
+        return {
+            percentages_raw: { description: 0, explanation: 0, prediction: 0, professional_vision: 0 },
+            percentages_priority: { description: 0, explanation: 0, prediction: 0, other: 100, professional_vision: 0 },
+            weakest_component: "Prediction",
+            analysis_summary: "No valid windows for analysis"
+        };
+    }
+    
+    // RAW CALCULATION (can exceed 100%)
+    let rawDescriptionCount = 0;
+    let rawExplanationCount = 0;
+    let rawPredictionCount = 0;
+    
+    classificationResults.forEach(result => {
+        if (result.description === 1) rawDescriptionCount++;
+        if (result.explanation === 1) rawExplanationCount++;
+        if (result.prediction === 1) rawPredictionCount++;
+    });
+    
+    const rawPercentages = {
+        description: Math.round((rawDescriptionCount / totalWindows) * 100 * 10) / 10,
+        explanation: Math.round((rawExplanationCount / totalWindows) * 100 * 10) / 10,
+        prediction: Math.round((rawPredictionCount / totalWindows) * 100 * 10) / 10,
+        professional_vision: Math.round(((rawDescriptionCount + rawExplanationCount + rawPredictionCount) / totalWindows) * 100 * 10) / 10
+    };
+    
+    // PRIORITY-BASED CALCULATION (adds to 100%)
+    let descriptionCount = 0;
+    let explanationCount = 0;
+    let predictionCount = 0;
+    let otherCount = 0;
+    
+    classificationResults.forEach(result => {
+        if (result.description === 1) {
+            descriptionCount++;
+        } else if (result.explanation === 1) {
+            explanationCount++;
+        } else if (result.prediction === 1) {
+            predictionCount++;
+        } else {
+            otherCount++;
+        }
+    });
+    
+    const priorityPercentages = {
+        description: Math.round((descriptionCount / totalWindows) * 100 * 10) / 10,
+        explanation: Math.round((explanationCount / totalWindows) * 100 * 10) / 10,
+        prediction: Math.round((predictionCount / totalWindows) * 100 * 10) / 10,
+        other: Math.round((otherCount / totalWindows) * 100 * 10) / 10,
+        professional_vision: Math.round(((descriptionCount + explanationCount + predictionCount) / totalWindows) * 100 * 10) / 10
+    };
+    
+    // Find weakest component
+    const components = {
+        'Description': priorityPercentages.description,
+        'Explanation': priorityPercentages.explanation,
+        'Prediction': priorityPercentages.prediction
+    };
+    
+    const weakestComponent = Object.keys(components).reduce((a, b) => 
+        components[a] <= components[b] ? a : b
+    );
+    
+    return {
+        percentages_raw: rawPercentages,
+        percentages_priority: priorityPercentages,
+        percentages: rawPercentages,
+        weakest_component: weakestComponent,
+        analysis_summary: `Analyzed ${totalWindows} windows. Raw: D:${rawPercentages.description}% E:${rawPercentages.explanation}% P:${rawPercentages.prediction}% (Total PV: ${rawPercentages.professional_vision}%). Priority-based: D:${priorityPercentages.description}% E:${priorityPercentages.explanation}% P:${priorityPercentages.prediction}% Other:${priorityPercentages.other}% = 100%`
+    };
+}
+
+// ============================================================================
+// Feedback Generation (Same as original)
+// ============================================================================
+
+async function generateWeightedFeedback(reflection, language, style, analysisResult) {
+    const promptType = `${style} ${language === 'en' ? 'English' : 'German'}`;
+    const systemPrompt = getFeedbackPrompt(promptType, analysisResult);
+    const pctPriority = analysisResult.percentages_priority;
+    
+    const languageInstruction = language === 'en' 
+        ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
+        : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
+    
+    const requestData = {
+        model: model,
+        messages: [
+            { role: "system", content: languageInstruction + "\n\n" + systemPrompt },
+            { role: "user", content: `Based on the analysis showing ${pctPriority.description}% description, ${pctPriority.explanation}% explanation, ${pctPriority.prediction}% prediction (Professional Vision: ${pctPriority.professional_vision}%) + Other: ${pctPriority.other}% = 100%, provide feedback for this reflection:\n\n${reflection}` }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000
+    };
+    
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            let errorData = {};
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (e) {
+                errorData = { error: { message: errorText } };
+            }
+            console.error(`Feedback generation failed: HTTP ${response.status}`, errorData);
+            console.error(`API URL: ${OPENAI_API_URL}`);
+            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        let feedback = result.choices[0].message.content;
+        
+        if (style === 'user-friendly') {
+            feedback = feedback.replace(/\s*\([^)]+\d{4}\)/g, '');
+        }
+        
+        return feedback;
+    } catch (error) {
+        console.error('Error in generateWeightedFeedback:', error);
+        throw error;
+    }
+}
+
+function getFeedbackPrompt(promptType, analysisResult) {
+    const weakestComponent = analysisResult?.weakest_component || 'Prediction';
+    
+    const prompts = {
+        'academic English': `You are a supportive yet rigorous teaching mentor providing feedback in a scholarly tone. Your feedback MUST be detailed, academic, and comprehensive, deeply integrating theory.
+
+**Knowledge Base Integration:**
+You MUST base your feedback on the theoretical framework of empirical teaching quality research. Specifically, use the process-oriented teaching-learning model (Seidel & Shavelson, 2007) or the three basic dimensions of teaching quality (Klieme, 2006) for feedback on description and explanation. For prediction, use self-determination theory (Deci & Ryan, 1993) or theories of cognitive and constructive learning (Atkinson & Shiffrin, 1968; Craik & Lockhart, 1972).
+
+**CRITICAL: You MUST explicitly cite these theories using the (Author, Year) format. Do NOT cite any other theories.**
+
+**MANDATORY WEIGHTED FEEDBACK STRUCTURE:**
+1. **Weakest Area Focus**: Write 6-8 detailed, academic sentences ONLY for the weakest component (${weakestComponent}), integrating multiple specific suggestions and deeply connecting them to theory.
+2. **Stronger Areas**: For the two stronger components, write EXACTLY 3-4 detailed sentences each (1 Strength, 1 Suggestion, 1 'Why' that explicitly connects to theory).
+3. **Conclusion**: Write 2-3 sentences summarizing the key area for development.
+
+**CRITICAL FOCUS REQUIREMENTS:**
+- Focus ONLY on analysis skills, not teaching performance.
+- Emphasize objective, non-evaluative observation for the Description section.
+
+**FORMATTING:**
+- Sections: "#### Description", "#### Explanation", "#### Prediction", "#### Conclusion"
+- Sub-headings: "Strength:", "Suggestions:", "Why:"`,
+        
+        'user-friendly English': `You are a friendly teaching mentor providing feedback for a busy teacher who wants quick, practical tips.
+
+**Style Guide - MUST BE FOLLOWED:**
+- **Language**: Use simple, direct language. Avoid academic jargon completely.
+- **Citations**: Do NOT include any in-text citations like (Author, Year).
+- **Focus**: Give actionable advice. Do NOT explain the theory behind the advice.
+
+**MANDATORY CONCISE FEEDBACK STRUCTURE:**
+1. **Weakest Area Focus**: For the weakest component (${weakestComponent}), provide a "Good:" section with 1-2 sentences, and a "Tip:" section with a bulleted list of 2-3 clear, practical tips.
+2. **Stronger Areas**: For the two stronger components, write a "Good:" section with one sentence and a "Tip:" section with one practical tip.
+3. **No Conclusion**: Do not include a "Conclusion" section.
+
+**FORMATTING:**
+- Sections: "#### Description", "#### Explanation", "#### Prediction"
+- Sub-headings: "Good:", "Tip:"`,
+        
+        'academic German': `Sie sind ein unterstützender, aber rigoroser Mentor, der Feedback in einem wissenschaftlichen Ton gibt. Ihr Feedback MUSS detailliert, akademisch und umfassend sein und die Theorie tief integrieren.
+
+**Wissensbasierte Integration:**
+Basieren Sie Ihr Feedback auf dem theoretischen Rahmen der empirischen Unterrichtsqualitätsforschung. Verwenden Sie das prozessorientierte Lehr-Lern-Modell (Seidel & Shavelson, 2007) oder die drei Grunddimensionen der Unterrichtsqualität (Klieme, 2006) für Feedback zu Beschreibung und Erklärung. Für die Vorhersage verwenden Sie die Selbstbestimmungstheorie der Motivation (Deci & Ryan, 1993) oder Theorien des kognitiven und konstruktiven Lernens (Atkinson & Shiffrin, 1968; Craik & Lockhart, 1972).
+
+**KRITISCH: Sie MÜSSEN diese Theorien explizit im Format (Autor, Jahr) zitieren. Zitieren Sie KEINE anderen Theorien.**
+
+**OBLIGATORISCHE GEWICHTETE FEEDBACK-STRUKTUR:**
+1. **Fokus auf den schwächsten Bereich**: Schreiben Sie 6-8 detaillierte, akademische Sätze NUR für die schwächste Komponente (${weakestComponent}), mit mehreren spezifischen Vorschlägen und tiefen theoretischen Verbindungen.
+2. **Stärkere Bereiche**: Für die beiden stärkeren Komponenten schreiben Sie GENAU 3-4 detaillierte Sätze (1 Stärke, 1 Vorschlag, 1 'Warum' mit explizitem Theoriebezug).
+3. **Fazit**: Schreiben Sie 2-3 Sätze, die den wichtigsten Entwicklungsbereich zusammenfassen.
+
+**KRITISCHE FOKUS-ANFORDERUNGEN:**
+- Konzentrieren Sie sich NUR auf Analysefähigkeiten, nicht auf die Lehrleistung.
+- Betonen Sie bei der Beschreibung eine objektive, nicht bewertende Beobachtung.
+
+**FORMATIERUNG:**
+- Abschnitte: "#### Beschreibung", "#### Erklärung", "#### Vorhersage", "#### Fazit"
+- Unterüberschriften: "Stärke:", "Vorschläge:", "Warum:"`,
+        
+        'user-friendly German': `Sie sind ein freundlicher Mentor, der Feedback für einen vielbeschäftigten Lehrer gibt, der schnelle, praktische Tipps wünscht.
+
+**Stilrichtlinie - MUSS BEFOLGT WERDEN:**
+- **Sprache**: Verwenden Sie einfache, direkte Sprache. Vermeiden Sie akademischen Jargon vollständig.
+- **Zitate**: Fügen Sie KEINE Zitate wie (Autor, Jahr) ein.
+- **Fokus**: Geben Sie handlungsorientierte Ratschläge. Erklären Sie NICHT die Theorie hinter den Ratschlägen.
+
+**OBLIGATORISCHE PRÄGNANTE FEEDBACK-STRUKTUR:**
+1. **Fokus auf den schwächsten Bereich**: Geben Sie für die schwächste Komponente (${weakestComponent}) einen "Gut:"-Abschnitt mit 1-2 Sätzen und einen "Tipp:"-Abschnitt mit einer Stichpunktliste von 2-3 klaren, praktischen Tipps.
+2. **Stärkere Bereiche**: Schreiben Sie für die beiden stärkeren Komponenten einen "Gut:"-Abschnitt mit einem Satz und einen "Tipp:"-Abschnitt mit einem praktischen Tipp.
+3. **Kein Fazit**: Fügen Sie keinen "Fazit"-Abschnitt hinzu.
+
+**FORMATIERUNG:**
+- Abschnitte: "#### Beschreibung", "#### Erklärung", "#### Vorhersage"
+- Unterüberschriften: "Gut:", "Tipp:"`
+    };
+    
+    return prompts[promptType] || prompts['academic English'];
+}
+
+function formatStructuredFeedback(text, analysisResult) {
+    if (!text) return '';
+
+    let formattedText = text.trim().replace(/\r\n/g, '\n').replace(/\*\*(.*?)\*\*/g, '$1');
+    const sections = formattedText.split(/####\s*/).filter(s => s.trim().length > 0);
+
+    const sectionMap = {
+        'Overall Assessment': 'overall', 'Gesamtbewertung': 'overall',
+        'Description': 'description', 'Beschreibung': 'description',
+        'Explanation': 'explanation', 'Erklärung': 'explanation',
+        'Prediction': 'prediction', 'Vorhersage': 'prediction',
+        'Conclusion': 'overall', 'Fazit': 'overall'
+    };
+
+    const processedSections = sections.map(sectionText => {
+        const lines = sectionText.trim().split('\n');
+        const heading = lines.shift().trim();
+        let body = lines.join('\n').trim();
+
+        let sectionClass = 'other';
+        for (const key in sectionMap) {
+            if (heading.toLowerCase().startsWith(key.toLowerCase())) {
+                sectionClass = sectionMap[key];
+                break;
+            }
+        }
+
+        const keywords = [
+            'Strength:', 'Stärke:', 'Suggestions:', 'Vorschläge:',
+            'Why:', 'Warum:', 'Good:', 'Gut:', 'Tip:', 'Tipp:'
+        ];
+
+        keywords.forEach(keyword => {
+            const regex = new RegExp(`^(${keyword.replace(':', '\\:')})`, 'gm');
+            body = body.replace(regex, `<span class="feedback-keyword">${keyword}</span>`);
+        });
+
+        body = body.replace(/\n/g, '<br>');
+
+        return `
+            <div class="feedback-section feedback-section-${sectionClass}">
+                <h4 class="feedback-heading">${heading}</h4>
+                <div class="section-content">${body}</div>
+            </div>
+        `;
+    }).join('');
+
+    return processedSections;
+}
+
+// ============================================================================
+// Database Functions
+// ============================================================================
+
+function initSupabase() {
+    if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('YOUR_') || SUPABASE_KEY.includes('YOUR_')) {
+        console.warn('Supabase credentials not set. Running in demo mode.');
+        showAlert('Running in demo mode - feedback works, but data won\'t be saved to database.', 'info');
+        return null;
+    }
+    
+    try {
+        if (typeof window.supabase === 'undefined' || !window.supabase) {
+            throw new Error('Supabase library not loaded from CDN.');
+        }
+        
+        if (typeof window.supabase.createClient !== 'function') {
+            throw new Error('Supabase createClient function not available.');
+        }
+        
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        if (!client) {
+            throw new Error('Failed to create Supabase client instance.');
+        }
+        
+        console.log('✅ Supabase client initialized successfully');
+        return client;
+    } catch (error) {
+        console.error('Error initializing Supabase client:', error);
+        showAlert('Database connection failed - running in demo mode. Feedback generation still works!', 'warning');
+        return null;
+    }
+}
+
+async function verifySupabaseConnection(client) {
+    if (!client) return;
+    
+    try {
+        const { data, error } = await client
+            .from('reflections')
+            .select('count')
+            .limit(1);
+        
+        if (error) {
+            console.error('Database connection test failed:', error);
+            showAlert('Database connection issue - data may not be saved.', 'warning');
+        } else {
+            console.log('✅ Supabase connection verified');
+        }
+    } catch (error) {
+        console.error('Error verifying Supabase connection:', error);
+    }
+}
+
+function getOrCreateSessionId() {
+    let sessionId = sessionStorage.getItem('session_id');
+    
+    if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem('session_id', sessionId);
+        console.log('✅ New session created:', sessionId);
+    } else {
+        console.log('✅ Existing session found:', sessionId);
+    }
+    
+    return sessionId;
+}
+
+async function logEvent(eventType, eventData = {}) {
+    if (!supabase || !currentSessionId) {
+        console.log(`Event (no DB): ${eventType}`, eventData);
+        return;
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('user_events')
+            .insert([{
+                session_id: currentSessionId,
+                reflection_id: eventData.reflection_id || null,
+                event_type: eventType,
+                event_data: eventData,
+                user_agent: navigator.userAgent,
+                language: currentLanguage,
+                timestamp_utc: new Date().toISOString()
+            }]);
+
+        if (error) {
+            console.error('Error logging event:', error);
+        } else {
+            console.log(`📝 Event logged: ${eventType}`, eventData);
+        }
+    } catch (error) {
+        console.error('Error in logEvent:', error);
+    }
+}
+
+async function storeBinaryClassificationResults(analysisResult) {
+    if (!supabase || !currentSessionId || !currentParticipant || !currentVideoId) return;
+    
+    try {
+        const classificationRecords = analysisResult.classificationResults.map(result => ({
+            session_id: currentSessionId,
+            reflection_id: currentTaskState.currentReflectionId,
+            task_id: `video-task-${currentVideoId}`,
+            participant_name: currentParticipant,
+            video_id: currentVideoId,
+            language: currentLanguage,
+            window_id: result.window_id,
+            window_text: result.window_text,
+            description_score: result.description,
+            explanation_score: result.explanation,
+            prediction_score: result.prediction,
+            created_at: new Date().toISOString()
+        }));
+        
+        if (classificationRecords.length > 0) {
+            const { data, error } = await supabase
+                .from('binary_classifications')
+                .insert(classificationRecords);
+            
+            if (error) {
+                console.error('Error storing binary classifications:', error);
+            } else {
+                console.log(`✅ ${classificationRecords.length} binary classifications stored`);
+            }
+        }
+    } catch (error) {
+        console.error('Error in storeBinaryClassificationResults:', error);
+    }
+}
+
+async function saveFeedbackToDatabase(data) {
+    if (!supabase) {
+        console.log('No database connection - running in demo mode');
+        return;
+    }
+    
+    try {
+        const revisionNumber = currentTaskState.revisionCount || 1;
+        const parentReflectionId = currentTaskState.parentReflectionId || null;
+
+        const reflectionData = {
+            session_id: currentSessionId,
+            participant_name: data.participantCode,
+            video_id: data.videoSelected,
+            language: currentLanguage,
+            task_id: `video-task-${data.videoSelected}`,
+            reflection_text: data.reflectionText,
+            analysis_percentages: {
+                raw: data.analysisResult.percentages_raw,
+                priority: data.analysisResult.percentages_priority,
+                displayed_to_student: data.analysisResult.percentages_raw
+            },
+            weakest_component: data.analysisResult.weakest_component,
+            feedback_extended: data.extendedFeedback,
+            feedback_short: data.shortFeedback,
+            revision_number: revisionNumber,
+            parent_reflection_id: parentReflectionId,
+            created_at: new Date().toISOString()
+        };
+
+        const { data: result, error } = await supabase
+            .from('reflections')
+            .insert([reflectionData])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Database insert error:', error);
+            return;
+        }
+
+        currentTaskState.currentReflectionId = result.id;
+        
+        if (revisionNumber === 1) {
+            currentTaskState.parentReflectionId = result.id;
+        }
+        
+        console.log(`✅ Reflection saved to database:`, result.id);
+        
+        logEvent('submit_reflection', {
+            video_id: data.videoSelected,
+            participant_name: data.participantCode,
+            language: currentLanguage,
+            reflection_id: result.id,
+            reflection_length: data.reflectionText.length,
+            analysis_percentages_raw: data.analysisResult.percentages_raw,
+            analysis_percentages_priority: data.analysisResult.percentages_priority,
+            weakest_component: data.analysisResult.weakest_component
+        });
+        
+    } catch (error) {
+        console.error('Error saving to database:', error);
+    }
+}
+
+// Session end tracking
+window.addEventListener('beforeunload', () => {
+    if (currentTaskState.currentFeedbackType && currentTaskState.currentFeedbackStartTime) {
+        endFeedbackViewing(currentTaskState.currentFeedbackType, currentLanguage);
+    }
+    
+    logEvent('session_end', {
+        session_duration: Date.now() - performance.timing.navigationStart,
+        language: currentLanguage,
+        final_page: currentPage,
+        video_id: currentVideoId,
+        participant_name: currentParticipant || null
+    });
+});
+
+            }
+            
+            const result = await response.json();
+            if (!result.choices || !result.choices[0]) {
+                console.error(`Binary classifier attempt ${attempt + 1}: Invalid response format`, result);
+                continue;
+            }
+            const output = result.choices[0].message.content.trim();
+            
+            if (output === '1' || output === '0') {
+                return parseInt(output);
+            }
+            
+            if (output.includes('1')) return 1;
+            if (output.includes('0')) return 0;
+            
+            console.warn(`Binary classifier attempt ${attempt + 1}: Unexpected output: "${output}"`);
+            
+        } catch (error) {
+            console.warn(`Binary classifier attempt ${attempt + 1} failed:`, error);
+        }
+    }
+    
+    console.error('All binary classifier attempts failed, defaulting to 0');
+    return 0;
+}
+
+function calculatePercentages(classificationResults) {
+    const totalWindows = classificationResults.length;
+    
+    if (totalWindows === 0) {
+        return {
+            percentages_raw: { description: 0, explanation: 0, prediction: 0, professional_vision: 0 },
+            percentages_priority: { description: 0, explanation: 0, prediction: 0, other: 100, professional_vision: 0 },
+            weakest_component: "Prediction",
+            analysis_summary: "No valid windows for analysis"
+        };
+    }
+    
+    // RAW CALCULATION (can exceed 100%)
+    let rawDescriptionCount = 0;
+    let rawExplanationCount = 0;
+    let rawPredictionCount = 0;
+    
+    classificationResults.forEach(result => {
+        if (result.description === 1) rawDescriptionCount++;
+        if (result.explanation === 1) rawExplanationCount++;
+        if (result.prediction === 1) rawPredictionCount++;
+    });
+    
+    const rawPercentages = {
+        description: Math.round((rawDescriptionCount / totalWindows) * 100 * 10) / 10,
+        explanation: Math.round((rawExplanationCount / totalWindows) * 100 * 10) / 10,
+        prediction: Math.round((rawPredictionCount / totalWindows) * 100 * 10) / 10,
+        professional_vision: Math.round(((rawDescriptionCount + rawExplanationCount + rawPredictionCount) / totalWindows) * 100 * 10) / 10
+    };
+    
+    // PRIORITY-BASED CALCULATION (adds to 100%)
+    let descriptionCount = 0;
+    let explanationCount = 0;
+    let predictionCount = 0;
+    let otherCount = 0;
+    
+    classificationResults.forEach(result => {
+        if (result.description === 1) {
+            descriptionCount++;
+        } else if (result.explanation === 1) {
+            explanationCount++;
+        } else if (result.prediction === 1) {
+            predictionCount++;
+        } else {
+            otherCount++;
+        }
+    });
+    
+    const priorityPercentages = {
+        description: Math.round((descriptionCount / totalWindows) * 100 * 10) / 10,
+        explanation: Math.round((explanationCount / totalWindows) * 100 * 10) / 10,
+        prediction: Math.round((predictionCount / totalWindows) * 100 * 10) / 10,
+        other: Math.round((otherCount / totalWindows) * 100 * 10) / 10,
+        professional_vision: Math.round(((descriptionCount + explanationCount + predictionCount) / totalWindows) * 100 * 10) / 10
+    };
+    
+    // Find weakest component
+    const components = {
+        'Description': priorityPercentages.description,
+        'Explanation': priorityPercentages.explanation,
+        'Prediction': priorityPercentages.prediction
+    };
+    
+    const weakestComponent = Object.keys(components).reduce((a, b) => 
+        components[a] <= components[b] ? a : b
+    );
+    
+    return {
+        percentages_raw: rawPercentages,
+        percentages_priority: priorityPercentages,
+        percentages: rawPercentages,
+        weakest_component: weakestComponent,
+        analysis_summary: `Analyzed ${totalWindows} windows. Raw: D:${rawPercentages.description}% E:${rawPercentages.explanation}% P:${rawPercentages.prediction}% (Total PV: ${rawPercentages.professional_vision}%). Priority-based: D:${priorityPercentages.description}% E:${priorityPercentages.explanation}% P:${priorityPercentages.prediction}% Other:${priorityPercentages.other}% = 100%`
+    };
+}
+
+// ============================================================================
+// Feedback Generation (Same as original)
+// ============================================================================
+
+async function generateWeightedFeedback(reflection, language, style, analysisResult) {
+    const promptType = `${style} ${language === 'en' ? 'English' : 'German'}`;
+    const systemPrompt = getFeedbackPrompt(promptType, analysisResult);
+    const pctPriority = analysisResult.percentages_priority;
+    
+    const languageInstruction = language === 'en' 
+        ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
+        : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
+    
+    const requestData = {
+        model: model,
+        messages: [
+            { role: "system", content: languageInstruction + "\n\n" + systemPrompt },
+            { role: "user", content: `Based on the analysis showing ${pctPriority.description}% description, ${pctPriority.explanation}% explanation, ${pctPriority.prediction}% prediction (Professional Vision: ${pctPriority.professional_vision}%) + Other: ${pctPriority.other}% = 100%, provide feedback for this reflection:\n\n${reflection}` }
+        ],
+        temperature: 0.3,
+        max_tokens: 2000
+    };
+    
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            let errorData = {};
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (e) {
+                errorData = { error: { message: errorText } };
+            }
+            console.error(`Feedback generation failed: HTTP ${response.status}`, errorData);
+            console.error(`API URL: ${OPENAI_API_URL}`);
+            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        let feedback = result.choices[0].message.content;
+        
+        if (style === 'user-friendly') {
+            feedback = feedback.replace(/\s*\([^)]+\d{4}\)/g, '');
+        }
+        
+        return feedback;
+    } catch (error) {
+        console.error('Error in generateWeightedFeedback:', error);
+        throw error;
+    }
+}
+
+function getFeedbackPrompt(promptType, analysisResult) {
+    const weakestComponent = analysisResult?.weakest_component || 'Prediction';
+    
+    const prompts = {
+        'academic English': `You are a supportive yet rigorous teaching mentor providing feedback in a scholarly tone. Your feedback MUST be detailed, academic, and comprehensive, deeply integrating theory.
+
+**Knowledge Base Integration:**
+You MUST base your feedback on the theoretical framework of empirical teaching quality research. Specifically, use the process-oriented teaching-learning model (Seidel & Shavelson, 2007) or the three basic dimensions of teaching quality (Klieme, 2006) for feedback on description and explanation. For prediction, use self-determination theory (Deci & Ryan, 1993) or theories of cognitive and constructive learning (Atkinson & Shiffrin, 1968; Craik & Lockhart, 1972).
+
+**CRITICAL: You MUST explicitly cite these theories using the (Author, Year) format. Do NOT cite any other theories.**
+
+**MANDATORY WEIGHTED FEEDBACK STRUCTURE:**
+1. **Weakest Area Focus**: Write 6-8 detailed, academic sentences ONLY for the weakest component (${weakestComponent}), integrating multiple specific suggestions and deeply connecting them to theory.
+2. **Stronger Areas**: For the two stronger components, write EXACTLY 3-4 detailed sentences each (1 Strength, 1 Suggestion, 1 'Why' that explicitly connects to theory).
+3. **Conclusion**: Write 2-3 sentences summarizing the key area for development.
+
+**CRITICAL FOCUS REQUIREMENTS:**
+- Focus ONLY on analysis skills, not teaching performance.
+- Emphasize objective, non-evaluative observation for the Description section.
+
+**FORMATTING:**
+- Sections: "#### Description", "#### Explanation", "#### Prediction", "#### Conclusion"
+- Sub-headings: "Strength:", "Suggestions:", "Why:"`,
+        
+        'user-friendly English': `You are a friendly teaching mentor providing feedback for a busy teacher who wants quick, practical tips.
+
+**Style Guide - MUST BE FOLLOWED:**
+- **Language**: Use simple, direct language. Avoid academic jargon completely.
+- **Citations**: Do NOT include any in-text citations like (Author, Year).
+- **Focus**: Give actionable advice. Do NOT explain the theory behind the advice.
+
+**MANDATORY CONCISE FEEDBACK STRUCTURE:**
+1. **Weakest Area Focus**: For the weakest component (${weakestComponent}), provide a "Good:" section with 1-2 sentences, and a "Tip:" section with a bulleted list of 2-3 clear, practical tips.
+2. **Stronger Areas**: For the two stronger components, write a "Good:" section with one sentence and a "Tip:" section with one practical tip.
+3. **No Conclusion**: Do not include a "Conclusion" section.
+
+**FORMATTING:**
+- Sections: "#### Description", "#### Explanation", "#### Prediction"
+- Sub-headings: "Good:", "Tip:"`,
+        
+        'academic German': `Sie sind ein unterstützender, aber rigoroser Mentor, der Feedback in einem wissenschaftlichen Ton gibt. Ihr Feedback MUSS detailliert, akademisch und umfassend sein und die Theorie tief integrieren.
+
+**Wissensbasierte Integration:**
+Basieren Sie Ihr Feedback auf dem theoretischen Rahmen der empirischen Unterrichtsqualitätsforschung. Verwenden Sie das prozessorientierte Lehr-Lern-Modell (Seidel & Shavelson, 2007) oder die drei Grunddimensionen der Unterrichtsqualität (Klieme, 2006) für Feedback zu Beschreibung und Erklärung. Für die Vorhersage verwenden Sie die Selbstbestimmungstheorie der Motivation (Deci & Ryan, 1993) oder Theorien des kognitiven und konstruktiven Lernens (Atkinson & Shiffrin, 1968; Craik & Lockhart, 1972).
+
+**KRITISCH: Sie MÜSSEN diese Theorien explizit im Format (Autor, Jahr) zitieren. Zitieren Sie KEINE anderen Theorien.**
+
+**OBLIGATORISCHE GEWICHTETE FEEDBACK-STRUKTUR:**
+1. **Fokus auf den schwächsten Bereich**: Schreiben Sie 6-8 detaillierte, akademische Sätze NUR für die schwächste Komponente (${weakestComponent}), mit mehreren spezifischen Vorschlägen und tiefen theoretischen Verbindungen.
+2. **Stärkere Bereiche**: Für die beiden stärkeren Komponenten schreiben Sie GENAU 3-4 detaillierte Sätze (1 Stärke, 1 Vorschlag, 1 'Warum' mit explizitem Theoriebezug).
+3. **Fazit**: Schreiben Sie 2-3 Sätze, die den wichtigsten Entwicklungsbereich zusammenfassen.
+
+**KRITISCHE FOKUS-ANFORDERUNGEN:**
+- Konzentrieren Sie sich NUR auf Analysefähigkeiten, nicht auf die Lehrleistung.
+- Betonen Sie bei der Beschreibung eine objektive, nicht bewertende Beobachtung.
+
+**FORMATIERUNG:**
+- Abschnitte: "#### Beschreibung", "#### Erklärung", "#### Vorhersage", "#### Fazit"
+- Unterüberschriften: "Stärke:", "Vorschläge:", "Warum:"`,
+        
+        'user-friendly German': `Sie sind ein freundlicher Mentor, der Feedback für einen vielbeschäftigten Lehrer gibt, der schnelle, praktische Tipps wünscht.
+
+**Stilrichtlinie - MUSS BEFOLGT WERDEN:**
+- **Sprache**: Verwenden Sie einfache, direkte Sprache. Vermeiden Sie akademischen Jargon vollständig.
+- **Zitate**: Fügen Sie KEINE Zitate wie (Autor, Jahr) ein.
+- **Fokus**: Geben Sie handlungsorientierte Ratschläge. Erklären Sie NICHT die Theorie hinter den Ratschlägen.
+
+**OBLIGATORISCHE PRÄGNANTE FEEDBACK-STRUKTUR:**
+1. **Fokus auf den schwächsten Bereich**: Geben Sie für die schwächste Komponente (${weakestComponent}) einen "Gut:"-Abschnitt mit 1-2 Sätzen und einen "Tipp:"-Abschnitt mit einer Stichpunktliste von 2-3 klaren, praktischen Tipps.
+2. **Stärkere Bereiche**: Schreiben Sie für die beiden stärkeren Komponenten einen "Gut:"-Abschnitt mit einem Satz und einen "Tipp:"-Abschnitt mit einem praktischen Tipp.
+3. **Kein Fazit**: Fügen Sie keinen "Fazit"-Abschnitt hinzu.
+
+**FORMATIERUNG:**
+- Abschnitte: "#### Beschreibung", "#### Erklärung", "#### Vorhersage"
+- Unterüberschriften: "Gut:", "Tipp:"`
+    };
+    
+    return prompts[promptType] || prompts['academic English'];
+}
+
+function formatStructuredFeedback(text, analysisResult) {
+    if (!text) return '';
+
+    let formattedText = text.trim().replace(/\r\n/g, '\n').replace(/\*\*(.*?)\*\*/g, '$1');
+    const sections = formattedText.split(/####\s*/).filter(s => s.trim().length > 0);
+
+    const sectionMap = {
+        'Overall Assessment': 'overall', 'Gesamtbewertung': 'overall',
+        'Description': 'description', 'Beschreibung': 'description',
+        'Explanation': 'explanation', 'Erklärung': 'explanation',
+        'Prediction': 'prediction', 'Vorhersage': 'prediction',
+        'Conclusion': 'overall', 'Fazit': 'overall'
+    };
+
+    const processedSections = sections.map(sectionText => {
+        const lines = sectionText.trim().split('\n');
+        const heading = lines.shift().trim();
+        let body = lines.join('\n').trim();
+
+        let sectionClass = 'other';
+        for (const key in sectionMap) {
+            if (heading.toLowerCase().startsWith(key.toLowerCase())) {
+                sectionClass = sectionMap[key];
+                break;
+            }
+        }
+
+        const keywords = [
+            'Strength:', 'Stärke:', 'Suggestions:', 'Vorschläge:',
+            'Why:', 'Warum:', 'Good:', 'Gut:', 'Tip:', 'Tipp:'
+        ];
+
+        keywords.forEach(keyword => {
+            const regex = new RegExp(`^(${keyword.replace(':', '\\:')})`, 'gm');
+            body = body.replace(regex, `<span class="feedback-keyword">${keyword}</span>`);
+        });
+
+        body = body.replace(/\n/g, '<br>');
+
+        return `
+            <div class="feedback-section feedback-section-${sectionClass}">
+                <h4 class="feedback-heading">${heading}</h4>
+                <div class="section-content">${body}</div>
+            </div>
+        `;
+    }).join('');
+
+    return processedSections;
+}
+
+// ============================================================================
+// Database Functions
+// ============================================================================
+
+function initSupabase() {
+    if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('YOUR_') || SUPABASE_KEY.includes('YOUR_')) {
+        console.warn('Supabase credentials not set. Running in demo mode.');
+        showAlert('Running in demo mode - feedback works, but data won\'t be saved to database.', 'info');
+        return null;
+    }
+    
+    try {
+        if (typeof window.supabase === 'undefined' || !window.supabase) {
+            throw new Error('Supabase library not loaded from CDN.');
+        }
+        
+        if (typeof window.supabase.createClient !== 'function') {
+            throw new Error('Supabase createClient function not available.');
+        }
+        
+        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        if (!client) {
+            throw new Error('Failed to create Supabase client instance.');
+        }
+        
+        console.log('✅ Supabase client initialized successfully');
+        return client;
+    } catch (error) {
+        console.error('Error initializing Supabase client:', error);
+        showAlert('Database connection failed - running in demo mode. Feedback generation still works!', 'warning');
+        return null;
+    }
+}
+
+async function verifySupabaseConnection(client) {
+    if (!client) return;
+    
+    try {
+        const { data, error } = await client
+            .from('reflections')
+            .select('count')
+            .limit(1);
+        
+        if (error) {
+            console.error('Database connection test failed:', error);
+            showAlert('Database connection issue - data may not be saved.', 'warning');
+        } else {
+            console.log('✅ Supabase connection verified');
+        }
+    } catch (error) {
+        console.error('Error verifying Supabase connection:', error);
+    }
+}
+
+function getOrCreateSessionId() {
+    let sessionId = sessionStorage.getItem('session_id');
+    
+    if (!sessionId) {
+        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        sessionStorage.setItem('session_id', sessionId);
+        console.log('✅ New session created:', sessionId);
+    } else {
+        console.log('✅ Existing session found:', sessionId);
+    }
+    
+    return sessionId;
+}
+
+async function logEvent(eventType, eventData = {}) {
+    if (!supabase || !currentSessionId) {
+        console.log(`Event (no DB): ${eventType}`, eventData);
+        return;
+    }
+    
+    try {
+        const { error } = await supabase
+            .from('user_events')
+            .insert([{
+                session_id: currentSessionId,
+                reflection_id: eventData.reflection_id || null,
+                event_type: eventType,
+                event_data: eventData,
+                user_agent: navigator.userAgent,
+                language: currentLanguage,
+                timestamp_utc: new Date().toISOString()
+            }]);
+
+        if (error) {
+            console.error('Error logging event:', error);
+        } else {
+            console.log(`📝 Event logged: ${eventType}`, eventData);
+        }
+    } catch (error) {
+        console.error('Error in logEvent:', error);
+    }
+}
+
+async function storeBinaryClassificationResults(analysisResult) {
+    if (!supabase || !currentSessionId || !currentParticipant || !currentVideoId) return;
+    
+    try {
+        const classificationRecords = analysisResult.classificationResults.map(result => ({
+            session_id: currentSessionId,
+            reflection_id: currentTaskState.currentReflectionId,
+            task_id: `video-task-${currentVideoId}`,
+            participant_name: currentParticipant,
+            video_id: currentVideoId,
+            language: currentLanguage,
+            window_id: result.window_id,
+            window_text: result.window_text,
+            description_score: result.description,
+            explanation_score: result.explanation,
+            prediction_score: result.prediction,
+            created_at: new Date().toISOString()
+        }));
+        
+        if (classificationRecords.length > 0) {
+            const { data, error } = await supabase
+                .from('binary_classifications')
+                .insert(classificationRecords);
+            
+            if (error) {
+                console.error('Error storing binary classifications:', error);
+            } else {
+                console.log(`✅ ${classificationRecords.length} binary classifications stored`);
+            }
+        }
+    } catch (error) {
+        console.error('Error in storeBinaryClassificationResults:', error);
+    }
+}
+
+async function saveFeedbackToDatabase(data) {
+    if (!supabase) {
+        console.log('No database connection - running in demo mode');
+        return;
+    }
+    
+    try {
+        const revisionNumber = currentTaskState.revisionCount || 1;
+        const parentReflectionId = currentTaskState.parentReflectionId || null;
+
+        const reflectionData = {
+            session_id: currentSessionId,
+            participant_name: data.participantCode,
+            video_id: data.videoSelected,
+            language: currentLanguage,
+            task_id: `video-task-${data.videoSelected}`,
+            reflection_text: data.reflectionText,
+            analysis_percentages: {
+                raw: data.analysisResult.percentages_raw,
+                priority: data.analysisResult.percentages_priority,
+                displayed_to_student: data.analysisResult.percentages_raw
+            },
+            weakest_component: data.analysisResult.weakest_component,
+            feedback_extended: data.extendedFeedback,
+            feedback_short: data.shortFeedback,
+            revision_number: revisionNumber,
+            parent_reflection_id: parentReflectionId,
+            created_at: new Date().toISOString()
+        };
+
+        const { data: result, error } = await supabase
+            .from('reflections')
+            .insert([reflectionData])
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Database insert error:', error);
+            return;
+        }
+
+        currentTaskState.currentReflectionId = result.id;
+        
+        if (revisionNumber === 1) {
+            currentTaskState.parentReflectionId = result.id;
+        }
+        
+        console.log(`✅ Reflection saved to database:`, result.id);
+        
+        logEvent('submit_reflection', {
+            video_id: data.videoSelected,
+            participant_name: data.participantCode,
+            language: currentLanguage,
+            reflection_id: result.id,
+            reflection_length: data.reflectionText.length,
+            analysis_percentages_raw: data.analysisResult.percentages_raw,
+            analysis_percentages_priority: data.analysisResult.percentages_priority,
+            weakest_component: data.analysisResult.weakest_component
+        });
+        
+    } catch (error) {
+        console.error('Error saving to database:', error);
+    }
+}
+
+// Session end tracking
+window.addEventListener('beforeunload', () => {
+    if (currentTaskState.currentFeedbackType && currentTaskState.currentFeedbackStartTime) {
+        endFeedbackViewing(currentTaskState.currentFeedbackType, currentLanguage);
+    }
+    
+    logEvent('session_end', {
+        session_duration: Date.now() - performance.timing.navigationStart,
+        language: currentLanguage,
+        final_page: currentPage,
+        video_id: currentVideoId,
+        participant_name: currentParticipant || null
+    });
+});
+
