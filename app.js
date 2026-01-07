@@ -2316,13 +2316,44 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
         const feedbackExtended = document.getElementById(ids.feedbackExtended);
         const feedbackShort = document.getElementById(ids.feedbackShort);
         const feedbackTabs = document.getElementById(ids.feedbackTabs);
+        const extendedPane = document.getElementById(`video-${videoNum}-feedback-extended-pane`);
+        const shortPane = document.getElementById(`video-${videoNum}-feedback-short-pane`);
         
         // Ensure we're displaying the full feedback - use textContent to preserve all content
         const feedbackHTML = simpleFeedback.replace(/\n/g, '<br>');
         
+        // Log detailed information
+        console.log('Gamma: Setting feedback...');
+        console.log('Gamma: Full feedback text:', simpleFeedback);
+        console.log('Gamma: FeedbackExtended element:', feedbackExtended);
+        console.log('Gamma: FeedbackShort element:', feedbackShort);
+        console.log('Gamma: Extended pane:', extendedPane);
+        console.log('Gamma: Short pane:', shortPane);
+        
+        // Ensure extended pane is visible (show active)
+        if (extendedPane) {
+            extendedPane.classList.add('show', 'active');
+            extendedPane.classList.remove('fade');
+            console.log('Gamma: Extended pane classes:', extendedPane.className);
+        }
+        if (shortPane) {
+            shortPane.classList.remove('show', 'active');
+        }
+        
         if (feedbackExtended) {
             feedbackExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-            console.log('Gamma: Feedback set to feedbackExtended element, length:', feedbackExtended.textContent.length);
+            const displayedText = feedbackExtended.textContent || feedbackExtended.innerText;
+            console.log('Gamma: Feedback set to feedbackExtended element');
+            console.log('Gamma: Displayed text length:', displayedText.length);
+            console.log('Gamma: Displayed text (first 200 chars):', displayedText.substring(0, 200));
+            console.log('Gamma: Full displayed text:', displayedText);
+            
+            // Verify the content is actually there
+            setTimeout(() => {
+                const verifyText = feedbackExtended.textContent || feedbackExtended.innerText;
+                console.log('Gamma: Verification after 100ms - text length:', verifyText.length);
+                console.log('Gamma: Verification - full text:', verifyText);
+            }, 100);
         }
         if (feedbackShort) {
             feedbackShort.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
@@ -2380,6 +2411,26 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
         if (loadingSpinner) loadingSpinner.style.display = 'none';
         if (loadingText) loadingText.style.display = 'none'; // Hide loading text when done
         if (generateBtn) generateBtn.disabled = false;
+        
+        // Final verification - check what's actually visible in the UI
+        setTimeout(() => {
+            const finalCheckExtended = document.getElementById(ids.feedbackExtended);
+            if (finalCheckExtended) {
+                const finalText = finalCheckExtended.textContent || finalCheckExtended.innerText;
+                console.log('Gamma: FINAL CHECK - Extended element text length:', finalText.length);
+                console.log('Gamma: FINAL CHECK - Extended element full text:', finalText);
+                console.log('Gamma: FINAL CHECK - Extended element innerHTML length:', finalCheckExtended.innerHTML.length);
+                
+                // Also check if the pane is visible
+                const finalPane = document.getElementById(`video-${videoNum}-feedback-extended-pane`);
+                if (finalPane) {
+                    const isVisible = finalPane.classList.contains('show') && finalPane.classList.contains('active');
+                    console.log('Gamma: FINAL CHECK - Extended pane visible:', isVisible);
+                    console.log('Gamma: FINAL CHECK - Extended pane classes:', finalPane.className);
+                    console.log('Gamma: FINAL CHECK - Extended pane computed display:', window.getComputedStyle(finalPane).display);
+                }
+            }
+        }, 500);
         
         logEvent('simple_feedback_generated', {
             video_id: `video${videoNum}`,
