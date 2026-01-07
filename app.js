@@ -1,6 +1,6 @@
 // INFER - 4-Video Experiment Version
 // STUDY VERSION: Gamma (Control Group)
-// - All videos: Simple but comprehensive feedback (3-5 sentences, no complex INFER analysis)
+// - All videos: Simple feedback (8-9 sentences, no complex INFER analysis)
 // - All surveys mandatory
 // - NO tutorial video (unlike Alpha)
 //
@@ -3885,17 +3885,17 @@ function calculatePercentages(classificationResults) {
 // Feedback Generation (Same as original)
 // ============================================================================
 
-// Generate simple feedback for Gamma (Control Group) - comprehensive but simple feedback
+// Generate simple feedback for Gamma (Control Group) - 8-9 sentences
 async function generateSimpleFeedback(reflection, language) {
     const languageInstruction = language === 'en' 
         ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
         : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
     
-    // Comprehensive but simple feedback prompt for Gamma (Control Group)
-    // No complex analysis, but provide detailed, helpful feedback
+    // Simple and direct feedback prompt for Gamma (Control Group)
+    // Request 8-9 sentences of feedback
     const simplePrompt = language === 'en'
-        ? "Provide comprehensive, helpful feedback for this teaching reflection. Write 3-5 sentences that offer constructive suggestions and insights. Focus on practical advice that can help improve teaching practice. Be specific and detailed in your feedback."
-        : "Geben Sie umfassendes, hilfreiches Feedback für diese Unterrichtsreflexion. Schreiben Sie 3-5 Sätze, die konstruktive Vorschläge und Einsichten bieten. Konzentrieren Sie sich auf praktische Ratschläge, die zur Verbesserung der Unterrichtspraxis beitragen können. Seien Sie spezifisch und detailliert in Ihrem Feedback.";
+        ? "Provide feedback (8-9 sentences) for my teaching reflection."
+        : "Geben Sie Feedback (8-9 Sätze) für meine Unterrichtsreflexion.";
     
     const requestData = {
         model: model,
