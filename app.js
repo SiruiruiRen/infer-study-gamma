@@ -1698,14 +1698,10 @@ async function continueToReflectionTask(videoNum) {
     // Load previous reflection and feedback for this video
     await loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum);
     
-    // Show percentage explanation only for INFER videos
+    // Gamma: Never show percentage explanation (no complex analysis in Gamma)
     const explanationEl = document.getElementById(ids.percentageExplanation);
     if (explanationEl) {
-        if (video.hasINFER) {
-            explanationEl.classList.remove('d-none');
-        } else {
-            explanationEl.classList.add('d-none');
-        }
+        explanationEl.classList.add('d-none'); // Always hide in Gamma
     }
     
     // Show task page for this video (use page-video-X format)
@@ -1732,6 +1728,12 @@ function configureVideoTaskUI(videoNum, hasINFER) {
     const reviseBtn = document.getElementById(ids.reviseBtn);
     const copyBtn = document.getElementById(ids.copyBtn);
     const conceptsSection = document.getElementById(`video-${videoNum}-concepts-section`);
+    const percentageExplanation = document.getElementById(ids.percentageExplanation);
+    
+    // Gamma: Always hide percentage explanation (no complex analysis in Gamma)
+    if (percentageExplanation) {
+        percentageExplanation.classList.add('d-none');
+    }
     
     // Gamma: All videos have simple feedback (hasINFER is true for all)
     if (hasINFER) {
@@ -2256,8 +2258,13 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
     const loadingText = document.getElementById(ids.loadingText);
     
     if (generateBtn) generateBtn.disabled = true;
-    if (loadingSpinner) loadingSpinner.style.display = 'block';
-    if (loadingText) loadingText.textContent = currentLanguage === 'en' ? 'Generating feedback...' : 'Feedback wird generiert...';
+    if (loadingSpinner) {
+        loadingSpinner.style.display = 'flex'; // Use flex to show spinner and text
+    }
+    if (loadingText) {
+        loadingText.textContent = currentLanguage === 'en' ? 'Generating feedback...' : 'Feedback wird generiert...';
+        loadingText.style.display = 'block'; // Ensure loading text is visible
+    }
     
     try {
         // Gamma: Simple feedback generation without complex analysis
@@ -2273,6 +2280,7 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
         if (feedbackTabs) feedbackTabs.classList.add('d-none'); // Hide tabs in Gamma (same feedback for both)
         
         if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (loadingText) loadingText.style.display = 'none'; // Hide loading text when done
         if (generateBtn) generateBtn.disabled = false;
         
         logEvent('simple_feedback_generated', {
@@ -2281,10 +2289,20 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
             language: currentLanguage
         });
     } catch (error) {
-        console.error('Error generating simple feedback:', error);
+        console.error('Gamma: Error generating simple feedback:', error);
+        console.error('Gamma: Error details:', {
+            message: error.message,
+            stack: error.stack,
+            apiUrl: OPENAI_API_URL,
+            corsProxy: CORS_PROXY_URL
+        });
         if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (loadingText) loadingText.style.display = 'none'; // Hide loading text on error
         if (generateBtn) generateBtn.disabled = false;
-        showAlert(currentLanguage === 'en' ? 'Error generating feedback. Please try again.' : 'Fehler beim Generieren des Feedbacks. Bitte versuchen Sie es erneut.', 'danger');
+        const errorMessage = currentLanguage === 'en' 
+            ? `Error generating feedback: ${error.message}. Please check the console for details.`
+            : `Fehler beim Generieren des Feedbacks: ${error.message}. Bitte überprüfen Sie die Konsole für Details.`;
+        showAlert(errorMessage, 'danger');
     }
 }
 
@@ -3698,10 +3716,13 @@ async function generateSimpleFeedback(reflection, language) {
             { role: "user", content: reflection }
         ],
         temperature: 0.3,
-        max_tokens: 200
+        max_tokens: 2000
     };
     
     try {
+        console.log('Gamma: Calling OpenAI API via CORS proxy:', OPENAI_API_URL);
+        console.log('Gamma: Request data:', JSON.stringify(requestData, null, 2));
+        
         const response = await fetch(OPENAI_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -3710,13 +3731,23 @@ async function generateSimpleFeedback(reflection, language) {
         
         if (!response.ok) {
             const errorText = await response.text().catch(() => 'Unknown error');
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
+            console.error('Gamma: API response error:', response.status, errorText);
+            let errorData = {};
+            try {
+                errorData = JSON.parse(errorText);
+            } catch (e) {
+                errorData = { error: { message: errorText } };
+            }
+            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${errorText}`);
         }
         
         const result = await response.json();
+        console.log('Gamma: API response received successfully');
         return result.choices[0].message.content;
     } catch (error) {
-        console.error('Error in generateSimpleFeedback:', error);
+        console.error('Gamma: Error in generateSimpleFeedback:', error);
+        console.error('Gamma: API URL was:', OPENAI_API_URL);
+        console.error('Gamma: CORS Proxy URL:', CORS_PROXY_URL);
         throw error;
     }
 }
