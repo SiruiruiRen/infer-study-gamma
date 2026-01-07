@@ -2304,16 +2304,98 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
     const loadingSpinner = document.getElementById(ids.loadingSpinner);
     const loadingText = document.getElementById(ids.loadingText);
     
+    // Show loading
+    if (loadingSpinner) loadingSpinner.style.display = 'flex';
     if (generateBtn) generateBtn.disabled = true;
-    if (loadingSpinner) {
-        loadingSpinner.style.display = 'flex'; // Use flex to show spinner and text
-    }
-    if (loadingText) {
-        loadingText.textContent = currentLanguage === 'en' ? 'Generating feedback...' : 'Feedback wird generiert...';
-        loadingText.style.display = 'block'; // Ensure loading text is visible
-    }
+    
+    // Rotate loading messages (same as Alpha/Beta)
+    let loadingMessageIndex = 0;
+    const loadingInterval = setInterval(() => {
+        loadingMessageIndex = (loadingMessageIndex + 1) % translations[currentLanguage].loading_messages.length;
+        if (loadingText) {
+            loadingText.textContent = translations[currentLanguage].loading_messages[loadingMessageIndex];
+            loadingText.style.display = 'block'; // Ensure loading text is visible
+        }
+    }, 8000);
     
     try {
+        // Step 0: Check for duplicate reflection
+        const previousReflection = sessionStorage.getItem(`reflection-${currentVideoId}`);
+        if (previousReflection && previousReflection.trim() === reflection.trim()) {
+            const duplicateMessage = currentLanguage === 'en'
+                ? "⚠️ You submitted the same reflection as before. Please revise your reflection to improve it based on the previous feedback, then generate new feedback."
+                : "⚠️ Sie haben dieselbe Reflexion wie zuvor eingereicht. Bitte überarbeiten Sie Ihre Reflexion, um sie basierend auf dem vorherigen Feedback zu verbessern, und generieren Sie dann neues Feedback.";
+            
+            logEvent('duplicate_reflection_detected', {
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                language: currentLanguage,
+                reflection_length: reflection.length,
+                revision_count: currentTaskState.revisionCount || 0
+            });
+            
+            clearInterval(loadingInterval);
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (loadingText) loadingText.style.display = 'none';
+            if (generateBtn) generateBtn.disabled = false;
+            
+            showAlert(duplicateMessage, 'warning');
+            return;
+        }
+        
+        // Step 0.5: Check for very short reflection
+        const wordCount = reflection.split(/\s+/).length;
+        const isVeryShort = wordCount < 20;
+        
+        if (isVeryShort) {
+            const warningMessage = currentLanguage === 'en'
+                ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand your reflection to at least 50 words, providing more detail about what you observed, why it happened, and its effects on student learning."
+                : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie Ihre Reflexion auf mindestens 50 Wörter und geben Sie mehr Details zu dem, was Sie beobachtet haben, warum es passiert ist und welche Auswirkungen es auf das Lernen der Schüler hat.";
+            
+            logEvent('very_short_reflection_detected', {
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                language: currentLanguage,
+                word_count: wordCount,
+                is_very_short: isVeryShort
+            });
+            
+            clearInterval(loadingInterval);
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (loadingText) loadingText.style.display = 'none';
+            if (generateBtn) generateBtn.disabled = false;
+            
+            showAlert(warningMessage, 'warning');
+            return;
+        }
+        
+        // Step 0.6: Check for irrelevant content (simple check - look for common irrelevant words)
+        const irrelevantPatterns = currentLanguage === 'en' 
+            ? /\b(test|testing|hello|hi|asdf|qwerty|123|abc|xyz|lorem|ipsum)\b/gi
+            : /\b(test|testen|hallo|hi|asdf|qwerty|123|abc|xyz|lorem|ipsum)\b/gi;
+        
+        const hasIrrelevantContent = irrelevantPatterns.test(reflection);
+        if (hasIrrelevantContent && reflection.length < 100) {
+            const warningMessage = currentLanguage === 'en'
+                ? "⚠️ Your reflection appears to contain irrelevant content or test words. Please write a meaningful reflection about the teaching video you watched."
+                : "⚠️ Ihre Reflexion scheint irrelevante Inhalte oder Testwörter zu enthalten. Bitte schreiben Sie eine aussagekräftige Reflexion über das Unterrichtsvideo, das Sie gesehen haben.";
+            
+            logEvent('irrelevant_reflection_detected', {
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                language: currentLanguage,
+                reflection_length: reflection.length
+            });
+            
+            clearInterval(loadingInterval);
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (loadingText) loadingText.style.display = 'none';
+            if (generateBtn) generateBtn.disabled = false;
+            
+            showAlert(warningMessage, 'warning');
+            return;
+        }
+        
         // Gamma: Simple feedback generation without complex analysis
         const simpleFeedback = await generateSimpleFeedback(reflection, currentLanguage);
         
@@ -2417,13 +2499,17 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
             }
         }
         
-        if (loadingSpinner) loadingSpinner.style.display = 'none';
-        if (loadingText) loadingText.style.display = 'none'; // Hide loading text when done
-        if (generateBtn) generateBtn.disabled = false;
+        // Step 7: Store reflection for duplicate detection
+        sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
         
         // Mark that we just generated new feedback to prevent it from being overwritten
         currentTaskState.feedbackGenerated = true;
         currentTaskState.justGeneratedFeedback = true; // Flag to prevent overwriting
+        
+        clearInterval(loadingInterval);
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (loadingText) loadingText.style.display = 'none'; // Hide loading text when done
+        if (generateBtn) generateBtn.disabled = false;
         
         // Final verification - check what's actually visible in the UI
         setTimeout(() => {
@@ -2483,6 +2569,7 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
             apiUrl: OPENAI_API_URL,
             corsProxy: CORS_PROXY_URL
         });
+        clearInterval(loadingInterval);
         if (loadingSpinner) loadingSpinner.style.display = 'none';
         if (loadingText) loadingText.style.display = 'none'; // Hide loading text on error
         if (generateBtn) generateBtn.disabled = false;
