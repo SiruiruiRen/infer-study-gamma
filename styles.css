@@ -1226,6 +1226,23 @@ textarea {
   }
 }
 
+/* Make settings column text slightly smaller to avoid truncation */
+.settings-panel {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+.settings-panel .form-label,
+.settings-panel label,
+.settings-panel .card-header {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+/* Prevent back-to-dashboard button text from stacking vertically */
+.back-to-dashboard-btn {
+  white-space: nowrap;
+}
+
 /* Beautiful Definitions Section - Horizontal Layout */
 .definitions-section {
   background: linear-gradient(135deg, #fff8e1 0%, #fff3e0 100%);
@@ -1519,6 +1536,20 @@ textarea {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-y: auto; /* Allow vertical scrolling */
+}
+
+/* Ensure video task pages are scrollable */
+.video-task-page {
+  overflow-y: auto !important;
+  height: auto !important;
+  min-height: 100vh;
+}
+
+/* Make sure card bodies can scroll if content is long */
+.video-task-page .card-body {
+  overflow-y: visible;
+  max-height: none;
 }
 
 .page-container.d-none {

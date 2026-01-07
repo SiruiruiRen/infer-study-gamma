@@ -1,22 +1,19 @@
 // INFER - 4-Video Experiment Version
 // STUDY VERSION: Gamma (Control Group)
-// - Videos 2 & 3: SIMPLE feedback (no PV analysis, just general feedback)
-// - Videos 1 & 4: Reflection only (no AI feedback)
+// - All videos: Simple feedback (1-2 sentences, no complex INFER analysis)
 // - All surveys mandatory
-// - Uses same interface as treatment groups but with simplified prompt
+// - NO tutorial video (unlike Alpha)
 //
 // DATA COLLECTION:
 // - All user interactions (clicks, navigations) logged to Supabase
-// - Reflection data and simple feedback stored in Supabase
+// - Reflection data and feedback stored in Supabase
 // - Progress tracking in participant_progress table
-// - NO binary classification scores (no PV analysis)
 
 // ============================================================================
 // STUDY CONDITION - DO NOT MODIFY
 // ============================================================================
 const STUDY_CONDITION = 'control';
 const STUDY_VERSION = 'gamma';
-const USE_SIMPLE_FEEDBACK = true; // Control group uses simple prompt
 // ============================================================================
 
 // Constants and configuration
@@ -35,13 +32,19 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // ============================================================================
 
 // Video Configuration - UPDATE WITH YOUR 4 VIDEOS
-// Treatment Group 2: Videos 2 & 3 have INFER feedback, Videos 1 & 4 are reflection-only
+// Control Group (Gamma): All videos have simple feedback (simple prompt, no complex INFER analysis, no tutorial)
 const VIDEOS = [
-    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: false },
+    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: true },
     { id: 'video2', name: 'Video 2: [Name]', link: 'VIDEO_LINK_2', password: 'PASSWORD_2', hasINFER: true },
     { id: 'video3', name: 'Video 3: [Name]', link: 'VIDEO_LINK_3', password: 'PASSWORD_3', hasINFER: true },
-    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: false }
+    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: true }
 ];
+
+// Tutorial Video Configuration - NOT USED IN GAMMA (Control Group has no tutorial)
+// const TUTORIAL_VIDEO = {
+//     link: 'tutorial_german.mp4',
+//     password: ''
+// };
 
 // Qualtrics Survey Links
 const QUALTRICS_SURVEYS = {
@@ -69,7 +72,8 @@ let currentTaskState = {
     parentReflectionId: null,
     revisionCount: 0,
     currentFeedbackType: null,
-    currentFeedbackStartTime: null
+    currentFeedbackStartTime: null,
+    lastRevisionTime: null  // Track when last revision was saved
 };
 
 // Tab switching detection
@@ -135,6 +139,7 @@ const translations = {
         short: "Short",
         copy: "Copy",
         revise_reflection: "Revise Reflection",
+        save_reflection: "Save Reflection",
         submit_final: "Submit Final Reflection",
         submit_reflection_only: "Submit Reflection",
         reflection_only_mode: "Write your reflection about the video. After submission, you will proceed to a short questionnaire.",
@@ -190,6 +195,8 @@ const translations = {
         ai_usage_message: "We noticed you switched to another tab. Did you use another AI system (such as ChatGPT) for your work on this task?",
         ai_usage_yes: "Yes, I used AI",
         ai_usage_no: "No, I did not use AI",
+        watch_tutorial: "Watch Tutorial",
+        tutorial_video_title: "INFER Tutorial",
         welcome_to_infer: "Welcome to INFER",
         welcome_message: "Thank you for participating in this study on AI-supported teaching reflection. Over the next 2.5 weeks, you will analyze 4 teaching videos using our INFER system.",
         browser_recommendation: "For the best experience, we recommend using <strong>Google Chrome</strong>.",
@@ -265,6 +272,7 @@ const translations = {
         short: "Kurz",
         copy: "Kopieren",
         revise_reflection: "Reflexion überarbeiten",
+        save_reflection: "Reflexion speichern",
         submit_final: "Endgültige Reflexion einreichen",
         submit_reflection_only: "Reflexion einreichen",
         reflection_only_mode: "Schreiben Sie Ihre Reflexion über das Video. Nach der Einreichung werden Sie zu einem kurzen Fragebogen weitergeleitet.",
@@ -334,6 +342,8 @@ const translations = {
         ai_usage_message: "Wir haben bemerkt, dass Sie zu einem anderen Tab gewechselt haben. Haben Sie ein anderes KI-System (wie ChatGPT) für Ihre Arbeit an dieser Aufgabe verwendet?",
         ai_usage_yes: "Ja, ich habe KI verwendet",
         ai_usage_no: "Nein, ich habe keine KI verwendet",
+        watch_tutorial: "Tutorial ansehen",
+        tutorial_video_title: "INFER Tutorial",
         loading_messages: [
             "Bitte warten Sie, während die kleinen Elfen Ihr Feedback erstellen...",
             "Fast geschafft, wir versprechen es...",
@@ -442,6 +452,8 @@ function setupEventListeners() {
         document.getElementById(`video-${i}-lang-en`)?.addEventListener('change', () => switchLanguage('en'));
         document.getElementById(`video-${i}-lang-de`)?.addEventListener('change', () => switchLanguage('de'));
     }
+    
+    // Tutorial button removed for Gamma (Control Group has no tutorial)
     
     // Language switchers (for all pages via language-switcher-container)
     document.addEventListener('click', (e) => {
@@ -792,9 +804,44 @@ async function handleLogin() {
     const progress = await loadParticipantProgress(participantCode);
     
     if (progress) {
-        // Returning participant
+        // Returning participant - restore all progress
         currentParticipant = participantCode;
         currentParticipantProgress = progress;
+        
+        // Verify treatment_group matches current site (prevent group switching)
+        const existingTreatmentGroup = progress.treatment_group;
+        if (existingTreatmentGroup && existingTreatmentGroup !== STUDY_CONDITION) {
+            console.warn(`Participant ${participantCode} is assigned to ${existingTreatmentGroup} but accessing ${STUDY_CONDITION} site`);
+            showAlert(
+                `Warning: You are registered in a different study group. Please use the correct link for your assigned group.`,
+                'warning'
+            );
+            // Keep their original treatment_group - don't change it
+        } else if (!existingTreatmentGroup) {
+            // If treatment_group is missing, set it based on current site
+            console.log(`Setting missing treatment_group to ${STUDY_CONDITION} for ${participantCode}`);
+            if (supabase) {
+                supabase.from('participant_progress')
+                    .update({ treatment_group: STUDY_CONDITION })
+                    .eq('participant_name', participantCode)
+                    .then(() => {
+                        currentParticipantProgress.treatment_group = STUDY_CONDITION;
+                        console.log('Updated treatment_group for', participantCode);
+                    });
+            }
+        }
+        
+        // Ensure arrays are properly initialized
+        if (!currentParticipantProgress.videos_completed) currentParticipantProgress.videos_completed = [];
+        if (!currentParticipantProgress.video_surveys) currentParticipantProgress.video_surveys = {};
+        
+        // Update last active time
+        if (supabase) {
+            supabase.from('participant_progress')
+                .update({ last_active_at: new Date().toISOString() })
+                .eq('participant_name', participantCode)
+                .then(() => console.log('Updated last_active_at for', participantCode));
+        }
         
         // Show resume message
         const resumeInfo = document.getElementById('resume-info');
@@ -804,6 +851,8 @@ async function handleLogin() {
             resumeMessage.textContent = `Welcome back! You have completed ${videosDone}/4 videos.`;
             resumeInfo.classList.remove('d-none');
         }
+        
+        console.log('Restored progress for', participantCode, ':', currentParticipantProgress);
         
         // Always show dashboard first - don't auto-navigate to pre-survey
         setTimeout(() => {
@@ -829,9 +878,9 @@ async function handleLogin() {
         
         logEvent('participant_registered', {
             participant_name: participantCode,
-            assigned_condition: condition,
             treatment_group: STUDY_CONDITION,
-            study_version: STUDY_VERSION
+            study_version: STUDY_VERSION,
+            assigned_condition: condition
         });
         
         // Hide resume message for new users
@@ -855,7 +904,10 @@ function assignCondition(participantName) {
 
 // Load participant progress
 async function loadParticipantProgress(participantName) {
-    if (!supabase) return null;
+    if (!supabase) {
+        console.warn('Supabase not initialized, cannot load progress');
+        return null;
+    }
     
     try {
         const { data, error } = await supabase
@@ -869,7 +921,16 @@ async function loadParticipantProgress(participantName) {
             return null;
         }
         
-        return data;
+        if (data) {
+            console.log('Loaded progress for', participantName, ':', data);
+            // Ensure arrays are properly initialized
+            if (!data.videos_completed) data.videos_completed = [];
+            if (!data.video_surveys) data.video_surveys = {};
+            return data;
+        }
+        
+        console.log('No existing progress found for', participantName);
+        return null;
     } catch (error) {
         console.error('Error in loadParticipantProgress:', error);
         return null;
@@ -881,21 +942,46 @@ async function createParticipantProgress(participantName, condition) {
     if (!supabase) return;
     
     try {
-        const { error } = await supabase
-            .from('participant_progress')
-            .insert([{
-                participant_name: participantName,
-                assigned_condition: condition,
-                treatment_group: STUDY_CONDITION, // treatment_1, treatment_2, or control
-                videos_completed: [],
-                pre_survey_completed: false,
-                post_survey_completed: false,
-                video_surveys: {},
-                last_active_at: new Date().toISOString()
-            }]);
+        // Use upsert to handle existing participants gracefully
+        const progressData = {
+            participant_name: participantName,
+            assigned_condition: condition,
+            videos_completed: [],
+            pre_survey_completed: false,
+            post_survey_completed: false,
+            video_surveys: {},
+            last_active_at: new Date().toISOString()
+        };
         
-        if (error) {
+        // Always set treatment_group based on which site they're accessing
+        // This ensures participants are assigned to the correct group based on their link
+        let { error } = await supabase
+            .from('participant_progress')
+            .upsert([{
+                ...progressData,
+                treatment_group: STUDY_CONDITION  // Set based on current site (Alpha/Beta/Gamma)
+            }], {
+                onConflict: 'participant_name',
+                ignoreDuplicates: false
+            });
+        
+        // If treatment_group column doesn't exist, try without it (shouldn't happen after migration)
+        if (error && error.message && error.message.includes('treatment_group')) {
+            console.warn('treatment_group column not found, creating without it');
+            console.warn('Please run MIGRATE_SUPABASE_SCHEMA.sql to add the treatment_group column');
+            const { error: error2 } = await supabase
+                .from('participant_progress')
+                .upsert([progressData], {
+                    onConflict: 'participant_name',
+                    ignoreDuplicates: false
+                });
+            if (error2) {
+                console.error('Error creating progress (without treatment_group):', error2);
+            }
+        } else if (error) {
             console.error('Error creating progress:', error);
+        } else {
+            console.log(`Created progress for ${participantName} with treatment_group: ${STUDY_CONDITION}`);
         }
     } catch (error) {
         console.error('Error in createParticipantProgress:', error);
@@ -1104,6 +1190,268 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
     return card;
 }
 
+// ============================================================================
+// TUTORIAL VIDEO (Treatment Group 1 Only)
+// ============================================================================
+
+// Show tutorial page before Video 2
+function showTutorialPage(videoId) {
+    const t = translations[currentLanguage];
+    
+    // Create tutorial page if it doesn't exist
+    let tutorialPage = document.getElementById('page-tutorial');
+    if (!tutorialPage) {
+        tutorialPage = createTutorialPage();
+        document.body.appendChild(tutorialPage);
+    }
+    
+    // Update tutorial page content
+    const titleEl = tutorialPage.querySelector('.tutorial-title');
+    const subtitleEl = tutorialPage.querySelector('.tutorial-subtitle');
+    const descEl = tutorialPage.querySelector('.tutorial-description');
+    const instructionsEl = tutorialPage.querySelector('.tutorial-instructions');
+    const openBtn = tutorialPage.querySelector('#open-tutorial-btn');
+    
+    if (titleEl) titleEl.textContent = t.tutorial_video_title || 'Tutorial: How to Use INFER';
+    if (subtitleEl) subtitleEl.textContent = t.tutorial_video_subtitle || 'Please watch this tutorial before starting Video 2';
+    if (descEl) descEl.textContent = t.tutorial_video_description || 'This short tutorial will explain how to use the INFER feedback system effectively.';
+    if (instructionsEl) instructionsEl.textContent = t.tutorial_watch_instructions || 'Click "Open Tutorial" to watch. After watching, click "Continue to Video Task".';
+    
+    if (openBtn) {
+        openBtn.href = TUTORIAL_VIDEO.link;
+        const openText = openBtn.querySelector('span');
+        if (openText) openText.textContent = t.open_tutorial || 'Open Tutorial';
+    }
+    
+    // Store the target video ID
+    tutorialPage.dataset.targetVideoId = videoId;
+    
+    // Show tutorial page
+    showPage('tutorial');
+    
+    logEvent('tutorial_page_shown', {
+        participant_name: currentParticipant,
+        target_video_id: videoId
+    });
+}
+
+// Track tutorial watch status
+let tutorialWatchProgress = 0;
+let tutorialWatched = false;
+
+// Create tutorial page HTML
+function createTutorialPage() {
+    const t = translations[currentLanguage];
+    const page = document.createElement('div');
+    page.id = 'page-tutorial';
+    page.className = 'page-container d-none';
+    // Remove margin-top to use full height
+    page.style.marginTop = '0';
+    page.style.paddingTop = '10px';
+    page.style.height = '100vh';
+    page.style.overflow = 'hidden';
+    
+    page.innerHTML = `
+        <div class="main-container h-100" style="max-width: 100%; padding: 0 20px;">
+            <div class="row justify-content-center h-100">
+                <div class="col-12 h-100">
+                    <div class="card h-100 border-0 shadow-none" style="background: transparent;">
+                        <div class="card-header text-center bg-transparent border-0 py-1">
+                            <h5 class="tutorial-title mb-0 text-primary fw-bold" style="font-size: 1.1rem;">${t.tutorial_video_title || 'INFER Tutorial'}</h5>
+                        </div>
+                        <div class="card-body d-flex flex-column align-items-center p-0 h-100">
+                            <!-- Minimal info section -->
+                            <div class="alert alert-info py-1 px-3 mb-2" style="font-size: 0.85rem; max-width: 800px;">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <span class="tutorial-description">${t.tutorial_video_description || 'Please watch the entire video below to learn how to use the system.'}</span>
+                            </div>
+                            
+                            <!-- Massive video player taking remaining height -->
+                            <div class="video-container flex-grow-1 w-100 d-flex justify-content-center align-items-center" style="background: #000; border-radius: 8px; overflow: hidden; max-height: 80vh;">
+                                <video id="page-tutorial-video-player" controls controlsList="nodownload" style="width: 100%; height: 100%; max-height: 100%; object-fit: contain;">
+                                    <source src="${TUTORIAL_VIDEO.link}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            </div>
+                            
+                            <!-- Bottom controls -->
+                            <div class="mt-2 text-center pb-3" style="min-height: 60px;">
+                                <div class="form-check mb-2 d-inline-block">
+                                    <input class="form-check-input" type="checkbox" id="tutorial-watched-check" disabled>
+                                    <label class="form-check-label small text-muted" for="tutorial-watched-check">
+                                        ${t.tutorial_completed_checkbox || 'I have watched the tutorial video'}
+                                    </label>
+                                </div>
+                                <div class="ms-3 d-inline-block">
+                                    <button id="continue-after-tutorial" class="btn btn-secondary btn-sm px-4 fw-bold" disabled>
+                                        <span>${t.continue_after_tutorial || 'Continue'}</span>
+                                        <i class="bi bi-arrow-right ms-1"></i>
+                                    </button>
+                                </div>
+                                <div class="alert alert-warning d-none py-1 px-2 mt-1 d-inline-block ms-2" id="tutorial-warning" style="font-size: 0.8rem;">
+                                    <span>Watch until end to continue</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners
+    const continueBtn = page.querySelector('#continue-after-tutorial');
+    const checkbox = page.querySelector('#tutorial-watched-check');
+    const videoPlayer = page.querySelector('#page-tutorial-video-player');
+    const warning = page.querySelector('#tutorial-warning');
+    
+    if (videoPlayer) {
+        // Track progress
+        videoPlayer.addEventListener('timeupdate', () => {
+            if (videoPlayer.duration > 0) {
+                const progress = videoPlayer.currentTime / videoPlayer.duration;
+                if (progress > tutorialWatchProgress) {
+                    tutorialWatchProgress = progress;
+                }
+                
+                // Enable continue if watched at least 90%
+                if (tutorialWatchProgress > 0.9 && !tutorialWatched) {
+                    tutorialWatched = true;
+                    if (checkbox) {
+                        checkbox.disabled = false;
+                        checkbox.checked = true;
+                    }
+                    if (continueBtn) {
+                        continueBtn.disabled = false;
+                        continueBtn.classList.remove('btn-secondary');
+                        continueBtn.classList.add('btn-success');
+                    }
+                    if (warning) warning.classList.add('d-none');
+                }
+            }
+        });
+        
+        videoPlayer.addEventListener('ended', () => {
+            tutorialWatched = true;
+            if (checkbox) {
+                checkbox.disabled = false;
+                checkbox.checked = true;
+            }
+            if (continueBtn) {
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('btn-secondary');
+                continueBtn.classList.add('btn-success');
+            }
+            if (warning) warning.classList.add('d-none');
+        });
+        
+        videoPlayer.addEventListener('play', () => {
+            logEvent('tutorial_video_started', {
+                participant_name: currentParticipant,
+                tutorial_url: TUTORIAL_VIDEO.link
+            });
+        });
+    }
+    
+    if (continueBtn) {
+        continueBtn.addEventListener('click', () => {
+            if (!tutorialWatched) {
+                if (warning) {
+                    warning.classList.remove('d-none');
+                    warning.textContent = 'Please watch the video until the end before continuing.';
+                }
+                return;
+            }
+            
+            if (!checkbox || !checkbox.checked) {
+                const t = translations[currentLanguage];
+                showAlert(t.survey_checkbox_required || 'Please check the box to confirm you have watched the tutorial.', 'warning');
+                return;
+            }
+            
+            // Mark tutorial as watched
+            markTutorialWatched();
+            
+            // Continue to the target video
+            const targetVideoId = document.getElementById('page-tutorial').dataset.targetVideoId;
+            if (targetVideoId) {
+                const videoNum = getVideoPageNumber(targetVideoId);
+                continueToReflectionTask(videoNum);
+            }
+        });
+    }
+    
+    return page;
+}
+
+// Mark tutorial as watched in database
+async function markTutorialWatched() {
+    if (!supabase || !currentParticipant) return;
+    
+    try {
+        const { error } = await supabase
+            .from('participant_progress')
+            .update({ 
+                tutorial_watched: true,
+                tutorial_watched_at: new Date().toISOString(),
+                last_active_at: new Date().toISOString()
+            })
+            .eq('participant_name', currentParticipant);
+        
+        if (error) {
+            console.error('Error marking tutorial watched:', error);
+        } else {
+            currentParticipantProgress.tutorial_watched = true;
+            logEvent('tutorial_completed', {
+                participant_name: currentParticipant
+            });
+        }
+    } catch (error) {
+        console.error('Error in markTutorialWatched:', error);
+    }
+}
+
+// Start video task after tutorial is complete
+async function startVideoTaskAfterTutorial(videoId) {
+    currentVideoId = videoId;
+    const video = VIDEOS.find(v => v.id === videoId);
+    
+    if (!video) return;
+    
+    const videoNum = getVideoPageNumber(videoId);
+    
+    // Update video link page with video info
+    const linkPageSubtitle = document.getElementById(`video-link-${videoNum}-subtitle`);
+    const linkPageName = document.getElementById(`video-link-${videoNum}-name`);
+    const linkPageUrl = document.getElementById(`video-link-${videoNum}-url`);
+    const linkPagePassword = document.getElementById(`video-link-${videoNum}-password`);
+    const linkPageOpenBtn = document.getElementById(`video-link-${videoNum}-open-btn`);
+    
+    if (linkPageSubtitle) {
+        linkPageSubtitle.setAttribute('data-lang-key', 'video_link_subtitle');
+    }
+    if (linkPageName) {
+        linkPageName.textContent = video.name;
+    }
+    if (linkPageUrl) {
+        linkPageUrl.value = video.link;
+    }
+    if (linkPagePassword && video.password) {
+        linkPagePassword.value = video.password;
+    }
+    if (linkPageOpenBtn) {
+        linkPageOpenBtn.href = video.link;
+    }
+    
+    // Show video link page
+    showPage(`video-link-${videoNum}`);
+    
+    logEvent('video_task_started_after_tutorial', {
+        video_id: videoId,
+        participant_name: currentParticipant
+    });
+}
+
 // Get video page number from video ID
 function getVideoPageNumber(videoId) {
     const index = VIDEOS.findIndex(v => v.id === videoId);
@@ -1120,6 +1468,7 @@ function getVideoElementIds(videoNum) {
         reflectionText: `video-${videoNum}-reflection-text`,
         wordCount: `video-${videoNum}-word-count`,
         generateBtn: `video-${videoNum}-generate-btn`,
+        saveBtn: `video-${videoNum}-save-btn`,
         submitBtn: `video-${videoNum}-submit-btn`,
         clearBtn: `video-${videoNum}-clear-btn`,
         copyBtn: `video-${videoNum}-copy-btn`,
@@ -1168,6 +1517,11 @@ function setupVideoPageElements(videoNum) {
         reviseBtn.addEventListener('click', () => handleReviseForVideo(videoNum));
     }
     
+    const saveBtn = document.getElementById(ids.saveBtn);
+    if (saveBtn) {
+        saveBtn.addEventListener('click', () => handleSaveReflection(videoNum));
+    }
+    
     const submitBtn = document.getElementById(ids.submitBtn);
     if (submitBtn) {
         submitBtn.addEventListener('click', () => handleFinalSubmissionForVideo(videoNum));
@@ -1192,6 +1546,56 @@ function setupVideoPageElements(videoNum) {
     if (langDe) {
         langDe.addEventListener('change', () => switchLanguage('de'));
     }
+    
+    // Setup concept explanation card click handlers
+    setupConceptCardClickHandlers(videoNum);
+}
+
+// Setup click handlers for concept explanation cards
+function setupConceptCardClickHandlers(videoNum) {
+    const conceptsSection = document.getElementById(`video-${videoNum}-concepts-section`);
+    if (!conceptsSection) return;
+    
+    // Find all definition cards
+    const descriptionCard = conceptsSection.querySelector('.description-card');
+    const explanationCard = conceptsSection.querySelector('.explanation-card');
+    const predictionCard = conceptsSection.querySelector('.prediction-card');
+    
+    if (descriptionCard) {
+        descriptionCard.style.cursor = 'pointer';
+        descriptionCard.addEventListener('click', () => {
+            logEvent('concept_explanation_clicked', {
+                video_id: `video${videoNum}`,
+                concept_name: 'Description',
+                concept_type: 'description',
+                participant_name: currentParticipant
+            });
+        });
+    }
+    
+    if (explanationCard) {
+        explanationCard.style.cursor = 'pointer';
+        explanationCard.addEventListener('click', () => {
+            logEvent('concept_explanation_clicked', {
+                video_id: `video${videoNum}`,
+                concept_name: 'Explanation',
+                concept_type: 'explanation',
+                participant_name: currentParticipant
+            });
+        });
+    }
+    
+    if (predictionCard) {
+        predictionCard.style.cursor = 'pointer';
+        predictionCard.addEventListener('click', () => {
+            logEvent('concept_explanation_clicked', {
+                video_id: `video${videoNum}`,
+                concept_name: 'Prediction',
+                concept_type: 'prediction',
+                participant_name: currentParticipant
+            });
+        });
+    }
 }
 
 // Start video task - now goes to video link page first
@@ -1209,6 +1613,12 @@ async function startVideoTask(videoId) {
     const video = VIDEOS.find(v => v.id === videoId);
     
     if (!video) return;
+    
+    // Tutorial check removed for Gamma (Control Group has no tutorial)
+    // if (video.hasTutorial && !currentParticipantProgress?.tutorial_watched) {
+    //     showTutorialPage(videoId);
+    //     return;
+    // }
     
     const videoNum = getVideoPageNumber(videoId);
     
@@ -1310,7 +1720,7 @@ async function continueToReflectionTask(videoNum) {
     });
 }
 
-// Configure UI for INFER vs reflection-only mode
+// Configure UI for Gamma (Control Group): All videos have simple feedback
 function configureVideoTaskUI(videoNum, hasINFER) {
     const ids = getVideoElementIds(videoNum);
     const t = translations[currentLanguage];
@@ -1323,17 +1733,20 @@ function configureVideoTaskUI(videoNum, hasINFER) {
     const copyBtn = document.getElementById(ids.copyBtn);
     const conceptsSection = document.getElementById(`video-${videoNum}-concepts-section`);
     
+    // Gamma: All videos have simple feedback (hasINFER is true for all)
     if (hasINFER) {
-        // INFER mode: Show generate button, hide submit initially
+        // Simple feedback mode: Show generate button and submit button
         if (generateBtn) {
             generateBtn.classList.remove('d-none');
             generateBtn.textContent = t.generate_feedback || 'Generate Feedback';
         }
         if (submitBtn) {
-            submitBtn.classList.add('d-none');
+            submitBtn.classList.remove('d-none');
+            submitBtn.disabled = false;
         }
         if (feedbackSection) feedbackSection.classList.remove('d-none');
-        if (conceptsSection) conceptsSection.classList.remove('d-none');
+        // Hide concepts section in Gamma (no complex analysis)
+        if (conceptsSection) conceptsSection.classList.add('d-none');
     } else {
         // Reflection-only mode: Hide generate button, show submit directly
         if (generateBtn) {
@@ -1491,11 +1904,12 @@ async function loadPreviousReflectionAndFeedback(videoId) {
             
             // Load previous feedback if available
             if (reflection.feedback_extended || reflection.feedback_short) {
-                const feedbackExtended = document.getElementById('task-feedback-extended');
-                const feedbackShort = document.getElementById('task-feedback-short');
-                const feedbackTabs = document.getElementById('task-feedback-tabs');
-                const reviseBtn = document.getElementById('task-revise-btn');
-                const submitBtn = document.getElementById('task-submit-final');
+                const ids = getVideoElementIds(videoNum);
+                const feedbackExtended = document.getElementById(ids.feedbackExtended);
+                const feedbackShort = document.getElementById(ids.feedbackShort);
+                const feedbackTabs = document.getElementById(ids.feedbackTabs);
+                const reviseBtn = document.getElementById(ids.reviseBtn);
+                const submitBtn = document.getElementById(ids.submitBtn);
                 
                 if (reflection.feedback_extended && feedbackExtended) {
                     const analysisResult = reflection.analysis_percentages ? {
@@ -1596,7 +2010,6 @@ function resetTaskStateForVideo(videoNum) {
     if (analysisDist) analysisDist.remove();
     
     if (reviseBtn) reviseBtn.style.display = 'none';
-    if (submitBtn) submitBtn.style.display = 'none';
 }
 
 // Reset task state (legacy function - kept for compatibility)
@@ -1819,18 +2232,8 @@ async function handleGenerateFeedbackForVideo(videoNum) {
         return;
     }
     
-    // Show style preference modal on first generation
-    if (!currentTaskState.feedbackGenerated) {
-        const modal = new bootstrap.Modal(document.getElementById('feedback-preference-modal'));
-        modal.show();
-        
-        document.getElementById('feedback-preference-modal').addEventListener('hidden.bs.modal', function handler() {
-            this.removeEventListener('hidden.bs.modal', handler);
-            generateFeedbackForVideo(reflection, videoNum);
-        });
-    } else {
-        generateFeedbackForVideo(reflection, videoNum);
-    }
+    // Gamma (Control Group): Use simple feedback generation (no preference modal, no complex analysis)
+    generateSimpleFeedbackForVideo(reflection, videoNum);
 }
 
 // Generate feedback handler (legacy - kept for compatibility)
@@ -1844,170 +2247,47 @@ async function handleGenerateFeedback() {
     }
 }
 
-// ============================================================================
-// CONTROL GROUP: Simple Feedback Generation (No PV Analysis)
-// ============================================================================
-
-function getSimpleFeedbackPrompt(language, style) {
-    if (language === 'de') {
-        return "Ich schreibe eine Antwort, um ein Video über Unterricht zu analysieren. Gib mir Feedback.";
-    } else {
-        return "I am writing a response to analyze a video about teaching. Give me feedback.";
-    }
-}
-
-async function generateSimpleFeedbackForControl(reflection, language, style) {
-    const systemPrompt = "You are a helpful assistant."; 
-    const userPrompt = getSimpleFeedbackPrompt(language, style);
-    
-    const requestData = {
-        model: 'gpt-4o',
-        messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `${userPrompt}\n\n${reflection}` }
-        ],
-        temperature: 0,
-        max_tokens: 1000
-    };
-    
-    try {
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            throw new Error(`HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        return result.choices[0].message.content;
-    } catch (error) {
-        console.error('Error in generateSimpleFeedbackForControl:', error);
-        throw error;
-    }
-}
-
-function formatSimpleFeedback(text) {
-    if (!text) return '';
-    let formatted = text
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n- /g, '</p><ul><li>')
-        .replace(/\n• /g, '</p><ul><li>')
-        .replace(/<\/li>\n/g, '</li>')
-        .replace(/\n/g, '<br>');
-    formatted = '<p>' + formatted + '</p>';
-    formatted = formatted.replace(/<\/p><ul>/g, '</p><ul>');
-    formatted = formatted.replace(/<\/li><p>/g, '</li></ul><p>');
-    return `<div class="simple-feedback">${formatted}</div>`;
-}
-
-async function saveSimpleReflectionToDatabase(reflection, feedbackExtended, feedbackShort, videoNum) {
-    if (!supabase || !currentParticipant) return;
-    try {
-        const { data, error } = await supabase
-            .from('reflections')
-            .insert([{
-                session_id: currentSessionId,
-                participant_name: currentParticipant,
-                video_id: currentVideoId,
-                task_id: currentVideoId,
-                language: currentLanguage,
-                reflection_text: reflection,
-                analysis_percentages: { 
-                    raw: { description: 0, explanation: 0, prediction: 0, professional_vision: 0, other: 100 },
-                    priority: { description: 0, explanation: 0, prediction: 0, professional_vision: 0, other: 100 },
-                    note: 'Control group - no PV analysis'
-                },
-                weakest_component: null,
-                feedback_extended: feedbackExtended,
-                feedback_short: feedbackShort,
-                revision_number: currentTaskState.revisionCount || 1,
-                parent_reflection_id: currentTaskState.parentReflectionId || null
-            }])
-            .select()
-            .single();
-        if (error) {
-            console.error('Error saving simple reflection:', error);
-        } else {
-            currentTaskState.currentReflectionId = data?.id;
-            currentTaskState.parentReflectionId = data?.id;
-        }
-    } catch (error) {
-        console.error('Error in saveSimpleReflectionToDatabase:', error);
-    }
-}
-
-async function generateSimpleFeedbackOnly(reflection, videoNum, loadingInterval) {
+// Generate feedback for specific video page
+// Generate simple feedback for Gamma (Control Group) - no complex analysis
+async function generateSimpleFeedbackForVideo(reflection, videoNum) {
     const ids = getVideoElementIds(videoNum);
-    const loadingSpinner = document.getElementById(ids.loadingSpinner);
     const generateBtn = document.getElementById(ids.generateBtn);
+    const loadingSpinner = document.getElementById(ids.loadingSpinner);
+    const loadingText = document.getElementById(ids.loadingText);
+    
+    if (generateBtn) generateBtn.disabled = true;
+    if (loadingSpinner) loadingSpinner.style.display = 'block';
+    if (loadingText) loadingText.textContent = currentLanguage === 'en' ? 'Generating feedback...' : 'Feedback wird generiert...';
     
     try {
-        if (reflection.split(/\s+/).length < 20) {
-            const warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your reflection is very short. Please write at least 50 words."
-                : "⚠️ Ihre Reflexion ist sehr kurz. Bitte schreiben Sie mindestens 50 Wörter.";
-            const feedbackExtended = document.getElementById(ids.feedbackExtended);
-            const feedbackShort = document.getElementById(ids.feedbackShort);
-            if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
-            if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
-            document.getElementById(ids.feedbackTabs).classList.remove('d-none');
-            clearInterval(loadingInterval);
-            if (loadingSpinner) loadingSpinner.style.display = 'none';
-            if (generateBtn) generateBtn.disabled = false;
-            return;
-        }
+        // Gamma: Simple feedback generation without complex analysis
+        const simpleFeedback = await generateSimpleFeedback(reflection, currentLanguage);
         
-        const [feedbackExtendedText, feedbackShortText] = await Promise.all([
-            generateSimpleFeedbackForControl(reflection, currentLanguage, 'academic'),
-            generateSimpleFeedbackForControl(reflection, currentLanguage, 'user-friendly')
-        ]);
+        // Display feedback (same format for both extended and short in Gamma)
+        const feedbackExtended = document.getElementById(ids.feedbackExtended);
+        const feedbackShort = document.getElementById(ids.feedbackShort);
+        const feedbackTabs = document.getElementById(ids.feedbackTabs);
         
-        document.getElementById(ids.feedbackExtended).innerHTML = formatSimpleFeedback(feedbackExtendedText);
-        document.getElementById(ids.feedbackShort).innerHTML = formatSimpleFeedback(feedbackShortText);
-        document.getElementById(ids.feedbackTabs).classList.remove('d-none');
-        document.getElementById(ids.percentageExplanation).classList.add('d-none');
+        if (feedbackExtended) feedbackExtended.innerHTML = `<div class="feedback-content">${simpleFeedback.replace(/\n/g, '<br>')}</div>`;
+        if (feedbackShort) feedbackShort.innerHTML = `<div class="feedback-content">${simpleFeedback.replace(/\n/g, '<br>')}</div>`;
+        if (feedbackTabs) feedbackTabs.classList.add('d-none'); // Hide tabs in Gamma (same feedback for both)
         
-        // Use video-specific IDs for buttons
-        const reviseBtn = document.getElementById(ids.reviseBtn);
-        const submitBtn = document.getElementById(ids.submitBtn);
-        if (reviseBtn) reviseBtn.classList.remove('d-none');
-        if (submitBtn) {
-            submitBtn.classList.remove('d-none');
-            submitBtn.disabled = false;
-        }
-        
-        currentTaskState.feedbackGenerated = true;
-        currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
-        
-        await saveSimpleReflectionToDatabase(reflection, feedbackExtendedText, feedbackShortText, videoNum);
-        
-        logEvent('simple_feedback_generated', {
-            participant_name: currentParticipant,
-            video_id: currentVideoId,
-            language: currentLanguage,
-            reflection_length: reflection.length,
-            revision_count: currentTaskState.revisionCount,
-            study_condition: STUDY_CONDITION
-        });
-        
-        startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
-        
-    } catch (error) {
-        console.error('Error generating simple feedback:', error);
-        showAlert('Error generating feedback. Please try again.', 'danger');
-    } finally {
-        clearInterval(loadingInterval);
         if (loadingSpinner) loadingSpinner.style.display = 'none';
         if (generateBtn) generateBtn.disabled = false;
+        
+        logEvent('simple_feedback_generated', {
+            video_id: `video${videoNum}`,
+            participant_name: currentParticipant,
+            language: currentLanguage
+        });
+    } catch (error) {
+        console.error('Error generating simple feedback:', error);
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (generateBtn) generateBtn.disabled = false;
+        showAlert(currentLanguage === 'en' ? 'Error generating feedback. Please try again.' : 'Fehler beim Generieren des Feedbacks. Bitte versuchen Sie es erneut.', 'danger');
     }
 }
 
-// Generate feedback for specific video page
 async function generateFeedbackForVideo(reflection, videoNum) {
     const ids = getVideoElementIds(videoNum);
     const loadingSpinner = document.getElementById(ids.loadingSpinner);
@@ -2028,12 +2308,6 @@ async function generateFeedbackForVideo(reflection, videoNum) {
     }, 8000);
     
     try {
-        // CONTROL GROUP: Use simple feedback without PV analysis
-        if (typeof USE_SIMPLE_FEEDBACK !== 'undefined' && USE_SIMPLE_FEEDBACK) {
-            await generateSimpleFeedbackOnly(reflection, videoNum, loadingInterval);
-            return;
-        }
-        
         // Step 0: Check for duplicate reflection
         const previousReflection = sessionStorage.getItem(`reflection-${currentVideoId}`);
         if (previousReflection && previousReflection.trim() === reflection.trim()) {
@@ -2187,8 +2461,11 @@ async function generateFeedbackForVideo(reflection, videoNum) {
         // Step 10: Show revise and submit buttons
         const reviseBtn = document.getElementById(ids.reviseBtn);
         const submitBtn = document.getElementById(ids.submitBtn);
-        if (reviseBtn) reviseBtn.style.display = 'inline-block';
-        if (submitBtn) submitBtn.style.display = 'block';
+        if (reviseBtn) reviseBtn.classList.remove('d-none');
+        if (submitBtn) {
+            submitBtn.classList.remove('d-none');
+            submitBtn.disabled = false;
+        }
         
         currentTaskState.feedbackGenerated = true;
         
@@ -2301,12 +2578,13 @@ async function generateFeedback(reflection) {
                 is_non_relevant: isNonRelevant
             });
             
-            const feedbackExtended = document.getElementById('task-feedback-extended');
-            const feedbackShort = document.getElementById('task-feedback-short');
+            const ids = getVideoElementIds(videoNum);
+            const feedbackExtended = document.getElementById(ids.feedbackExtended);
+            const feedbackShort = document.getElementById(ids.feedbackShort);
             if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
             if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
             
-            const feedbackTabs = document.getElementById('task-feedback-tabs');
+            const feedbackTabs = document.getElementById(ids.feedbackTabs);
             if (feedbackTabs) feedbackTabs.classList.remove('d-none');
             
             clearInterval(loadingInterval);
@@ -2315,8 +2593,8 @@ async function generateFeedback(reflection) {
             return;
         }
         
-        // Step 3: Display analysis distribution
-        displayAnalysisDistribution(analysisResult);
+        // Step 3: Display analysis distribution (using video-specific function)
+        displayAnalysisDistributionForVideo(analysisResult, videoNum);
         
         // Step 4: Generate both feedback styles
         const [extendedFeedback, shortFeedback] = await Promise.all([
@@ -2367,30 +2645,31 @@ async function generateFeedback(reflection) {
         // Step 7: Store reflection for duplicate detection
         sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
         
-        // Step 8: Display feedback
-        const feedbackExtended = document.getElementById('task-feedback-extended');
-        const feedbackShort = document.getElementById('task-feedback-short');
+        // Step 8: Display feedback (using video-specific IDs)
+        const ids = getVideoElementIds(videoNum);
+        const feedbackExtended = document.getElementById(ids.feedbackExtended);
+        const feedbackShort = document.getElementById(ids.feedbackShort);
         if (feedbackExtended) feedbackExtended.innerHTML = formatStructuredFeedback(finalExtendedFeedback, analysisResult);
         if (feedbackShort) feedbackShort.innerHTML = formatStructuredFeedback(finalShortFeedback, analysisResult);
         
-        // Step 9: Show tabs
-        const feedbackTabs = document.getElementById('task-feedback-tabs');
+        // Step 9: Show tabs (using video-specific IDs)
+        const feedbackTabs = document.getElementById(ids.feedbackTabs);
         if (feedbackTabs) feedbackTabs.classList.remove('d-none');
         
         if (userPreferredFeedbackStyle === 'short') {
-            document.getElementById('task-short-tab')?.click();
+            document.getElementById(ids.shortTab)?.click();
         } else {
-            document.getElementById('task-extended-tab')?.click();
+            document.getElementById(ids.extendedTab)?.click();
         }
         
         // Start feedback viewing tracking
         startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
         
-        // Step 10: Show revise and submit buttons
-        const reviseBtn = document.getElementById('task-revise-btn');
-        const submitBtn = document.getElementById('task-submit-final');
-        if (reviseBtn) reviseBtn.style.display = 'inline-block';
-        if (submitBtn) submitBtn.style.display = 'block';
+        // Step 10: Show revise and submit buttons (using correct video-specific IDs)
+        const reviseBtn = document.getElementById(ids.reviseBtn);
+        const submitBtn = document.getElementById(ids.submitBtn);
+        if (reviseBtn) reviseBtn.classList.remove('d-none');
+        if (submitBtn) submitBtn.classList.remove('d-none');
         
         currentTaskState.feedbackGenerated = true;
         
@@ -2550,6 +2829,60 @@ function handleRevise() {
     });
 }
 
+// Handle save reflection (without final submission)
+async function handleSaveReflection(videoNum) {
+    const videoId = `video${videoNum}`;
+    const ids = getVideoElementIds(videoNum);
+    const reflectionText = document.getElementById(ids.reflectionText)?.value?.trim();
+    
+    if (!reflectionText || reflectionText.length < 10) {
+        const t = translations[currentLanguage];
+        showAlert(currentLanguage === 'en' ? 'Please write a reflection before saving.' : 'Bitte schreiben Sie eine Reflexion, bevor Sie speichern.', 'warning');
+        return;
+    }
+    
+    // Save reflection to database (as a draft/save, not final)
+    if (supabase && currentParticipant) {
+        try {
+            const { data, error } = await supabase
+                .from('reflections')
+                .insert([{
+                    session_id: currentSessionId,
+                    participant_name: currentParticipant,
+                    video_id: videoId,
+                    task_id: videoId,
+                    language: currentLanguage,
+                    reflection_text: reflectionText,
+                    revision_number: currentTaskState.revisionCount || 1,
+                    is_draft: true, // Mark as draft/save
+                    // No feedback for save
+                    feedback_extended: null,
+                    feedback_short: null,
+                    analysis_percentages: null,
+                    weakest_component: null
+                }])
+                .select()
+                .single();
+            
+            if (error) {
+                console.error('Error saving reflection:', error);
+                showAlert('❌ ' + (currentLanguage === 'en' ? 'Error saving reflection' : 'Fehler beim Speichern der Reflexion'), 'danger');
+            } else {
+                currentTaskState.currentReflectionId = data?.id;
+                logEvent('reflection_saved_draft', {
+                    video_id: videoId,
+                    participant_name: currentParticipant,
+                    reflection_id: data?.id,
+                    reflection_length: reflectionText.length
+                });
+                showAlert('💾 ' + (currentLanguage === 'en' ? 'Reflection saved!' : 'Reflexion gespeichert!'), 'success');
+            }
+        } catch (error) {
+            console.error('Error in handleSaveReflection:', error);
+        }
+    }
+}
+
 function handleFinalSubmission() {
     const currentVideoPage = document.querySelector('.video-task-page:not(.d-none)');
     if (currentVideoPage) {
@@ -2560,12 +2893,25 @@ function handleFinalSubmission() {
 }
 
 function handleFinalSubmissionForVideo(videoNum) {
+    const ids = getVideoElementIds(videoNum);
+    const submitBtn = document.getElementById(ids.submitBtn);
+    const originalSubmitHtml = submitBtn ? submitBtn.innerHTML : null;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${submitBtn.dataset.loadingLabel || 'Submitting...'}`;
+    }
+
     const videoId = `video${videoNum}`;
     const video = VIDEOS.find(v => v.id === videoId);
     
     // For reflection-only mode, skip confirmation modal and submit directly
     if (video && !video.hasINFER) {
-        submitReflectionOnly(videoNum);
+        submitReflectionOnly(videoNum).finally(() => {
+            if (submitBtn && originalSubmitHtml !== null) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalSubmitHtml;
+            }
+        });
         return;
     }
     
@@ -2577,14 +2923,26 @@ function handleFinalSubmissionForVideo(videoNum) {
         bootstrapModal.show();
     } else {
         // If modal doesn't exist, directly confirm
-        confirmFinalSubmissionForVideo(videoNum);
+        confirmFinalSubmissionForVideo(videoNum).finally(() => {
+            if (submitBtn && originalSubmitHtml !== null) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalSubmitHtml;
+            }
+        });
     }
 }
 
 // Submit reflection without INFER feedback (reflection-only mode)
 async function submitReflectionOnly(videoNum) {
-    const videoId = `video${videoNum}`;
     const ids = getVideoElementIds(videoNum);
+    const submitBtn = document.getElementById(ids.submitBtn);
+    const originalSubmitHtml = submitBtn ? submitBtn.innerHTML : null;
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${submitBtn.dataset.loadingLabel || 'Submitting...'}`;
+    }
+
+    const videoId = `video${videoNum}`;
     const reflectionText = document.getElementById(ids.reflectionText)?.value?.trim();
     
     if (!reflectionText || reflectionText.length < 10) {
@@ -2592,6 +2950,24 @@ async function submitReflectionOnly(videoNum) {
         showAlert(currentLanguage === 'en' ? 'Please write a reflection before submitting.' : 'Bitte schreiben Sie eine Reflexion, bevor Sie einreichen.', 'warning');
         return;
     }
+    
+    // Make reflection read-only after final submission
+    const reflectionTextArea = document.getElementById(ids.reflectionText);
+    if (reflectionTextArea) {
+        reflectionTextArea.readOnly = true;
+        reflectionTextArea.style.backgroundColor = '#f5f5f5';
+        reflectionTextArea.style.cursor = 'not-allowed';
+    }
+    
+    // Disable/hide edit buttons
+    const saveBtn = document.getElementById(ids.saveBtn);
+    if (saveBtn) saveBtn.disabled = true;
+    
+    const clearBtn = document.getElementById(ids.clearBtn);
+    if (clearBtn) clearBtn.disabled = true;
+    
+    const generateBtn = document.getElementById(ids.generateBtn);
+    if (generateBtn) generateBtn.disabled = true;
     
     // Save reflection to database (without feedback)
     if (supabase && currentParticipant) {
@@ -2641,6 +3017,11 @@ async function submitReflectionOnly(videoNum) {
         showPage(`post-video-survey-${videoNum}`);
         loadSurvey(`post_video_${videoNum}`);
     }, 1500);
+
+    if (submitBtn && originalSubmitHtml !== null) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalSubmitHtml;
+    }
 }
 
 function confirmFinalSubmission() {
@@ -2656,6 +3037,27 @@ function confirmFinalSubmissionForVideo(videoNum) {
     const videoId = `video${videoNum}`;
     const video = VIDEOS.find(v => v.id === videoId);
     const ids = getVideoElementIds(videoNum);
+    
+    // Make reflection read-only after final submission
+    const reflectionTextArea = document.getElementById(ids.reflectionText);
+    if (reflectionTextArea) {
+        reflectionTextArea.readOnly = true;
+        reflectionTextArea.style.backgroundColor = '#f5f5f5';
+        reflectionTextArea.style.cursor = 'not-allowed';
+    }
+    
+    // Disable/hide edit buttons
+    const saveBtn = document.getElementById(ids.saveBtn);
+    if (saveBtn) saveBtn.disabled = true;
+    
+    const submitBtn = document.getElementById(ids.submitBtn);
+    if (submitBtn) submitBtn.disabled = true;
+    
+    const clearBtn = document.getElementById(ids.clearBtn);
+    if (clearBtn) clearBtn.disabled = true;
+    
+    const generateBtn = document.getElementById(ids.generateBtn);
+    if (generateBtn) generateBtn.disabled = true;
     
     // Mark video as completed
     markVideoCompleted();
@@ -3278,24 +3680,51 @@ function calculatePercentages(classificationResults) {
 // Feedback Generation (Same as original)
 // ============================================================================
 
-async function generateWeightedFeedback(reflection, language, style, analysisResult) {
-    const promptType = `${style} ${language === 'en' ? 'English' : 'German'}`;
-    const systemPrompt = getFeedbackPrompt(promptType, analysisResult);
-    const pctPriority = analysisResult.percentages_priority;
-    
+// Generate simple feedback for Gamma (Control Group) - 1-2 sentences
+async function generateSimpleFeedback(reflection, language) {
     const languageInstruction = language === 'en' 
         ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
         : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
     
+    // Simple 1-2 sentence prompt for Gamma (Control Group)
+    const simplePrompt = language === 'en'
+        ? "Provide brief, helpful feedback (1-2 sentences) for this teaching reflection."
+        : "Geben Sie kurzes, hilfreiches Feedback (1-2 Sätze) für diese Unterrichtsreflexion.";
+    
     const requestData = {
         model: model,
         messages: [
-            { role: "system", content: languageInstruction + "\n\n" + systemPrompt },
-            { role: "user", content: `Based on the analysis showing ${pctPriority.description}% description, ${pctPriority.explanation}% explanation, ${pctPriority.prediction}% prediction (Professional Vision: ${pctPriority.professional_vision}%) + Other: ${pctPriority.other}% = 100%, provide feedback for this reflection:\n\n${reflection}` }
+            { role: "system", content: languageInstruction + "\n\n" + simplePrompt },
+            { role: "user", content: reflection }
         ],
         temperature: 0.3,
-        max_tokens: 2000
+        max_tokens: 200
     };
+    
+    try {
+        const response = await fetch(OPENAI_API_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        const result = await response.json();
+        return result.choices[0].message.content;
+    } catch (error) {
+        console.error('Error in generateSimpleFeedback:', error);
+        throw error;
+    }
+}
+
+async function generateWeightedFeedback(reflection, language, style, analysisResult) {
+    // This function is not used in Gamma (Control Group) - kept for compatibility
+    // Gamma uses generateSimpleFeedback instead
+    return await generateSimpleFeedback(reflection, language);
     
     try {
         const response = await fetch(OPENAI_API_URL, {
@@ -3536,22 +3965,28 @@ async function logEvent(eventType, eventData = {}) {
     }
     
     try {
+        // Store user_agent and language in event_data JSONB (schema doesn't have separate columns)
+        const enrichedEventData = {
+            ...eventData,
+            user_agent: navigator.userAgent,
+            language: currentLanguage
+        };
+        
         const { error } = await supabase
             .from('user_events')
             .insert([{
                 session_id: currentSessionId,
                 reflection_id: eventData.reflection_id || null,
+                participant_name: currentParticipant || null,
                 event_type: eventType,
-                event_data: eventData,
-                user_agent: navigator.userAgent,
-                language: currentLanguage,
+                event_data: enrichedEventData,
                 timestamp_utc: new Date().toISOString()
             }]);
 
         if (error) {
             console.error('Error logging event:', error);
         } else {
-            console.log(`📝 Event logged: ${eventType}`, eventData);
+            console.log(`📝 Event logged: ${eventType}`, enrichedEventData);
         }
     } catch (error) {
         console.error('Error in logEvent:', error);
@@ -3602,6 +4037,12 @@ async function saveFeedbackToDatabase(data) {
     try {
         const revisionNumber = currentTaskState.revisionCount || 1;
         const parentReflectionId = currentTaskState.parentReflectionId || null;
+        
+        // Calculate revision time (time since last revision)
+        let revisionTimeSeconds = null;
+        if (revisionNumber > 1 && currentTaskState.lastRevisionTime) {
+            revisionTimeSeconds = (Date.now() - currentTaskState.lastRevisionTime) / 1000;
+        }
 
         const reflectionData = {
             session_id: currentSessionId,
@@ -3618,8 +4059,10 @@ async function saveFeedbackToDatabase(data) {
             weakest_component: data.analysisResult.weakest_component,
             feedback_extended: data.extendedFeedback,
             feedback_short: data.shortFeedback,
+            feedback_raw: data.rawFeedback || null,  // Store raw LLM response
             revision_number: revisionNumber,
             parent_reflection_id: parentReflectionId,
+            revision_time_seconds: revisionTimeSeconds,
             created_at: new Date().toISOString()
         };
 
@@ -3635,12 +4078,16 @@ async function saveFeedbackToDatabase(data) {
         }
 
         currentTaskState.currentReflectionId = result.id;
+        currentTaskState.lastRevisionTime = Date.now();  // Track revision time
         
         if (revisionNumber === 1) {
             currentTaskState.parentReflectionId = result.id;
         }
         
         console.log(`✅ Reflection saved to database:`, result.id);
+        if (revisionTimeSeconds !== null) {
+            console.log(`   Revision time: ${revisionTimeSeconds.toFixed(2)} seconds`);
+        }
         
         logEvent('submit_reflection', {
             video_id: data.videoSelected,
@@ -3672,1007 +4119,3 @@ window.addEventListener('beforeunload', () => {
         participant_name: currentParticipant || null
     });
 });
-            }
-            
-            const result = await response.json();
-            if (!result.choices || !result.choices[0]) {
-                console.error(`Binary classifier attempt ${attempt + 1}: Invalid response format`, result);
-                continue;
-            }
-            const output = result.choices[0].message.content.trim();
-            
-            if (output === '1' || output === '0') {
-                return parseInt(output);
-            }
-            
-            if (output.includes('1')) return 1;
-            if (output.includes('0')) return 0;
-            
-            console.warn(`Binary classifier attempt ${attempt + 1}: Unexpected output: "${output}"`);
-            
-        } catch (error) {
-            console.warn(`Binary classifier attempt ${attempt + 1} failed:`, error);
-        }
-    }
-    
-    console.error('All binary classifier attempts failed, defaulting to 0');
-    return 0;
-}
-
-function calculatePercentages(classificationResults) {
-    const totalWindows = classificationResults.length;
-    
-    if (totalWindows === 0) {
-        return {
-            percentages_raw: { description: 0, explanation: 0, prediction: 0, professional_vision: 0 },
-            percentages_priority: { description: 0, explanation: 0, prediction: 0, other: 100, professional_vision: 0 },
-            weakest_component: "Prediction",
-            analysis_summary: "No valid windows for analysis"
-        };
-    }
-    
-    // RAW CALCULATION (can exceed 100%)
-    let rawDescriptionCount = 0;
-    let rawExplanationCount = 0;
-    let rawPredictionCount = 0;
-    
-    classificationResults.forEach(result => {
-        if (result.description === 1) rawDescriptionCount++;
-        if (result.explanation === 1) rawExplanationCount++;
-        if (result.prediction === 1) rawPredictionCount++;
-    });
-    
-    const rawPercentages = {
-        description: Math.round((rawDescriptionCount / totalWindows) * 100 * 10) / 10,
-        explanation: Math.round((rawExplanationCount / totalWindows) * 100 * 10) / 10,
-        prediction: Math.round((rawPredictionCount / totalWindows) * 100 * 10) / 10,
-        professional_vision: Math.round(((rawDescriptionCount + rawExplanationCount + rawPredictionCount) / totalWindows) * 100 * 10) / 10
-    };
-    
-    // PRIORITY-BASED CALCULATION (adds to 100%)
-    let descriptionCount = 0;
-    let explanationCount = 0;
-    let predictionCount = 0;
-    let otherCount = 0;
-    
-    classificationResults.forEach(result => {
-        if (result.description === 1) {
-            descriptionCount++;
-        } else if (result.explanation === 1) {
-            explanationCount++;
-        } else if (result.prediction === 1) {
-            predictionCount++;
-        } else {
-            otherCount++;
-        }
-    });
-    
-    const priorityPercentages = {
-        description: Math.round((descriptionCount / totalWindows) * 100 * 10) / 10,
-        explanation: Math.round((explanationCount / totalWindows) * 100 * 10) / 10,
-        prediction: Math.round((predictionCount / totalWindows) * 100 * 10) / 10,
-        other: Math.round((otherCount / totalWindows) * 100 * 10) / 10,
-        professional_vision: Math.round(((descriptionCount + explanationCount + predictionCount) / totalWindows) * 100 * 10) / 10
-    };
-    
-    // Find weakest component
-    const components = {
-        'Description': priorityPercentages.description,
-        'Explanation': priorityPercentages.explanation,
-        'Prediction': priorityPercentages.prediction
-    };
-    
-    const weakestComponent = Object.keys(components).reduce((a, b) => 
-        components[a] <= components[b] ? a : b
-    );
-    
-    return {
-        percentages_raw: rawPercentages,
-        percentages_priority: priorityPercentages,
-        percentages: rawPercentages,
-        weakest_component: weakestComponent,
-        analysis_summary: `Analyzed ${totalWindows} windows. Raw: D:${rawPercentages.description}% E:${rawPercentages.explanation}% P:${rawPercentages.prediction}% (Total PV: ${rawPercentages.professional_vision}%). Priority-based: D:${priorityPercentages.description}% E:${priorityPercentages.explanation}% P:${priorityPercentages.prediction}% Other:${priorityPercentages.other}% = 100%`
-    };
-}
-
-// ============================================================================
-// Feedback Generation (Same as original)
-// ============================================================================
-
-async function generateWeightedFeedback(reflection, language, style, analysisResult) {
-    const promptType = `${style} ${language === 'en' ? 'English' : 'German'}`;
-    const systemPrompt = getFeedbackPrompt(promptType, analysisResult);
-    const pctPriority = analysisResult.percentages_priority;
-    
-    const languageInstruction = language === 'en' 
-        ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
-        : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
-    
-    const requestData = {
-        model: model,
-        messages: [
-            { role: "system", content: languageInstruction + "\n\n" + systemPrompt },
-            { role: "user", content: `Based on the analysis showing ${pctPriority.description}% description, ${pctPriority.explanation}% explanation, ${pctPriority.prediction}% prediction (Professional Vision: ${pctPriority.professional_vision}%) + Other: ${pctPriority.other}% = 100%, provide feedback for this reflection:\n\n${reflection}` }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000
-    };
-    
-    try {
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            let errorData = {};
-            try {
-                errorData = JSON.parse(errorText);
-            } catch (e) {
-                errorData = { error: { message: errorText } };
-            }
-            console.error(`Feedback generation failed: HTTP ${response.status}`, errorData);
-            console.error(`API URL: ${OPENAI_API_URL}`);
-            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        let feedback = result.choices[0].message.content;
-        
-        if (style === 'user-friendly') {
-            feedback = feedback.replace(/\s*\([^)]+\d{4}\)/g, '');
-        }
-        
-        return feedback;
-    } catch (error) {
-        console.error('Error in generateWeightedFeedback:', error);
-        throw error;
-    }
-}
-
-function getFeedbackPrompt(promptType, analysisResult) {
-    const weakestComponent = analysisResult?.weakest_component || 'Prediction';
-    
-    const prompts = {
-        'academic English': `You are a supportive yet rigorous teaching mentor providing feedback in a scholarly tone. Your feedback MUST be detailed, academic, and comprehensive, deeply integrating theory.
-
-**Knowledge Base Integration:**
-You MUST base your feedback on the theoretical framework of empirical teaching quality research. Specifically, use the process-oriented teaching-learning model (Seidel & Shavelson, 2007) or the three basic dimensions of teaching quality (Klieme, 2006) for feedback on description and explanation. For prediction, use self-determination theory (Deci & Ryan, 1993) or theories of cognitive and constructive learning (Atkinson & Shiffrin, 1968; Craik & Lockhart, 1972).
-
-**CRITICAL: You MUST explicitly cite these theories using the (Author, Year) format. Do NOT cite any other theories.**
-
-**MANDATORY WEIGHTED FEEDBACK STRUCTURE:**
-1. **Weakest Area Focus**: Write 6-8 detailed, academic sentences ONLY for the weakest component (${weakestComponent}), integrating multiple specific suggestions and deeply connecting them to theory.
-2. **Stronger Areas**: For the two stronger components, write EXACTLY 3-4 detailed sentences each (1 Strength, 1 Suggestion, 1 'Why' that explicitly connects to theory).
-3. **Conclusion**: Write 2-3 sentences summarizing the key area for development.
-
-**CRITICAL FOCUS REQUIREMENTS:**
-- Focus ONLY on analysis skills, not teaching performance.
-- Emphasize objective, non-evaluative observation for the Description section.
-
-**FORMATTING:**
-- Sections: "#### Description", "#### Explanation", "#### Prediction", "#### Conclusion"
-- Sub-headings: "Strength:", "Suggestions:", "Why:"`,
-        
-        'user-friendly English': `You are a friendly teaching mentor providing feedback for a busy teacher who wants quick, practical tips.
-
-**Style Guide - MUST BE FOLLOWED:**
-- **Language**: Use simple, direct language. Avoid academic jargon completely.
-- **Citations**: Do NOT include any in-text citations like (Author, Year).
-- **Focus**: Give actionable advice. Do NOT explain the theory behind the advice.
-
-**MANDATORY CONCISE FEEDBACK STRUCTURE:**
-1. **Weakest Area Focus**: For the weakest component (${weakestComponent}), provide a "Good:" section with 1-2 sentences, and a "Tip:" section with a bulleted list of 2-3 clear, practical tips.
-2. **Stronger Areas**: For the two stronger components, write a "Good:" section with one sentence and a "Tip:" section with one practical tip.
-3. **No Conclusion**: Do not include a "Conclusion" section.
-
-**FORMATTING:**
-- Sections: "#### Description", "#### Explanation", "#### Prediction"
-- Sub-headings: "Good:", "Tip:"`,
-        
-        'academic German': `Sie sind ein unterstützender, aber rigoroser Mentor, der Feedback in einem wissenschaftlichen Ton gibt. Ihr Feedback MUSS detailliert, akademisch und umfassend sein und die Theorie tief integrieren.
-
-**Wissensbasierte Integration:**
-Basieren Sie Ihr Feedback auf dem theoretischen Rahmen der empirischen Unterrichtsqualitätsforschung. Verwenden Sie das prozessorientierte Lehr-Lern-Modell (Seidel & Shavelson, 2007) oder die drei Grunddimensionen der Unterrichtsqualität (Klieme, 2006) für Feedback zu Beschreibung und Erklärung. Für die Vorhersage verwenden Sie die Selbstbestimmungstheorie der Motivation (Deci & Ryan, 1993) oder Theorien des kognitiven und konstruktiven Lernens (Atkinson & Shiffrin, 1968; Craik & Lockhart, 1972).
-
-**KRITISCH: Sie MÜSSEN diese Theorien explizit im Format (Autor, Jahr) zitieren. Zitieren Sie KEINE anderen Theorien.**
-
-**OBLIGATORISCHE GEWICHTETE FEEDBACK-STRUKTUR:**
-1. **Fokus auf den schwächsten Bereich**: Schreiben Sie 6-8 detaillierte, akademische Sätze NUR für die schwächste Komponente (${weakestComponent}), mit mehreren spezifischen Vorschlägen und tiefen theoretischen Verbindungen.
-2. **Stärkere Bereiche**: Für die beiden stärkeren Komponenten schreiben Sie GENAU 3-4 detaillierte Sätze (1 Stärke, 1 Vorschlag, 1 'Warum' mit explizitem Theoriebezug).
-3. **Fazit**: Schreiben Sie 2-3 Sätze, die den wichtigsten Entwicklungsbereich zusammenfassen.
-
-**KRITISCHE FOKUS-ANFORDERUNGEN:**
-- Konzentrieren Sie sich NUR auf Analysefähigkeiten, nicht auf die Lehrleistung.
-- Betonen Sie bei der Beschreibung eine objektive, nicht bewertende Beobachtung.
-
-**FORMATIERUNG:**
-- Abschnitte: "#### Beschreibung", "#### Erklärung", "#### Vorhersage", "#### Fazit"
-- Unterüberschriften: "Stärke:", "Vorschläge:", "Warum:"`,
-        
-        'user-friendly German': `Sie sind ein freundlicher Mentor, der Feedback für einen vielbeschäftigten Lehrer gibt, der schnelle, praktische Tipps wünscht.
-
-**Stilrichtlinie - MUSS BEFOLGT WERDEN:**
-- **Sprache**: Verwenden Sie einfache, direkte Sprache. Vermeiden Sie akademischen Jargon vollständig.
-- **Zitate**: Fügen Sie KEINE Zitate wie (Autor, Jahr) ein.
-- **Fokus**: Geben Sie handlungsorientierte Ratschläge. Erklären Sie NICHT die Theorie hinter den Ratschlägen.
-
-**OBLIGATORISCHE PRÄGNANTE FEEDBACK-STRUKTUR:**
-1. **Fokus auf den schwächsten Bereich**: Geben Sie für die schwächste Komponente (${weakestComponent}) einen "Gut:"-Abschnitt mit 1-2 Sätzen und einen "Tipp:"-Abschnitt mit einer Stichpunktliste von 2-3 klaren, praktischen Tipps.
-2. **Stärkere Bereiche**: Schreiben Sie für die beiden stärkeren Komponenten einen "Gut:"-Abschnitt mit einem Satz und einen "Tipp:"-Abschnitt mit einem praktischen Tipp.
-3. **Kein Fazit**: Fügen Sie keinen "Fazit"-Abschnitt hinzu.
-
-**FORMATIERUNG:**
-- Abschnitte: "#### Beschreibung", "#### Erklärung", "#### Vorhersage"
-- Unterüberschriften: "Gut:", "Tipp:"`
-    };
-    
-    return prompts[promptType] || prompts['academic English'];
-}
-
-function formatStructuredFeedback(text, analysisResult) {
-    if (!text) return '';
-
-    let formattedText = text.trim().replace(/\r\n/g, '\n').replace(/\*\*(.*?)\*\*/g, '$1');
-    const sections = formattedText.split(/####\s*/).filter(s => s.trim().length > 0);
-
-    const sectionMap = {
-        'Overall Assessment': 'overall', 'Gesamtbewertung': 'overall',
-        'Description': 'description', 'Beschreibung': 'description',
-        'Explanation': 'explanation', 'Erklärung': 'explanation',
-        'Prediction': 'prediction', 'Vorhersage': 'prediction',
-        'Conclusion': 'overall', 'Fazit': 'overall'
-    };
-
-    const processedSections = sections.map(sectionText => {
-        const lines = sectionText.trim().split('\n');
-        const heading = lines.shift().trim();
-        let body = lines.join('\n').trim();
-
-        let sectionClass = 'other';
-        for (const key in sectionMap) {
-            if (heading.toLowerCase().startsWith(key.toLowerCase())) {
-                sectionClass = sectionMap[key];
-                break;
-            }
-        }
-
-        const keywords = [
-            'Strength:', 'Stärke:', 'Suggestions:', 'Vorschläge:',
-            'Why:', 'Warum:', 'Good:', 'Gut:', 'Tip:', 'Tipp:'
-        ];
-
-        keywords.forEach(keyword => {
-            const regex = new RegExp(`^(${keyword.replace(':', '\\:')})`, 'gm');
-            body = body.replace(regex, `<span class="feedback-keyword">${keyword}</span>`);
-        });
-
-        body = body.replace(/\n/g, '<br>');
-
-        return `
-            <div class="feedback-section feedback-section-${sectionClass}">
-                <h4 class="feedback-heading">${heading}</h4>
-                <div class="section-content">${body}</div>
-            </div>
-        `;
-    }).join('');
-
-    return processedSections;
-}
-
-// ============================================================================
-// Database Functions
-// ============================================================================
-
-function initSupabase() {
-    if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('YOUR_') || SUPABASE_KEY.includes('YOUR_')) {
-        console.warn('Supabase credentials not set. Running in demo mode.');
-        showAlert('Running in demo mode - feedback works, but data won\'t be saved to database.', 'info');
-        return null;
-    }
-    
-    try {
-        if (typeof window.supabase === 'undefined' || !window.supabase) {
-            throw new Error('Supabase library not loaded from CDN.');
-        }
-        
-        if (typeof window.supabase.createClient !== 'function') {
-            throw new Error('Supabase createClient function not available.');
-        }
-        
-        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        if (!client) {
-            throw new Error('Failed to create Supabase client instance.');
-        }
-        
-        console.log('✅ Supabase client initialized successfully');
-        return client;
-    } catch (error) {
-        console.error('Error initializing Supabase client:', error);
-        showAlert('Database connection failed - running in demo mode. Feedback generation still works!', 'warning');
-        return null;
-    }
-}
-
-async function verifySupabaseConnection(client) {
-    if (!client) return;
-    
-    try {
-        const { data, error } = await client
-            .from('reflections')
-            .select('count')
-            .limit(1);
-        
-        if (error) {
-            console.error('Database connection test failed:', error);
-            showAlert('Database connection issue - data may not be saved.', 'warning');
-        } else {
-            console.log('✅ Supabase connection verified');
-        }
-    } catch (error) {
-        console.error('Error verifying Supabase connection:', error);
-    }
-}
-
-function getOrCreateSessionId() {
-    let sessionId = sessionStorage.getItem('session_id');
-    
-    if (!sessionId) {
-        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        sessionStorage.setItem('session_id', sessionId);
-        console.log('✅ New session created:', sessionId);
-    } else {
-        console.log('✅ Existing session found:', sessionId);
-    }
-    
-    return sessionId;
-}
-
-async function logEvent(eventType, eventData = {}) {
-    if (!supabase || !currentSessionId) {
-        console.log(`Event (no DB): ${eventType}`, eventData);
-        return;
-    }
-    
-    try {
-        const { error } = await supabase
-            .from('user_events')
-            .insert([{
-                session_id: currentSessionId,
-                reflection_id: eventData.reflection_id || null,
-                event_type: eventType,
-                event_data: eventData,
-                user_agent: navigator.userAgent,
-                language: currentLanguage,
-                timestamp_utc: new Date().toISOString()
-            }]);
-
-        if (error) {
-            console.error('Error logging event:', error);
-        } else {
-            console.log(`📝 Event logged: ${eventType}`, eventData);
-        }
-    } catch (error) {
-        console.error('Error in logEvent:', error);
-    }
-}
-
-async function storeBinaryClassificationResults(analysisResult) {
-    if (!supabase || !currentSessionId || !currentParticipant || !currentVideoId) return;
-    
-    try {
-        const classificationRecords = analysisResult.classificationResults.map(result => ({
-            session_id: currentSessionId,
-            reflection_id: currentTaskState.currentReflectionId,
-            task_id: `video-task-${currentVideoId}`,
-            participant_name: currentParticipant,
-            video_id: currentVideoId,
-            language: currentLanguage,
-            window_id: result.window_id,
-            window_text: result.window_text,
-            description_score: result.description,
-            explanation_score: result.explanation,
-            prediction_score: result.prediction,
-            created_at: new Date().toISOString()
-        }));
-        
-        if (classificationRecords.length > 0) {
-            const { data, error } = await supabase
-                .from('binary_classifications')
-                .insert(classificationRecords);
-            
-            if (error) {
-                console.error('Error storing binary classifications:', error);
-            } else {
-                console.log(`✅ ${classificationRecords.length} binary classifications stored`);
-            }
-        }
-    } catch (error) {
-        console.error('Error in storeBinaryClassificationResults:', error);
-    }
-}
-
-async function saveFeedbackToDatabase(data) {
-    if (!supabase) {
-        console.log('No database connection - running in demo mode');
-        return;
-    }
-    
-    try {
-        const revisionNumber = currentTaskState.revisionCount || 1;
-        const parentReflectionId = currentTaskState.parentReflectionId || null;
-
-        const reflectionData = {
-            session_id: currentSessionId,
-            participant_name: data.participantCode,
-            video_id: data.videoSelected,
-            language: currentLanguage,
-            task_id: `video-task-${data.videoSelected}`,
-            reflection_text: data.reflectionText,
-            analysis_percentages: {
-                raw: data.analysisResult.percentages_raw,
-                priority: data.analysisResult.percentages_priority,
-                displayed_to_student: data.analysisResult.percentages_raw
-            },
-            weakest_component: data.analysisResult.weakest_component,
-            feedback_extended: data.extendedFeedback,
-            feedback_short: data.shortFeedback,
-            revision_number: revisionNumber,
-            parent_reflection_id: parentReflectionId,
-            created_at: new Date().toISOString()
-        };
-
-        const { data: result, error } = await supabase
-            .from('reflections')
-            .insert([reflectionData])
-            .select()
-            .single();
-
-        if (error) {
-            console.error('Database insert error:', error);
-            return;
-        }
-
-        currentTaskState.currentReflectionId = result.id;
-        
-        if (revisionNumber === 1) {
-            currentTaskState.parentReflectionId = result.id;
-        }
-        
-        console.log(`✅ Reflection saved to database:`, result.id);
-        
-        logEvent('submit_reflection', {
-            video_id: data.videoSelected,
-            participant_name: data.participantCode,
-            language: currentLanguage,
-            reflection_id: result.id,
-            reflection_length: data.reflectionText.length,
-            analysis_percentages_raw: data.analysisResult.percentages_raw,
-            analysis_percentages_priority: data.analysisResult.percentages_priority,
-            weakest_component: data.analysisResult.weakest_component
-        });
-        
-    } catch (error) {
-        console.error('Error saving to database:', error);
-    }
-}
-
-// Session end tracking
-window.addEventListener('beforeunload', () => {
-    if (currentTaskState.currentFeedbackType && currentTaskState.currentFeedbackStartTime) {
-        endFeedbackViewing(currentTaskState.currentFeedbackType, currentLanguage);
-    }
-    
-    logEvent('session_end', {
-        session_duration: Date.now() - performance.timing.navigationStart,
-        language: currentLanguage,
-        final_page: currentPage,
-        video_id: currentVideoId,
-        participant_name: currentParticipant || null
-    });
-});
-
-            }
-            
-            const result = await response.json();
-            if (!result.choices || !result.choices[0]) {
-                console.error(`Binary classifier attempt ${attempt + 1}: Invalid response format`, result);
-                continue;
-            }
-            const output = result.choices[0].message.content.trim();
-            
-            if (output === '1' || output === '0') {
-                return parseInt(output);
-            }
-            
-            if (output.includes('1')) return 1;
-            if (output.includes('0')) return 0;
-            
-            console.warn(`Binary classifier attempt ${attempt + 1}: Unexpected output: "${output}"`);
-            
-        } catch (error) {
-            console.warn(`Binary classifier attempt ${attempt + 1} failed:`, error);
-        }
-    }
-    
-    console.error('All binary classifier attempts failed, defaulting to 0');
-    return 0;
-}
-
-function calculatePercentages(classificationResults) {
-    const totalWindows = classificationResults.length;
-    
-    if (totalWindows === 0) {
-        return {
-            percentages_raw: { description: 0, explanation: 0, prediction: 0, professional_vision: 0 },
-            percentages_priority: { description: 0, explanation: 0, prediction: 0, other: 100, professional_vision: 0 },
-            weakest_component: "Prediction",
-            analysis_summary: "No valid windows for analysis"
-        };
-    }
-    
-    // RAW CALCULATION (can exceed 100%)
-    let rawDescriptionCount = 0;
-    let rawExplanationCount = 0;
-    let rawPredictionCount = 0;
-    
-    classificationResults.forEach(result => {
-        if (result.description === 1) rawDescriptionCount++;
-        if (result.explanation === 1) rawExplanationCount++;
-        if (result.prediction === 1) rawPredictionCount++;
-    });
-    
-    const rawPercentages = {
-        description: Math.round((rawDescriptionCount / totalWindows) * 100 * 10) / 10,
-        explanation: Math.round((rawExplanationCount / totalWindows) * 100 * 10) / 10,
-        prediction: Math.round((rawPredictionCount / totalWindows) * 100 * 10) / 10,
-        professional_vision: Math.round(((rawDescriptionCount + rawExplanationCount + rawPredictionCount) / totalWindows) * 100 * 10) / 10
-    };
-    
-    // PRIORITY-BASED CALCULATION (adds to 100%)
-    let descriptionCount = 0;
-    let explanationCount = 0;
-    let predictionCount = 0;
-    let otherCount = 0;
-    
-    classificationResults.forEach(result => {
-        if (result.description === 1) {
-            descriptionCount++;
-        } else if (result.explanation === 1) {
-            explanationCount++;
-        } else if (result.prediction === 1) {
-            predictionCount++;
-        } else {
-            otherCount++;
-        }
-    });
-    
-    const priorityPercentages = {
-        description: Math.round((descriptionCount / totalWindows) * 100 * 10) / 10,
-        explanation: Math.round((explanationCount / totalWindows) * 100 * 10) / 10,
-        prediction: Math.round((predictionCount / totalWindows) * 100 * 10) / 10,
-        other: Math.round((otherCount / totalWindows) * 100 * 10) / 10,
-        professional_vision: Math.round(((descriptionCount + explanationCount + predictionCount) / totalWindows) * 100 * 10) / 10
-    };
-    
-    // Find weakest component
-    const components = {
-        'Description': priorityPercentages.description,
-        'Explanation': priorityPercentages.explanation,
-        'Prediction': priorityPercentages.prediction
-    };
-    
-    const weakestComponent = Object.keys(components).reduce((a, b) => 
-        components[a] <= components[b] ? a : b
-    );
-    
-    return {
-        percentages_raw: rawPercentages,
-        percentages_priority: priorityPercentages,
-        percentages: rawPercentages,
-        weakest_component: weakestComponent,
-        analysis_summary: `Analyzed ${totalWindows} windows. Raw: D:${rawPercentages.description}% E:${rawPercentages.explanation}% P:${rawPercentages.prediction}% (Total PV: ${rawPercentages.professional_vision}%). Priority-based: D:${priorityPercentages.description}% E:${priorityPercentages.explanation}% P:${priorityPercentages.prediction}% Other:${priorityPercentages.other}% = 100%`
-    };
-}
-
-// ============================================================================
-// Feedback Generation (Same as original)
-// ============================================================================
-
-async function generateWeightedFeedback(reflection, language, style, analysisResult) {
-    const promptType = `${style} ${language === 'en' ? 'English' : 'German'}`;
-    const systemPrompt = getFeedbackPrompt(promptType, analysisResult);
-    const pctPriority = analysisResult.percentages_priority;
-    
-    const languageInstruction = language === 'en' 
-        ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
-        : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
-    
-    const requestData = {
-        model: model,
-        messages: [
-            { role: "system", content: languageInstruction + "\n\n" + systemPrompt },
-            { role: "user", content: `Based on the analysis showing ${pctPriority.description}% description, ${pctPriority.explanation}% explanation, ${pctPriority.prediction}% prediction (Professional Vision: ${pctPriority.professional_vision}%) + Other: ${pctPriority.other}% = 100%, provide feedback for this reflection:\n\n${reflection}` }
-        ],
-        temperature: 0.3,
-        max_tokens: 2000
-    };
-    
-    try {
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            let errorData = {};
-            try {
-                errorData = JSON.parse(errorText);
-            } catch (e) {
-                errorData = { error: { message: errorText } };
-            }
-            console.error(`Feedback generation failed: HTTP ${response.status}`, errorData);
-            console.error(`API URL: ${OPENAI_API_URL}`);
-            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        let feedback = result.choices[0].message.content;
-        
-        if (style === 'user-friendly') {
-            feedback = feedback.replace(/\s*\([^)]+\d{4}\)/g, '');
-        }
-        
-        return feedback;
-    } catch (error) {
-        console.error('Error in generateWeightedFeedback:', error);
-        throw error;
-    }
-}
-
-function getFeedbackPrompt(promptType, analysisResult) {
-    const weakestComponent = analysisResult?.weakest_component || 'Prediction';
-    
-    const prompts = {
-        'academic English': `You are a supportive yet rigorous teaching mentor providing feedback in a scholarly tone. Your feedback MUST be detailed, academic, and comprehensive, deeply integrating theory.
-
-**Knowledge Base Integration:**
-You MUST base your feedback on the theoretical framework of empirical teaching quality research. Specifically, use the process-oriented teaching-learning model (Seidel & Shavelson, 2007) or the three basic dimensions of teaching quality (Klieme, 2006) for feedback on description and explanation. For prediction, use self-determination theory (Deci & Ryan, 1993) or theories of cognitive and constructive learning (Atkinson & Shiffrin, 1968; Craik & Lockhart, 1972).
-
-**CRITICAL: You MUST explicitly cite these theories using the (Author, Year) format. Do NOT cite any other theories.**
-
-**MANDATORY WEIGHTED FEEDBACK STRUCTURE:**
-1. **Weakest Area Focus**: Write 6-8 detailed, academic sentences ONLY for the weakest component (${weakestComponent}), integrating multiple specific suggestions and deeply connecting them to theory.
-2. **Stronger Areas**: For the two stronger components, write EXACTLY 3-4 detailed sentences each (1 Strength, 1 Suggestion, 1 'Why' that explicitly connects to theory).
-3. **Conclusion**: Write 2-3 sentences summarizing the key area for development.
-
-**CRITICAL FOCUS REQUIREMENTS:**
-- Focus ONLY on analysis skills, not teaching performance.
-- Emphasize objective, non-evaluative observation for the Description section.
-
-**FORMATTING:**
-- Sections: "#### Description", "#### Explanation", "#### Prediction", "#### Conclusion"
-- Sub-headings: "Strength:", "Suggestions:", "Why:"`,
-        
-        'user-friendly English': `You are a friendly teaching mentor providing feedback for a busy teacher who wants quick, practical tips.
-
-**Style Guide - MUST BE FOLLOWED:**
-- **Language**: Use simple, direct language. Avoid academic jargon completely.
-- **Citations**: Do NOT include any in-text citations like (Author, Year).
-- **Focus**: Give actionable advice. Do NOT explain the theory behind the advice.
-
-**MANDATORY CONCISE FEEDBACK STRUCTURE:**
-1. **Weakest Area Focus**: For the weakest component (${weakestComponent}), provide a "Good:" section with 1-2 sentences, and a "Tip:" section with a bulleted list of 2-3 clear, practical tips.
-2. **Stronger Areas**: For the two stronger components, write a "Good:" section with one sentence and a "Tip:" section with one practical tip.
-3. **No Conclusion**: Do not include a "Conclusion" section.
-
-**FORMATTING:**
-- Sections: "#### Description", "#### Explanation", "#### Prediction"
-- Sub-headings: "Good:", "Tip:"`,
-        
-        'academic German': `Sie sind ein unterstützender, aber rigoroser Mentor, der Feedback in einem wissenschaftlichen Ton gibt. Ihr Feedback MUSS detailliert, akademisch und umfassend sein und die Theorie tief integrieren.
-
-**Wissensbasierte Integration:**
-Basieren Sie Ihr Feedback auf dem theoretischen Rahmen der empirischen Unterrichtsqualitätsforschung. Verwenden Sie das prozessorientierte Lehr-Lern-Modell (Seidel & Shavelson, 2007) oder die drei Grunddimensionen der Unterrichtsqualität (Klieme, 2006) für Feedback zu Beschreibung und Erklärung. Für die Vorhersage verwenden Sie die Selbstbestimmungstheorie der Motivation (Deci & Ryan, 1993) oder Theorien des kognitiven und konstruktiven Lernens (Atkinson & Shiffrin, 1968; Craik & Lockhart, 1972).
-
-**KRITISCH: Sie MÜSSEN diese Theorien explizit im Format (Autor, Jahr) zitieren. Zitieren Sie KEINE anderen Theorien.**
-
-**OBLIGATORISCHE GEWICHTETE FEEDBACK-STRUKTUR:**
-1. **Fokus auf den schwächsten Bereich**: Schreiben Sie 6-8 detaillierte, akademische Sätze NUR für die schwächste Komponente (${weakestComponent}), mit mehreren spezifischen Vorschlägen und tiefen theoretischen Verbindungen.
-2. **Stärkere Bereiche**: Für die beiden stärkeren Komponenten schreiben Sie GENAU 3-4 detaillierte Sätze (1 Stärke, 1 Vorschlag, 1 'Warum' mit explizitem Theoriebezug).
-3. **Fazit**: Schreiben Sie 2-3 Sätze, die den wichtigsten Entwicklungsbereich zusammenfassen.
-
-**KRITISCHE FOKUS-ANFORDERUNGEN:**
-- Konzentrieren Sie sich NUR auf Analysefähigkeiten, nicht auf die Lehrleistung.
-- Betonen Sie bei der Beschreibung eine objektive, nicht bewertende Beobachtung.
-
-**FORMATIERUNG:**
-- Abschnitte: "#### Beschreibung", "#### Erklärung", "#### Vorhersage", "#### Fazit"
-- Unterüberschriften: "Stärke:", "Vorschläge:", "Warum:"`,
-        
-        'user-friendly German': `Sie sind ein freundlicher Mentor, der Feedback für einen vielbeschäftigten Lehrer gibt, der schnelle, praktische Tipps wünscht.
-
-**Stilrichtlinie - MUSS BEFOLGT WERDEN:**
-- **Sprache**: Verwenden Sie einfache, direkte Sprache. Vermeiden Sie akademischen Jargon vollständig.
-- **Zitate**: Fügen Sie KEINE Zitate wie (Autor, Jahr) ein.
-- **Fokus**: Geben Sie handlungsorientierte Ratschläge. Erklären Sie NICHT die Theorie hinter den Ratschlägen.
-
-**OBLIGATORISCHE PRÄGNANTE FEEDBACK-STRUKTUR:**
-1. **Fokus auf den schwächsten Bereich**: Geben Sie für die schwächste Komponente (${weakestComponent}) einen "Gut:"-Abschnitt mit 1-2 Sätzen und einen "Tipp:"-Abschnitt mit einer Stichpunktliste von 2-3 klaren, praktischen Tipps.
-2. **Stärkere Bereiche**: Schreiben Sie für die beiden stärkeren Komponenten einen "Gut:"-Abschnitt mit einem Satz und einen "Tipp:"-Abschnitt mit einem praktischen Tipp.
-3. **Kein Fazit**: Fügen Sie keinen "Fazit"-Abschnitt hinzu.
-
-**FORMATIERUNG:**
-- Abschnitte: "#### Beschreibung", "#### Erklärung", "#### Vorhersage"
-- Unterüberschriften: "Gut:", "Tipp:"`
-    };
-    
-    return prompts[promptType] || prompts['academic English'];
-}
-
-function formatStructuredFeedback(text, analysisResult) {
-    if (!text) return '';
-
-    let formattedText = text.trim().replace(/\r\n/g, '\n').replace(/\*\*(.*?)\*\*/g, '$1');
-    const sections = formattedText.split(/####\s*/).filter(s => s.trim().length > 0);
-
-    const sectionMap = {
-        'Overall Assessment': 'overall', 'Gesamtbewertung': 'overall',
-        'Description': 'description', 'Beschreibung': 'description',
-        'Explanation': 'explanation', 'Erklärung': 'explanation',
-        'Prediction': 'prediction', 'Vorhersage': 'prediction',
-        'Conclusion': 'overall', 'Fazit': 'overall'
-    };
-
-    const processedSections = sections.map(sectionText => {
-        const lines = sectionText.trim().split('\n');
-        const heading = lines.shift().trim();
-        let body = lines.join('\n').trim();
-
-        let sectionClass = 'other';
-        for (const key in sectionMap) {
-            if (heading.toLowerCase().startsWith(key.toLowerCase())) {
-                sectionClass = sectionMap[key];
-                break;
-            }
-        }
-
-        const keywords = [
-            'Strength:', 'Stärke:', 'Suggestions:', 'Vorschläge:',
-            'Why:', 'Warum:', 'Good:', 'Gut:', 'Tip:', 'Tipp:'
-        ];
-
-        keywords.forEach(keyword => {
-            const regex = new RegExp(`^(${keyword.replace(':', '\\:')})`, 'gm');
-            body = body.replace(regex, `<span class="feedback-keyword">${keyword}</span>`);
-        });
-
-        body = body.replace(/\n/g, '<br>');
-
-        return `
-            <div class="feedback-section feedback-section-${sectionClass}">
-                <h4 class="feedback-heading">${heading}</h4>
-                <div class="section-content">${body}</div>
-            </div>
-        `;
-    }).join('');
-
-    return processedSections;
-}
-
-// ============================================================================
-// Database Functions
-// ============================================================================
-
-function initSupabase() {
-    if (!SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('YOUR_') || SUPABASE_KEY.includes('YOUR_')) {
-        console.warn('Supabase credentials not set. Running in demo mode.');
-        showAlert('Running in demo mode - feedback works, but data won\'t be saved to database.', 'info');
-        return null;
-    }
-    
-    try {
-        if (typeof window.supabase === 'undefined' || !window.supabase) {
-            throw new Error('Supabase library not loaded from CDN.');
-        }
-        
-        if (typeof window.supabase.createClient !== 'function') {
-            throw new Error('Supabase createClient function not available.');
-        }
-        
-        const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-        if (!client) {
-            throw new Error('Failed to create Supabase client instance.');
-        }
-        
-        console.log('✅ Supabase client initialized successfully');
-        return client;
-    } catch (error) {
-        console.error('Error initializing Supabase client:', error);
-        showAlert('Database connection failed - running in demo mode. Feedback generation still works!', 'warning');
-        return null;
-    }
-}
-
-async function verifySupabaseConnection(client) {
-    if (!client) return;
-    
-    try {
-        const { data, error } = await client
-            .from('reflections')
-            .select('count')
-            .limit(1);
-        
-        if (error) {
-            console.error('Database connection test failed:', error);
-            showAlert('Database connection issue - data may not be saved.', 'warning');
-        } else {
-            console.log('✅ Supabase connection verified');
-        }
-    } catch (error) {
-        console.error('Error verifying Supabase connection:', error);
-    }
-}
-
-function getOrCreateSessionId() {
-    let sessionId = sessionStorage.getItem('session_id');
-    
-    if (!sessionId) {
-        sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        sessionStorage.setItem('session_id', sessionId);
-        console.log('✅ New session created:', sessionId);
-    } else {
-        console.log('✅ Existing session found:', sessionId);
-    }
-    
-    return sessionId;
-}
-
-async function logEvent(eventType, eventData = {}) {
-    if (!supabase || !currentSessionId) {
-        console.log(`Event (no DB): ${eventType}`, eventData);
-        return;
-    }
-    
-    try {
-        const { error } = await supabase
-            .from('user_events')
-            .insert([{
-                session_id: currentSessionId,
-                reflection_id: eventData.reflection_id || null,
-                event_type: eventType,
-                event_data: eventData,
-                user_agent: navigator.userAgent,
-                language: currentLanguage,
-                timestamp_utc: new Date().toISOString()
-            }]);
-
-        if (error) {
-            console.error('Error logging event:', error);
-        } else {
-            console.log(`📝 Event logged: ${eventType}`, eventData);
-        }
-    } catch (error) {
-        console.error('Error in logEvent:', error);
-    }
-}
-
-async function storeBinaryClassificationResults(analysisResult) {
-    if (!supabase || !currentSessionId || !currentParticipant || !currentVideoId) return;
-    
-    try {
-        const classificationRecords = analysisResult.classificationResults.map(result => ({
-            session_id: currentSessionId,
-            reflection_id: currentTaskState.currentReflectionId,
-            task_id: `video-task-${currentVideoId}`,
-            participant_name: currentParticipant,
-            video_id: currentVideoId,
-            language: currentLanguage,
-            window_id: result.window_id,
-            window_text: result.window_text,
-            description_score: result.description,
-            explanation_score: result.explanation,
-            prediction_score: result.prediction,
-            created_at: new Date().toISOString()
-        }));
-        
-        if (classificationRecords.length > 0) {
-            const { data, error } = await supabase
-                .from('binary_classifications')
-                .insert(classificationRecords);
-            
-            if (error) {
-                console.error('Error storing binary classifications:', error);
-            } else {
-                console.log(`✅ ${classificationRecords.length} binary classifications stored`);
-            }
-        }
-    } catch (error) {
-        console.error('Error in storeBinaryClassificationResults:', error);
-    }
-}
-
-async function saveFeedbackToDatabase(data) {
-    if (!supabase) {
-        console.log('No database connection - running in demo mode');
-        return;
-    }
-    
-    try {
-        const revisionNumber = currentTaskState.revisionCount || 1;
-        const parentReflectionId = currentTaskState.parentReflectionId || null;
-
-        const reflectionData = {
-            session_id: currentSessionId,
-            participant_name: data.participantCode,
-            video_id: data.videoSelected,
-            language: currentLanguage,
-            task_id: `video-task-${data.videoSelected}`,
-            reflection_text: data.reflectionText,
-            analysis_percentages: {
-                raw: data.analysisResult.percentages_raw,
-                priority: data.analysisResult.percentages_priority,
-                displayed_to_student: data.analysisResult.percentages_raw
-            },
-            weakest_component: data.analysisResult.weakest_component,
-            feedback_extended: data.extendedFeedback,
-            feedback_short: data.shortFeedback,
-            revision_number: revisionNumber,
-            parent_reflection_id: parentReflectionId,
-            created_at: new Date().toISOString()
-        };
-
-        const { data: result, error } = await supabase
-            .from('reflections')
-            .insert([reflectionData])
-            .select()
-            .single();
-
-        if (error) {
-            console.error('Database insert error:', error);
-            return;
-        }
-
-        currentTaskState.currentReflectionId = result.id;
-        
-        if (revisionNumber === 1) {
-            currentTaskState.parentReflectionId = result.id;
-        }
-        
-        console.log(`✅ Reflection saved to database:`, result.id);
-        
-        logEvent('submit_reflection', {
-            video_id: data.videoSelected,
-            participant_name: data.participantCode,
-            language: currentLanguage,
-            reflection_id: result.id,
-            reflection_length: data.reflectionText.length,
-            analysis_percentages_raw: data.analysisResult.percentages_raw,
-            analysis_percentages_priority: data.analysisResult.percentages_priority,
-            weakest_component: data.analysisResult.weakest_component
-        });
-        
-    } catch (error) {
-        console.error('Error saving to database:', error);
-    }
-}
-
-// Session end tracking
-window.addEventListener('beforeunload', () => {
-    if (currentTaskState.currentFeedbackType && currentTaskState.currentFeedbackStartTime) {
-        endFeedbackViewing(currentTaskState.currentFeedbackType, currentLanguage);
-    }
-    
-    logEvent('session_end', {
-        session_duration: Date.now() - performance.timing.navigationStart,
-        language: currentLanguage,
-        final_page: currentPage,
-        video_id: currentVideoId,
-        participant_name: currentParticipant || null
-    });
-});
-
