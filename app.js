@@ -1811,26 +1811,45 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                 const reviseBtn = document.getElementById(ids.reviseBtn);
                 const submitBtn = document.getElementById(ids.submitBtn);
                 
+                // Gamma: Use simple feedback display (no structured formatting)
+                // Check if this is simple feedback (no analysis_percentages means it's Gamma simple feedback)
+                const isSimpleFeedback = !reflection.analysis_percentages;
+                
                 if (reflection.feedback_extended && feedbackExtended) {
-                    const analysisResult = reflection.analysis_percentages ? {
-                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
-                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
-                        weakest_component: reflection.weakest_component || 'Prediction'
-                    } : null;
-                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
+                    if (isSimpleFeedback) {
+                        // Gamma simple feedback: display directly without formatting
+                        const feedbackHTML = reflection.feedback_extended.replace(/\n/g, '<br>');
+                        feedbackExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
+                        console.log('Gamma: Loaded simple feedback, length:', reflection.feedback_extended.length);
+                    } else {
+                        // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
+                        const analysisResult = reflection.analysis_percentages ? {
+                            percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                            percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                            weakest_component: reflection.weakest_component || 'Prediction'
+                        } : null;
+                        feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
+                    }
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
-                    const analysisResult = reflection.analysis_percentages ? {
-                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
-                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
-                        weakest_component: reflection.weakest_component || 'Prediction'
-                    } : null;
-                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
+                    if (isSimpleFeedback) {
+                        // Gamma simple feedback: display directly without formatting
+                        const feedbackHTML = reflection.feedback_short.replace(/\n/g, '<br>');
+                        feedbackShort.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
+                    } else {
+                        // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
+                        const analysisResult = reflection.analysis_percentages ? {
+                            percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                            percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                            weakest_component: reflection.weakest_component || 'Prediction'
+                        } : null;
+                        feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
+                    }
                 }
                 
-                // Show feedback tabs and buttons
-                if (feedbackTabs) feedbackTabs.classList.remove('d-none');
+                // Gamma: Hide tabs (same feedback for both)
+                if (feedbackTabs) feedbackTabs.classList.add('d-none');
                 if (reviseBtn) reviseBtn.style.display = 'inline-block';
                 if (submitBtn) submitBtn.style.display = 'block';
                 
@@ -1913,26 +1932,45 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                 const reviseBtn = document.getElementById(ids.reviseBtn);
                 const submitBtn = document.getElementById(ids.submitBtn);
                 
+                // Gamma: Use simple feedback display (no structured formatting)
+                // Check if this is simple feedback (no analysis_percentages means it's Gamma simple feedback)
+                const isSimpleFeedback = !reflection.analysis_percentages;
+                
                 if (reflection.feedback_extended && feedbackExtended) {
-                    const analysisResult = reflection.analysis_percentages ? {
-                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
-                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
-                        weakest_component: reflection.weakest_component || 'Prediction'
-                    } : null;
-                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
+                    if (isSimpleFeedback) {
+                        // Gamma simple feedback: display directly without formatting
+                        const feedbackHTML = reflection.feedback_extended.replace(/\n/g, '<br>');
+                        feedbackExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
+                        console.log('Gamma: Loaded simple feedback (legacy), length:', reflection.feedback_extended.length);
+                    } else {
+                        // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
+                        const analysisResult = reflection.analysis_percentages ? {
+                            percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                            percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                            weakest_component: reflection.weakest_component || 'Prediction'
+                        } : null;
+                        feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
+                    }
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
-                    const analysisResult = reflection.analysis_percentages ? {
-                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
-                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
-                        weakest_component: reflection.weakest_component || 'Prediction'
-                    } : null;
-                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
+                    if (isSimpleFeedback) {
+                        // Gamma simple feedback: display directly without formatting
+                        const feedbackHTML = reflection.feedback_short.replace(/\n/g, '<br>');
+                        feedbackShort.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
+                    } else {
+                        // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
+                        const analysisResult = reflection.analysis_percentages ? {
+                            percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                            percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                            weakest_component: reflection.weakest_component || 'Prediction'
+                        } : null;
+                        feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
+                    }
                 }
                 
-                // Show feedback tabs and buttons
-                if (feedbackTabs) feedbackTabs.classList.remove('d-none');
+                // Gamma: Hide tabs (same feedback for both)
+                if (feedbackTabs) feedbackTabs.classList.add('d-none');
                 if (reviseBtn) reviseBtn.style.display = 'inline-block';
                 if (submitBtn) submitBtn.style.display = 'block';
                 
@@ -2270,14 +2308,74 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
         // Gamma: Simple feedback generation without complex analysis
         const simpleFeedback = await generateSimpleFeedback(reflection, currentLanguage);
         
+        // Log the full feedback to console for debugging
+        console.log('Gamma: Full feedback received from API:', simpleFeedback);
+        console.log('Gamma: Feedback length:', simpleFeedback.length, 'characters');
+        
         // Display feedback (same format for both extended and short in Gamma)
         const feedbackExtended = document.getElementById(ids.feedbackExtended);
         const feedbackShort = document.getElementById(ids.feedbackShort);
         const feedbackTabs = document.getElementById(ids.feedbackTabs);
         
-        if (feedbackExtended) feedbackExtended.innerHTML = `<div class="feedback-content">${simpleFeedback.replace(/\n/g, '<br>')}</div>`;
-        if (feedbackShort) feedbackShort.innerHTML = `<div class="feedback-content">${simpleFeedback.replace(/\n/g, '<br>')}</div>`;
+        // Ensure we're displaying the full feedback - use textContent to preserve all content
+        const feedbackHTML = simpleFeedback.replace(/\n/g, '<br>');
+        
+        if (feedbackExtended) {
+            feedbackExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
+            console.log('Gamma: Feedback set to feedbackExtended element, length:', feedbackExtended.textContent.length);
+        }
+        if (feedbackShort) {
+            feedbackShort.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
+            console.log('Gamma: Feedback set to feedbackShort element, length:', feedbackShort.textContent.length);
+        }
         if (feedbackTabs) feedbackTabs.classList.add('d-none'); // Hide tabs in Gamma (same feedback for both)
+        
+        // Save feedback to database
+        if (supabase && currentParticipant && currentVideoId) {
+            try {
+                const revisionNumber = currentTaskState.revisionCount || 1;
+                const parentReflectionId = currentTaskState.parentReflectionId || null;
+                
+                let revisionTimeSeconds = null;
+                if (revisionNumber > 1 && currentTaskState.lastRevisionTime) {
+                    revisionTimeSeconds = (Date.now() - currentTaskState.lastRevisionTime) / 1000;
+                }
+                
+                const reflectionData = {
+                    session_id: currentSessionId,
+                    participant_name: currentParticipant,
+                    video_id: currentVideoId,
+                    language: currentLanguage,
+                    task_id: `video-task-${currentVideoId}`,
+                    reflection_text: reflection,
+                    feedback_extended: simpleFeedback, // Save the full feedback
+                    feedback_short: simpleFeedback,   // Same for short (Gamma uses same feedback)
+                    feedback_raw: simpleFeedback,      // Store raw LLM response
+                    revision_number: revisionNumber,
+                    parent_reflection_id: parentReflectionId,
+                    revision_time_seconds: revisionTimeSeconds,
+                    created_at: new Date().toISOString()
+                };
+                
+                const { data: result, error } = await supabase
+                    .from('reflections')
+                    .insert([reflectionData])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    console.error('Gamma: Error saving feedback to database:', error);
+                } else {
+                    console.log('Gamma: Feedback saved to database successfully');
+                    currentTaskState.currentReflectionId = result.id;
+                    if (revisionNumber === 1) {
+                        currentTaskState.parentReflectionId = result.id;
+                    }
+                }
+            } catch (dbError) {
+                console.error('Gamma: Error in saveFeedbackToDatabase:', dbError);
+            }
+        }
         
         if (loadingSpinner) loadingSpinner.style.display = 'none';
         if (loadingText) loadingText.style.display = 'none'; // Hide loading text when done
@@ -2286,7 +2384,8 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
         logEvent('simple_feedback_generated', {
             video_id: `video${videoNum}`,
             participant_name: currentParticipant,
-            language: currentLanguage
+            language: currentLanguage,
+            feedback_length: simpleFeedback.length
         });
     } catch (error) {
         console.error('Gamma: Error generating simple feedback:', error);
