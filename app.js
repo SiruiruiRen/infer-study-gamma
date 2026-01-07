@@ -1,6 +1,6 @@
 // INFER - 4-Video Experiment Version
 // STUDY VERSION: Gamma (Control Group)
-// - All videos: Simple feedback (1-2 sentences, no complex INFER analysis)
+// - All videos: Simple but comprehensive feedback (3-5 sentences, no complex INFER analysis)
 // - All surveys mandatory
 // - NO tutorial video (unlike Alpha)
 //
@@ -3885,16 +3885,17 @@ function calculatePercentages(classificationResults) {
 // Feedback Generation (Same as original)
 // ============================================================================
 
-// Generate simple feedback for Gamma (Control Group) - 1-2 sentences
+// Generate simple feedback for Gamma (Control Group) - comprehensive but simple feedback
 async function generateSimpleFeedback(reflection, language) {
     const languageInstruction = language === 'en' 
         ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
         : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
     
-    // Simple 1-2 sentence prompt for Gamma (Control Group)
+    // Comprehensive but simple feedback prompt for Gamma (Control Group)
+    // No complex analysis, but provide detailed, helpful feedback
     const simplePrompt = language === 'en'
-        ? "Provide brief, helpful feedback (1-2 sentences) for this teaching reflection."
-        : "Geben Sie kurzes, hilfreiches Feedback (1-2 Sätze) für diese Unterrichtsreflexion.";
+        ? "Provide comprehensive, helpful feedback for this teaching reflection. Write 3-5 sentences that offer constructive suggestions and insights. Focus on practical advice that can help improve teaching practice. Be specific and detailed in your feedback."
+        : "Geben Sie umfassendes, hilfreiches Feedback für diese Unterrichtsreflexion. Schreiben Sie 3-5 Sätze, die konstruktive Vorschläge und Einsichten bieten. Konzentrieren Sie sich auf praktische Ratschläge, die zur Verbesserung der Unterrichtspraxis beitragen können. Seien Sie spezifisch und detailliert in Ihrem Feedback.";
     
     const requestData = {
         model: model,
