@@ -1804,23 +1804,32 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
             }
             
             // Load previous feedback if available
-            if (reflection.feedback_extended || reflection.feedback_short) {
+            // BUT: Don't overwrite if we just generated new feedback
+            if (!currentTaskState.justGeneratedFeedback && (reflection.feedback_extended || reflection.feedback_short)) {
                 const feedbackExtended = document.getElementById(ids.feedbackExtended);
                 const feedbackShort = document.getElementById(ids.feedbackShort);
                 const feedbackTabs = document.getElementById(ids.feedbackTabs);
                 const reviseBtn = document.getElementById(ids.reviseBtn);
                 const submitBtn = document.getElementById(ids.submitBtn);
+                const extendedPane = document.getElementById(`video-${videoNum}-feedback-extended-pane`);
                 
                 // Gamma: Use simple feedback display (no structured formatting)
                 // Check if this is simple feedback (no analysis_percentages means it's Gamma simple feedback)
                 const isSimpleFeedback = !reflection.analysis_percentages;
+                
+                // Ensure extended pane is visible when loading feedback
+                if (extendedPane) {
+                    extendedPane.classList.add('show', 'active');
+                    extendedPane.classList.remove('fade');
+                }
                 
                 if (reflection.feedback_extended && feedbackExtended) {
                     if (isSimpleFeedback) {
                         // Gamma simple feedback: display directly without formatting
                         const feedbackHTML = reflection.feedback_extended.replace(/\n/g, '<br>');
                         feedbackExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-                        console.log('Gamma: Loaded simple feedback, length:', reflection.feedback_extended.length);
+                        console.log('Gamma: Loaded simple feedback from database, length:', reflection.feedback_extended.length);
+                        console.log('Gamma: Loaded feedback text:', reflection.feedback_extended);
                     } else {
                         // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
                         const analysisResult = reflection.analysis_percentages ? {
@@ -2381,7 +2390,7 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
                     reflection_text: reflection,
                     feedback_extended: simpleFeedback, // Save the full feedback
                     feedback_short: simpleFeedback,   // Same for short (Gamma uses same feedback)
-                    feedback_raw: simpleFeedback,      // Store raw LLM response
+                    // Note: feedback_raw column may not exist in schema, so we store it in feedback_extended
                     revision_number: revisionNumber,
                     parent_reflection_id: parentReflectionId,
                     revision_time_seconds: revisionTimeSeconds,
@@ -2412,6 +2421,10 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
         if (loadingText) loadingText.style.display = 'none'; // Hide loading text when done
         if (generateBtn) generateBtn.disabled = false;
         
+        // Mark that we just generated new feedback to prevent it from being overwritten
+        currentTaskState.feedbackGenerated = true;
+        currentTaskState.justGeneratedFeedback = true; // Flag to prevent overwriting
+        
         // Final verification - check what's actually visible in the UI
         setTimeout(() => {
             const finalCheckExtended = document.getElementById(ids.feedbackExtended);
@@ -2421,6 +2434,18 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
                 console.log('Gamma: FINAL CHECK - Extended element full text:', finalText);
                 console.log('Gamma: FINAL CHECK - Extended element innerHTML length:', finalCheckExtended.innerHTML.length);
                 
+                // Compare with what we set
+                if (finalText.length !== simpleFeedback.length) {
+                    console.warn('Gamma: WARNING - Feedback length mismatch! Expected:', simpleFeedback.length, 'Got:', finalText.length);
+                    console.warn('Gamma: Expected text:', simpleFeedback);
+                    console.warn('Gamma: Actual text:', finalText);
+                    
+                    // Restore the correct feedback if it was overwritten
+                    const feedbackHTML = simpleFeedback.replace(/\n/g, '<br>');
+                    finalCheckExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
+                    console.log('Gamma: Restored correct feedback');
+                }
+                
                 // Also check if the pane is visible
                 const finalPane = document.getElementById(`video-${videoNum}-feedback-extended-pane`);
                 if (finalPane) {
@@ -2428,9 +2453,21 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
                     console.log('Gamma: FINAL CHECK - Extended pane visible:', isVisible);
                     console.log('Gamma: FINAL CHECK - Extended pane classes:', finalPane.className);
                     console.log('Gamma: FINAL CHECK - Extended pane computed display:', window.getComputedStyle(finalPane).display);
+                    
+                    // Force visibility if needed
+                    if (!isVisible) {
+                        finalPane.classList.add('show', 'active');
+                        finalPane.classList.remove('fade');
+                        console.log('Gamma: Forced extended pane to be visible');
+                    }
                 }
             }
         }, 500);
+        
+        // Clear the flag after a delay to allow normal loading behavior later
+        setTimeout(() => {
+            currentTaskState.justGeneratedFeedback = false;
+        }, 2000);
         
         logEvent('simple_feedback_generated', {
             video_id: `video${videoNum}`,
