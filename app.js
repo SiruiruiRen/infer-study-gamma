@@ -116,7 +116,7 @@ const translations = {
         check_and_continue: "Check",
         open_video_link: "Open Video",
         finished_watching: "I Finished Watching the Video",
-        video_watch_instructions: "Please click \"Open Video\" above to watch the video in a new tab. After you finish watching, return here and click the button below. You will then write about what you have observed about teaching and learning and receive feedback.",
+        video_watch_instructions: "Please click \"Open Video\" above to watch the video in a new tab. After you finish watching, return here and click the button below. In the next screen, you will submit your reflection on this video. As you watch the video, we recommend that you take notes and draft your reflection in a word processor (e.g., Word), so you can paste it into the text box.",
         survey_completed_checkbox: "I have completed this survey",
         survey_required_instruction: "You must complete the survey above before checking this box.",
         survey_checkbox_required: "Please check the box to confirm you have completed the survey.",
@@ -167,6 +167,10 @@ const translations = {
         pre_survey_completed_message: "You have already completed the pre-survey. You can review it below or continue to the dashboard.",
         view_pre_survey: "View",
         presurvey_required: "You must complete the pre-survey before accessing video tasks.",
+        write_reflection_placeholder: "Write your reflection here...",
+        paste_reflection_placeholder: "Paste your reflection here...",
+        different_study_group_warning: "Warning: You are registered in a different study group. Please use the correct link for your assigned group.",
+        video_reflection_note: "In the next screen, you will submit your reflection on this video. As you watch the video, we recommend that you take notes and draft your reflection in a word processor (e.g., Word), so you can paste it into the text box.",
         video_tasks: "Video Tasks",
         video_completed: "Completed",
         start_video: "Start Video",
@@ -300,6 +304,10 @@ const translations = {
         pre_survey_completed_message: "Sie haben die Vor-Umfrage bereits abgeschlossen. Sie können sie unten überprüfen oder zum Dashboard fortfahren.",
         view_pre_survey: "Ansehen",
         presurvey_required: "Sie müssen die Vor-Umfrage abschließen, bevor Sie auf Video-Aufgaben zugreifen können.",
+        write_reflection_placeholder: "Schreiben Sie Ihre Reflexion hier...",
+        paste_reflection_placeholder: "Fügen Sie Ihre Reflexion hier ein...",
+        different_study_group_warning: "Warnung: Sie sind in einer anderen Studiengruppe registriert. Bitte verwenden Sie den korrekten Link für Ihre zugewiesene Gruppe.",
+        video_reflection_note: "Im nächsten Bildschirm werden Sie Ihre Reflexion zu diesem Video einreichen. Während Sie das Video ansehen, empfehlen wir Ihnen, Notizen zu machen und Ihre Reflexion in einem Textverarbeitungsprogramm (z.B. Word) zu verfassen, damit Sie sie in das Textfeld einfügen können.",
         start_pre_survey: "Jetzt starten",
         video_completed: "Abgeschlossen",
         start_video: "Video starten",
@@ -813,7 +821,7 @@ async function handleLogin() {
         if (existingTreatmentGroup && existingTreatmentGroup !== STUDY_CONDITION) {
             console.warn(`Participant ${participantCode} is assigned to ${existingTreatmentGroup} but accessing ${STUDY_CONDITION} site`);
             showAlert(
-                `Warning: You are registered in a different study group. Please use the correct link for your assigned group.`,
+                translations[currentLanguage].different_study_group_warning || `Warning: You are registered in a different study group. Please use the correct link for your assigned group.`,
                 'warning'
             );
             // Keep their original treatment_group - don't change it
