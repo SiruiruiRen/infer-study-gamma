@@ -167,8 +167,9 @@ const translations = {
         pre_survey_completed_message: "You have already completed the pre-survey. You can review it below or continue to the dashboard.",
         view_pre_survey: "View",
         presurvey_required: "You must complete the pre-survey before accessing video tasks.",
-        write_reflection_placeholder: "Write your reflection here...",
-        paste_reflection_placeholder: "Paste your reflection here...",
+        write_reflection_placeholder: "Paste or write your reflection here...",
+        paste_reflection_placeholder: "Paste or write your reflection here...",
+        paste_reflection: "Paste or write your reflection here...",
         different_study_group_warning: "Warning: You are registered in a different study group. Please use the correct link for your assigned group.",
         video_reflection_note: "In the next screen, you will submit your reflection on this video. As you watch the video, we recommend that you take notes and draft your reflection in a word processor (e.g., Word), so you can paste it into the text box.",
         video_tasks: "Video Tasks",
@@ -304,8 +305,9 @@ const translations = {
         pre_survey_completed_message: "Sie haben die Vor-Umfrage bereits abgeschlossen. Sie können sie unten überprüfen oder zum Dashboard fortfahren.",
         view_pre_survey: "Ansehen",
         presurvey_required: "Sie müssen die Vor-Umfrage abschließen, bevor Sie auf Video-Aufgaben zugreifen können.",
-        write_reflection_placeholder: "Schreiben Sie Ihre Reflexion hier...",
-        paste_reflection_placeholder: "Fügen Sie Ihre Reflexion hier ein...",
+        write_reflection_placeholder: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
+        paste_reflection_placeholder: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
+        paste_reflection: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
         different_study_group_warning: "Warnung: Sie sind in einer anderen Studiengruppe registriert. Bitte verwenden Sie den korrekten Link für Ihre zugewiesene Gruppe.",
         video_reflection_note: "Im nächsten Bildschirm werden Sie Ihre Reflexion zu diesem Video einreichen. Während Sie das Video ansehen, empfehlen wir Ihnen, Notizen zu machen und Ihre Reflexion in einem Textverarbeitungsprogramm (z.B. Word) zu verfassen, damit Sie sie in das Textfeld einfügen können.",
         start_pre_survey: "Jetzt starten",
@@ -3515,12 +3517,20 @@ function applyTranslations() {
     const t = translations[currentLanguage];
     if (!t) return;
     
+    // Update all elements with data-lang-key-placeholder attribute (for placeholders)
+    document.querySelectorAll('[data-lang-key-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-lang-key-placeholder');
+        if (t[key]) {
+            element.placeholder = t[key];
+        }
+    });
+    
     // Update all elements with data-lang-key attribute
     document.querySelectorAll('[data-lang-key]').forEach(element => {
         const key = element.getAttribute('data-lang-key');
         if (t[key]) {
-            // Check if it's a placeholder (either data-lang-key-placeholder or has placeholder attribute)
-            if (element.hasAttribute('data-lang-key-placeholder') || element.hasAttribute('placeholder')) {
+            // Check if it's a placeholder (has placeholder attribute)
+            if (element.hasAttribute('placeholder') && !element.hasAttribute('data-lang-key-placeholder')) {
                 element.placeholder = t[key];
             } 
             // For buttons with spans inside, update the span
