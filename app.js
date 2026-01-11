@@ -89,8 +89,11 @@ const translations = {
         login_title: "Enter Your Participant Code",
         code_help_text: "Create a code: First letter of mother's first name + birth month (2 digits) + birth year (2 digits).",
         code_example: "Example: Mother named Anna, born in August 1995 → A0895",
-        participant_code_label: "Participant Code:",
-        code_placeholder: "e.g., A0895",
+        student_id_label: "Student ID:",
+        student_id_placeholder: "Enter your student ID",
+        participant_code_label: "Anonymous ID (Participant Code):",
+        code_placeholder: "e.g., ER04LF09",
+        anonymous_id_help: "Generate from: First letter of mother's first name + first letter of mother's last name + birth day (2 digits) + first letter of father's first name + first letter of father's last name + birth month (2 digits). Example: Elke-Hannelore Müller, Wolf-Rüdiger Müller, born 09.11.1987 → ER04LF09",
         continue_button: "Continue",
         pre_survey_title: "Pre-Survey",
         pre_survey_subtitle: "Please complete the pre-survey before starting",
@@ -103,7 +106,7 @@ const translations = {
         dashboard_welcome_new: "Welcome, ",
         your_progress: "Your Progress",
         videos_completed: "0/4 Videos Completed",
-        time_limit: "You have 2.5 weeks to complete all 4 videos",
+        time_limit: "The site is open from February 1 to March 31. We recommend that you complete one video each week, so that you have enough time for spaced practice.",
         all_videos_completed: "All Videos Completed!",
         final_survey_prompt: "Please complete the final post-survey to finish the experiment.",
         start_post_survey: "Start Post-Survey",
@@ -116,7 +119,8 @@ const translations = {
         check_and_continue: "Check",
         open_video_link: "Open Video",
         finished_watching: "I Finished Watching the Video",
-        video_watch_instructions: "Please click \"Open Video\" above to watch the video in a new tab. After you finish watching, return here and click the button below. In the next screen, you will submit your reflection on this video. As you watch the video, we recommend that you take notes and draft your reflection in a word processor (e.g., Word), so you can paste it into the text box.",
+        video_watch_instructions: "<strong>Please read the following instructions carefully:</strong><br><br><strong>1.</strong> You need to take notes as you watch the video.<br><br><strong>2.</strong> You will submit your reflection on the video in the next page to complete the assignment.<br><br><strong>Recommendation:</strong> We recommend that you take notes and draft your reflection in a word processor (e.g., Word) as you watch the video, so you can paste it into the text box on the next page.",
+        video_instructions_read_checkbox: "I've read the instructions",
         survey_completed_checkbox: "I have completed this survey",
         survey_required_instruction: "You must complete the survey above before checking this box.",
         survey_checkbox_required: "Please check the box to confirm you have completed the survey.",
@@ -206,7 +210,7 @@ const translations = {
         watch_tutorial: "Watch Tutorial",
         tutorial_video_title: "INFER Tutorial",
         welcome_to_infer: "Welcome to INFER",
-        welcome_message: "Thank you for participating in this study on AI-supported teaching reflection. Over the next 2.5 weeks, you will analyze 4 teaching videos using our INFER system.",
+        welcome_message: "Thank you for participating in this study on AI-supported teaching reflection. The site is open from February 1 to March 31. We recommend that you complete one video each week, so that you have enough time for spaced practice. You will analyze 4 teaching videos using our INFER system.",
         browser_recommendation: "For the best experience, we recommend using <strong>Google Chrome</strong>.",
         data_protection_header: "Data Protection Information",
         data_protection_intro: "Please read the data protection information document below.",
@@ -232,8 +236,11 @@ const translations = {
         login_title: "Geben Sie Ihren Teilnehmer-Code ein",
         code_help_text: "Erstellen Sie einen Code: Erster Buchstabe des Vornamens der Mutter + Geburtsmonat (2 Ziffern) + Geburtsjahr (2 Ziffern).",
         code_example: "Beispiel: Mutter heißt Anna, geboren im August 1995 → A0895",
-        participant_code_label: "Ihr Teilnehmer-Code:",
-        code_placeholder: "z.B. A0895",
+        student_id_label: "Studenten-ID:",
+        student_id_placeholder: "Geben Sie Ihre Studenten-ID ein",
+        participant_code_label: "Anonyme ID (Teilnehmer-Code):",
+        code_placeholder: "z.B. ER04LF09",
+        anonymous_id_help: "Erstellen aus: Erster Buchstabe des Vornamens der Mutter + erster Buchstabe des Nachnamens der Mutter + Geburtstag (2 Ziffern) + erster Buchstabe des Vornamens des Vaters + erster Buchstabe des Nachnamens des Vaters + Geburtsmonat (2 Ziffern). Beispiel: Elke-Hannelore Müller, Wolf-Rüdiger Müller, geboren 09.11.1987 → ER04LF09",
         continue_button: "Weiter",
         pre_survey_title: "Vor-Umfrage",
         pre_survey_subtitle: "Bitte vervollständigen Sie die Vor-Umfrage, bevor Sie beginnen",
@@ -246,7 +253,7 @@ const translations = {
         dashboard_welcome_new: "Willkommen, ",
         your_progress: "Ihr Fortschritt",
         videos_completed: "0/4 Videos abgeschlossen",
-        time_limit: "Sie haben 2,5 Wochen Zeit, um alle 4 Videos zu vervollständigen",
+        time_limit: "Die Website ist vom 1. Februar bis 31. März geöffnet. Wir empfehlen, dass Sie ein Video pro Woche abschließen, damit Sie genügend Zeit für verteiltes Üben haben.",
         all_videos_completed: "Alle Videos abgeschlossen!",
         final_survey_prompt: "Bitte vervollständigen Sie die abschließende Nach-Umfrage, um das Experiment abzuschließen.",
         start_post_survey: "Nach-Umfrage starten",
@@ -257,7 +264,8 @@ const translations = {
         check_and_continue: "Prüfen",
         open_video_link: "Video öffnen",
         finished_watching: "Ich habe das Video angeschaut",
-        video_watch_instructions: "Bitte klicken Sie oben auf \"Video öffnen\", um das Video in einem neuen Tab anzusehen. Nachdem Sie das Video angeschaut haben, kehren Sie hierher zurück und klicken Sie auf die Schaltfläche unten. Im nächsten Bildschirm werden Sie Ihre Reflexion zu diesem Video einreichen. Während Sie das Video ansehen, empfehlen wir Ihnen, Notizen zu machen und Ihre Reflexion in einem Textverarbeitungsprogramm (z.B. Word) zu verfassen, damit Sie sie in das Textfeld einfügen können.",
+        video_watch_instructions: "<strong>Bitte lesen Sie die folgenden Anweisungen sorgfältig:</strong><br><br><strong>1.</strong> Sie müssen Notizen machen, während Sie das Video ansehen.<br><br><strong>2.</strong> Sie werden Ihre Reflexion zum Video auf der nächsten Seite einreichen, um die Aufgabe abzuschließen.<br><br><strong>Empfehlung:</strong> Wir empfehlen Ihnen, Notizen zu machen und Ihre Reflexion in einem Textverarbeitungsprogramm (z.B. Word) zu verfassen, während Sie das Video ansehen, damit Sie sie in das Textfeld auf der nächsten Seite einfügen können.",
+        video_instructions_read_checkbox: "Ich habe die Anweisungen gelesen",
         survey_completed_checkbox: "Ich habe diese Umfrage abgeschlossen",
         survey_required_instruction: "Sie müssen die Umfrage oben abschließen, bevor Sie dieses Kästchen ankreuzen.",
         survey_checkbox_required: "Bitte bestätigen Sie durch Ankreuzen, dass Sie die Umfrage abgeschlossen haben.",
@@ -333,7 +341,7 @@ const translations = {
         data_consent_disagree: "Ich stimme der Verwendung meiner anonymisierten Daten für wissenschaftliche Zwecke nicht zu.",
         consent_disagreement_message: "Sie können trotzdem am Experiment teilnehmen. Allerdings werden nur Daten von Teilnehmern verwendet, die zugestimmt haben.",
         welcome_to_infer: "Willkommen zu INFER",
-        welcome_message: "Vielen Dank für Ihre Teilnahme an dieser Studie zur KI-gestützten Unterrichtsreflexion. In den nächsten 2,5 Wochen werden Sie 4 Unterrichtsvideos mit unserem INFER-System analysieren.",
+        welcome_message: "Vielen Dank für Ihre Teilnahme an dieser Studie zur KI-gestützten Unterrichtsreflexion. Die Website ist vom 1. Februar bis 31. März geöffnet. Wir empfehlen, dass Sie ein Video pro Woche abschließen, damit Sie genügend Zeit für verteiltes Üben haben. Sie werden 4 Unterrichtsvideos mit unserem INFER-System analysieren.",
         browser_recommendation: "Für die beste Erfahrung empfehlen wir die Verwendung von <strong>Google Chrome</strong>.",
         video_tasks: "Video-Aufgaben",
         thank_you_title: "Vielen Dank!",
@@ -546,8 +554,25 @@ function setupEventListeners() {
     
     // Video link page check buttons (4 videos)
     for (let i = 1; i <= 4; i++) {
+        // Checkbox to enable/disable the continue button
+        const checkbox = document.getElementById(`video-link-${i}-instructions-read`);
+        const checkBtn = document.getElementById(`video-link-${i}-check-btn`);
+        
+        if (checkbox && checkBtn) {
+            checkbox.addEventListener('change', () => {
+                checkBtn.disabled = !checkbox.checked;
+            });
+        }
+        
         // "Finished watching" button - proceed to reflection
-        document.getElementById(`video-link-${i}-check-btn`)?.addEventListener('click', () => {
+        checkBtn?.addEventListener('click', () => {
+            // Verify checkbox is checked
+            if (!checkbox || !checkbox.checked) {
+                const t = translations[currentLanguage];
+                showAlert(t.video_instructions_read_checkbox || 'Please confirm you have read the instructions.', 'warning');
+                return;
+            }
+            
             logEvent('video_watched_confirmed', {
                 video_id: `video${i}`,
                 participant_name: currentParticipant
@@ -810,11 +835,19 @@ function handleConsentContinue() {
 // Login handler
 async function handleLogin() {
     const codeInput = document.getElementById('participant-code-input');
+    const studentIdInput = document.getElementById('student-id-input');
     const participantCode = codeInput?.value.trim().toUpperCase();
+    const studentId = studentIdInput?.value.trim();
     
     if (!participantCode) {
         const t = translations[currentLanguage];
         showAlert(t.enter_participant_code || 'Please enter your participant code.', 'warning');
+        return;
+    }
+    
+    if (!studentId) {
+        const t = translations[currentLanguage];
+        showAlert(t.student_id_label || 'Please enter your student ID.', 'warning');
         return;
     }
     
@@ -853,12 +886,19 @@ async function handleLogin() {
         if (!currentParticipantProgress.videos_completed) currentParticipantProgress.videos_completed = [];
         if (!currentParticipantProgress.video_surveys) currentParticipantProgress.video_surveys = {};
         
-        // Update last active time
+        // Update last active time, student_id, and anonymous_id if provided
         if (supabase) {
+            const updateData = { 
+                last_active_at: new Date().toISOString(),
+                anonymous_id: participantCode  // anonymous_id is the same as participant_name
+            };
+            if (studentId) {
+                updateData.student_id = studentId;
+            }
             supabase.from('participant_progress')
-                .update({ last_active_at: new Date().toISOString() })
+                .update(updateData)
                 .eq('participant_name', participantCode)
-                .then(() => console.log('Updated last_active_at for', participantCode));
+                .then(() => console.log('Updated last_active_at, student_id, and anonymous_id for', participantCode));
         }
         
         // Show resume message
@@ -883,7 +923,7 @@ async function handleLogin() {
         const condition = assignCondition(participantCode);
         
         // Create new progress record
-        await createParticipantProgress(participantCode, condition);
+        await createParticipantProgress(participantCode, condition, studentId);
         currentParticipantProgress = {
             participant_name: participantCode,
             assigned_condition: condition,
@@ -956,7 +996,7 @@ async function loadParticipantProgress(participantName) {
 }
 
 // Create participant progress
-async function createParticipantProgress(participantName, condition) {
+async function createParticipantProgress(participantName, condition, studentId = null) {
     if (!supabase) return;
     
     try {
@@ -970,6 +1010,13 @@ async function createParticipantProgress(participantName, condition) {
             video_surveys: {},
             last_active_at: new Date().toISOString()
         };
+        
+        // Add student_id and anonymous_id if provided
+        if (studentId) {
+            progressData.student_id = studentId;
+        }
+        // anonymous_id is the same as participant_name (the participant code)
+        progressData.anonymous_id = participantName;
         
         // Always set treatment_group based on which site they're accessing
         // This ensures participants are assigned to the correct group based on their link
@@ -3154,6 +3201,11 @@ async function handleSaveReflection(videoNum) {
     
     // Save reflection to database (as a draft/save, not final)
     if (supabase && currentParticipant) {
+        // Ensure session_id is set
+        if (!currentSessionId) {
+            currentSessionId = getOrCreateSessionId();
+        }
+        
         try {
             const { data, error } = await supabase
                 .from('reflections')
@@ -3165,8 +3217,7 @@ async function handleSaveReflection(videoNum) {
                     language: currentLanguage,
                     reflection_text: reflectionText,
                     revision_number: currentTaskState.revisionCount || 1,
-                    is_draft: true, // Mark as draft/save
-                    // No feedback for save
+                    // No feedback for save (draft save)
                     feedback_extended: null,
                     feedback_short: null,
                     analysis_percentages: null,

@@ -172,8 +172,14 @@
                             <p class="text-muted small" data-lang-key="code_example">Example: Mother named Anna, born in August 1995 → <strong>A0895</strong></p>
                             
                             <div class="mb-3">
-                                <label for="participant-code-input" class="form-label" data-lang-key="participant_code_label">Participant Code:</label>
-                                <input type="text" class="form-control" id="participant-code-input" data-lang-key-placeholder="code_placeholder" placeholder="e.g., A0895" maxlength="20" autofocus>
+                                <label for="student-id-input" class="form-label" data-lang-key="student_id_label">Student ID:</label>
+                                <input type="text" class="form-control" id="student-id-input" data-lang-key-placeholder="student_id_placeholder" placeholder="Enter your student ID" maxlength="50" autofocus>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="participant-code-input" class="form-label" data-lang-key="participant_code_label">Anonymous ID (Participant Code):</label>
+                                <input type="text" class="form-control" id="participant-code-input" data-lang-key-placeholder="code_placeholder" placeholder="e.g., ER04LF09" maxlength="20">
+                                <small class="form-text text-muted" data-lang-key="anonymous_id_help">Generate from: First letter of mother's first name + first letter of mother's last name + birth day (2 digits) + first letter of father's first name + first letter of father's last name + birth month (2 digits). Example: Elke-Hannelore Müller, Wolf-Rüdiger Müller, born 09.11.1987 → ER04LF09</small>
                             </div>
                             
                             <div id="resume-info" class="alert alert-info d-none">
@@ -385,10 +391,18 @@
                                 <input type="text" class="form-control" id="video-link-1-password" placeholder="" value="" readonly>
                             </div>
                             <div class="alert alert-info mb-4">
-                                <span data-lang-key="video_watch_instructions">Please click "Open Video" above to watch the video in a new tab. After you finish watching, return here and click the button below.</span>
+                                <div data-lang-key="video_watch_instructions" style="line-height: 1.8;"><strong>Please read the following instructions carefully:</strong><br><br><strong>1.</strong> You need to take notes as you watch the video.<br><br><strong>2.</strong> You will submit your reflection on the video in the next page to complete the assignment.<br><br><strong>Recommendation:</strong> We recommend that you take notes and draft your reflection in a word processor (e.g., Word) as you watch the video, so you can paste it into the text box on the next page.</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="video-link-1-instructions-read" required>
+                                    <label class="form-check-label" for="video-link-1-instructions-read" data-lang-key="video_instructions_read_checkbox">
+                                        I've read the instructions
+                                    </label>
+                                </div>
                             </div>
                             <div class="text-center">
-                                <button id="video-link-1-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching">I Finished Watching the Video</button>
+                                <button id="video-link-1-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching" disabled>I Finished Watching the Video</button>
                             </div>
                         </div>
                     </div>
@@ -541,10 +555,18 @@
                                 <input type="text" class="form-control" id="video-link-2-password" placeholder="" value="" readonly>
                             </div>
                             <div class="alert alert-info mb-4">
-                                <span data-lang-key="video_watch_instructions">Please click "Open Video" above to watch the video in a new tab. After you finish watching, return here and click the button below.</span>
+                                <div data-lang-key="video_watch_instructions" style="line-height: 1.8;"><strong>Please read the following instructions carefully:</strong><br><br><strong>1.</strong> You need to take notes as you watch the video.<br><br><strong>2.</strong> You will submit your reflection on the video in the next page to complete the assignment.<br><br><strong>Recommendation:</strong> We recommend that you take notes and draft your reflection in a word processor (e.g., Word) as you watch the video, so you can paste it into the text box on the next page.</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="video-link-2-instructions-read" required>
+                                    <label class="form-check-label" for="video-link-2-instructions-read" data-lang-key="video_instructions_read_checkbox">
+                                        I've read the instructions
+                                    </label>
+                                </div>
                             </div>
                             <div class="text-center">
-                                <button id="video-link-2-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching">I Finished Watching the Video</button>
+                                <button id="video-link-2-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching" disabled>I Finished Watching the Video</button>
                             </div>
                         </div>
                     </div>
@@ -751,10 +773,18 @@
                                 <input type="text" class="form-control" id="video-link-3-password" placeholder="" value="" readonly>
                             </div>
                             <div class="alert alert-info mb-4">
-                                <span data-lang-key="video_watch_instructions">Please click "Open Video" above to watch the video in a new tab. After you finish watching, return here and click the button below.</span>
+                                <div data-lang-key="video_watch_instructions" style="line-height: 1.8;"><strong>Please read the following instructions carefully:</strong><br><br><strong>1.</strong> You need to take notes as you watch the video.<br><br><strong>2.</strong> You will submit your reflection on the video in the next page to complete the assignment.<br><br><strong>Recommendation:</strong> We recommend that you take notes and draft your reflection in a word processor (e.g., Word) as you watch the video, so you can paste it into the text box on the next page.</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="video-link-3-instructions-read" required>
+                                    <label class="form-check-label" for="video-link-3-instructions-read" data-lang-key="video_instructions_read_checkbox">
+                                        I've read the instructions
+                                    </label>
+                                </div>
                             </div>
                             <div class="text-center">
-                                <button id="video-link-3-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching">I Finished Watching the Video</button>
+                                <button id="video-link-3-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching" disabled>I Finished Watching the Video</button>
                             </div>
                         </div>
                     </div>
@@ -961,10 +991,18 @@
                                 <input type="text" class="form-control" id="video-link-4-password" placeholder="" value="" readonly>
                             </div>
                             <div class="alert alert-info mb-4">
-                                <span data-lang-key="video_watch_instructions">Please click "Open Video" above to watch the video in a new tab. After you finish watching, return here and click the button below.</span>
+                                <div data-lang-key="video_watch_instructions" style="line-height: 1.8;"><strong>Please read the following instructions carefully:</strong><br><br><strong>1.</strong> You need to take notes as you watch the video.<br><br><strong>2.</strong> You will submit your reflection on the video in the next page to complete the assignment.<br><br><strong>Recommendation:</strong> We recommend that you take notes and draft your reflection in a word processor (e.g., Word) as you watch the video, so you can paste it into the text box on the next page.</div>
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="video-link-4-instructions-read" required>
+                                    <label class="form-check-label" for="video-link-4-instructions-read" data-lang-key="video_instructions_read_checkbox">
+                                        I've read the instructions
+                                    </label>
+                                </div>
                             </div>
                             <div class="text-center">
-                                <button id="video-link-4-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching">I Finished Watching the Video</button>
+                                <button id="video-link-4-check-btn" class="btn btn-success btn-lg" data-lang-key="finished_watching" disabled>I Finished Watching the Video</button>
                             </div>
                         </div>
                     </div>
