@@ -886,10 +886,16 @@ async function handleLogin() {
         if (existingTreatmentGroup && existingTreatmentGroup !== STUDY_CONDITION) {
             console.warn(`Participant ${participantCode} is assigned to ${existingTreatmentGroup} but accessing ${STUDY_CONDITION} site`);
             showAlert(
-                translations[currentLanguage].different_study_group_warning || `Warning: You are registered in a different study group. Please use the correct link for your assigned group.`,
-                'warning'
+                `Error: You are registered in a different study group (${existingTreatmentGroup}). Please use the correct link for your assigned group. Access blocked.`,
+                'danger'
             );
-            // Keep their original treatment_group - don't change it
+            // Block access - don't allow them to continue
+            logEvent('wrong_site_access_attempt', {
+                participant_name: participantCode,
+                assigned_group: existingTreatmentGroup,
+                attempted_site: STUDY_CONDITION
+            });
+            return; // Exit function - don't proceed
         } else if (!existingTreatmentGroup) {
             // If treatment_group is missing, set it based on current site
             console.log(`Setting missing treatment_group to ${STUDY_CONDITION} for ${participantCode}`);
