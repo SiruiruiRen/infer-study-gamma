@@ -397,15 +397,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const anonymousId = urlParams.get('anonymous_id');
     
     if (studentId && anonymousId) {
-        // Coming from assignment site - skip consent, go directly to login
-        // Pre-fill the login form
+        // Coming from assignment site - hide welcome page immediately, go directly to login
+        const welcomePage = document.getElementById('page-welcome');
+        if (welcomePage) welcomePage.classList.add('d-none');
+        
+        // Pre-fill the login form and show login page
         setTimeout(() => {
             showPage('login');
             const codeInput = document.getElementById('participant-code-input');
             const studentIdInput = document.getElementById('student-id-input');
             if (codeInput) codeInput.value = anonymousId;
             if (studentIdInput) studentIdInput.value = studentId;
-        }, 500);
+        }, 100);
     }
     
     initializeApp();
@@ -418,10 +421,14 @@ function initializeApp() {
     renderLanguageSwitcherInNav();
     applyTranslations();
     
-    // Check if we should skip welcome page (coming from assignment site)
+    // Check if coming from assignment site (with URL params) - skip welcome, show login
     const urlParams = new URLSearchParams(window.location.search);
-    if (!urlParams.get('student_id') || !urlParams.get('anonymous_id')) {
-        showPage('welcome');
+    if (urlParams.get('student_id') && urlParams.get('anonymous_id')) {
+        // Coming from assignment site - login page will be shown by setTimeout in DOMContentLoaded
+        // Welcome page stays hidden
+    } else {
+        // Direct visitor - show login page (welcome page stays hidden)
+        showPage('login');
     }
     
     // Set default language to German
