@@ -2473,8 +2473,8 @@ async function generateSimpleFeedbackForVideo(reflection, videoNum) {
         const hasIrrelevantContent = irrelevantPatterns.test(reflection);
         if (hasIrrelevantContent && reflection.length < 100) {
             const warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your reflection appears to contain irrelevant content or test words. Please write a meaningful reflection about the teaching video you watched."
-                : "⚠️ Ihre Reflexion scheint irrelevante Inhalte oder Testwörter zu enthalten. Bitte schreiben Sie eine aussagekräftige Reflexion über das Unterrichtsvideo, das Sie gesehen haben.";
+                ? "⚠️ Your reflection does not relate to the teaching video. Please write a reflection about what you observed in the video."
+                : "⚠️ Ihre Reflexion bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine Reflexion über das, was Sie im Video beobachtet haben.";
             
             logEvent('irrelevant_reflection_detected', {
                 participant_name: currentParticipant,
