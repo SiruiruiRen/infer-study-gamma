@@ -3558,11 +3558,16 @@ function switchLanguage(lang) {
 
 function renderLanguageSwitchers() {
     const containers = document.querySelectorAll('.language-switcher-container');
+    const t = translations[currentLanguage];
+    const tooltipText = t.language_tooltip || (currentLanguage === 'en' 
+        ? "Feedback is generated in the selected language. Switch before generating, or regenerate to change language."
+        : "Feedback wird in der ausgewählten Sprache generiert. Vor der Generierung wechseln oder neu generieren, um die Sprache zu ändern.");
+    
     containers.forEach(container => {
         container.innerHTML = `
             <div class="btn-group" role="group">
-                <button type="button" class="btn ${currentLanguage === 'en' ? 'btn-primary' : 'btn-outline-primary'}" id="lang-switch-en">English</button>
-                <button type="button" class="btn ${currentLanguage === 'de' ? 'btn-primary' : 'btn-outline-primary'}" id="lang-switch-de">Deutsch</button>
+                <button type="button" class="btn ${currentLanguage === 'en' ? 'btn-primary' : 'btn-outline-primary'}" id="lang-switch-en" title="${tooltipText}">English</button>
+                <button type="button" class="btn ${currentLanguage === 'de' ? 'btn-primary' : 'btn-outline-primary'}" id="lang-switch-de" title="${tooltipText}">Deutsch</button>
             </div>
         `;
     });
