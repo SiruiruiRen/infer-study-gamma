@@ -1271,14 +1271,20 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
     const viewBtn = card.querySelector('.view-video-btn');
     
     if (startBtn && canAccess) {
-        startBtn.addEventListener('click', () => {
+        startBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             startVideoTask(video.id);
+            return false;
         });
     }
     
     if (viewBtn && canAccess) {
-        viewBtn.addEventListener('click', () => {
+        viewBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             startVideoTask(video.id);
+            return false;
         });
     }
     
@@ -3675,6 +3681,13 @@ function applyTranslations() {
                     element.innerHTML = t[key];
                 } else {
                     element.textContent = t[key];
+                }
+            }
+            // Special handling for back-to-dashboard buttons - update span inside button
+            else if (element.classList && element.classList.contains('back-to-dashboard-btn')) {
+                const span = element.querySelector('span[data-lang-key="back_to_dashboard"]');
+                if (span && t.back_to_dashboard) {
+                    span.textContent = t.back_to_dashboard;
                 }
             } 
             // For input elements, check if they should have placeholder updated
