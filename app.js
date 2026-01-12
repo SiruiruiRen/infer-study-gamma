@@ -3583,6 +3583,14 @@ function renderLanguageSwitchers() {
             new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
+    
+    // Initialize Bootstrap tooltips
+    containers.forEach(container => {
+        const tooltipTriggerList = container.querySelectorAll('[title]');
+        tooltipTriggerList.forEach(tooltipTriggerEl => {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
 }
 
 function renderLanguageSwitcherInNav() {
