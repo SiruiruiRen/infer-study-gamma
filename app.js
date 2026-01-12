@@ -3603,6 +3603,12 @@ function renderLanguageSwitcherInNav() {
         // Add event listeners
         document.getElementById('nav-lang-switch-en')?.addEventListener('click', () => switchLanguage('en'));
         document.getElementById('nav-lang-switch-de')?.addEventListener('click', () => switchLanguage('de'));
+        
+        // Initialize Bootstrap tooltips
+        const tooltipTriggerList = navContainer.querySelectorAll('[title]');
+        tooltipTriggerList.forEach(tooltipTriggerEl => {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     }
     
     // Also render language switcher in dashboard header
@@ -3618,6 +3624,12 @@ function renderLanguageSwitcherInNav() {
         // Add event listeners
         document.getElementById('header-lang-switch-en')?.addEventListener('click', () => switchLanguage('en'));
         document.getElementById('header-lang-switch-de')?.addEventListener('click', () => switchLanguage('de'));
+        
+        // Initialize Bootstrap tooltips
+        const tooltipTriggerList = dashboardHeaderSwitcher.querySelectorAll('[title]');
+        tooltipTriggerList.forEach(tooltipTriggerEl => {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
     }
 }
 
