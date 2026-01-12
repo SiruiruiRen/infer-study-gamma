@@ -1241,6 +1241,13 @@ textarea {
 /* Prevent back-to-dashboard button text from stacking vertically */
 .back-to-dashboard-btn {
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.back-to-dashboard-btn span {
+  display: inline-block;
+  white-space: nowrap;
 }
 
 /* Beautiful Definitions Section - Horizontal Layout */
