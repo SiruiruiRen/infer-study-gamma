@@ -222,7 +222,7 @@ const translations = {
         data_consent_agree: "I agree to the use of my anonymized data for scientific purposes.",
         data_consent_disagree: "I do not agree to the use of my anonymized data for scientific purposes.",
         consent_disagreement_message: "You can still participate in the experiment. However, only data from participants who gave consent will be used for scientific purposes.",
-        language_tooltip: "Feedback is generated in the selected language. Switch before generating, or regenerate to change language.",
+        language_tooltip: "Select the language for feedback generation. Feedback will be generated in the selected language (English or German). Switch before generating, or regenerate to change the feedback language.",
         loading_messages: [
             "Please wait while the little elves create your feedback...",
             "Almost there, we promise...",
@@ -341,7 +341,7 @@ const translations = {
         data_consent_agree: "Ich stimme der Verwendung meiner anonymisierten Daten für wissenschaftliche Zwecke zu.",
         data_consent_disagree: "Ich stimme der Verwendung meiner anonymisierten Daten für wissenschaftliche Zwecke nicht zu.",
         consent_disagreement_message: "Sie können trotzdem am Experiment teilnehmen. Allerdings werden nur Daten von Teilnehmern verwendet, die zugestimmt haben.",
-        language_tooltip: "Feedback wird in der ausgewählten Sprache generiert. Vor der Generierung wechseln oder neu generieren, um die Sprache zu ändern.",
+        language_tooltip: "Wählen Sie die Sprache für die Feedback-Generierung. Das Feedback wird in der ausgewählten Sprache (Englisch oder Deutsch) generiert. Vor der Generierung wechseln oder neu generieren, um die Feedback-Sprache zu ändern.",
         welcome_to_infer: "Willkommen zu INFER",
         welcome_message: "Vielen Dank für Ihre Teilnahme an dieser Studie zur KI-gestützten Unterrichtsreflexion. Die Website ist vom 1. Februar bis 31. März geöffnet. Wir empfehlen, dass Sie ein Video pro Woche abschließen, damit Sie genügend Zeit für verteiltes Üben haben. Sie werden 4 Unterrichtsvideos mit unserem INFER-System analysieren.",
         browser_recommendation: "Für die beste Erfahrung empfehlen wir die Verwendung von <strong>Google Chrome</strong>.",
@@ -3560,8 +3560,8 @@ function renderLanguageSwitchers() {
     const containers = document.querySelectorAll('.language-switcher-container');
     const t = translations[currentLanguage];
     const tooltipText = t.language_tooltip || (currentLanguage === 'en' 
-        ? "Feedback is generated in the selected language. Switch before generating, or regenerate to change language."
-        : "Feedback wird in der ausgewählten Sprache generiert. Vor der Generierung wechseln oder neu generieren, um die Sprache zu ändern.");
+        ? "Select the language for feedback generation. Feedback will be generated in the selected language (English or German). Switch before generating, or regenerate to change the feedback language."
+        : "Wählen Sie die Sprache für die Feedback-Generierung. Das Feedback wird in der ausgewählten Sprache (Englisch oder Deutsch) generiert. Vor der Generierung wechseln oder neu generieren, um die Feedback-Sprache zu ändern.");
     
     containers.forEach(container => {
         container.innerHTML = `
@@ -3575,14 +3575,22 @@ function renderLanguageSwitchers() {
     // Add event listeners
     document.getElementById('lang-switch-en')?.addEventListener('click', () => switchLanguage('en'));
     document.getElementById('lang-switch-de')?.addEventListener('click', () => switchLanguage('de'));
+    
+    // Initialize Bootstrap tooltips
+    containers.forEach(container => {
+        const tooltipTriggerList = container.querySelectorAll('[title]');
+        tooltipTriggerList.forEach(tooltipTriggerEl => {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+    });
 }
 
 function renderLanguageSwitcherInNav() {
     const navContainer = document.querySelector('.language-switcher-container-inline');
     const t = translations[currentLanguage];
     const tooltipText = t.language_tooltip || (currentLanguage === 'en' 
-        ? "Feedback is generated in the selected language. Switch before generating, or regenerate to change language."
-        : "Feedback wird in der ausgewählten Sprache generiert. Vor der Generierung wechseln oder neu generieren, um die Sprache zu ändern.");
+        ? "Select the language for feedback generation. Feedback will be generated in the selected language (English or German). Switch before generating, or regenerate to change the feedback language."
+        : "Wählen Sie die Sprache für die Feedback-Generierung. Das Feedback wird in der ausgewählten Sprache (Englisch oder Deutsch) generiert. Vor der Generierung wechseln oder neu generieren, um die Feedback-Sprache zu ändern.");
     
     if (navContainer) {
         navContainer.innerHTML = `
@@ -3636,7 +3644,9 @@ function applyTranslations() {
             // For buttons with spans inside, update the span
             else if (element.tagName === 'BUTTON' && element.querySelector('span[data-lang-key]')) {
                 const span = element.querySelector('span[data-lang-key]');
-                if (span) span.textContent = t[key];
+                if (span && span.getAttribute('data-lang-key') === key) {
+                    span.textContent = t[key];
+                }
             } 
             // For span elements directly - use innerHTML to preserve HTML tags
             else if (element.tagName === 'SPAN' && element.hasAttribute('data-lang-key')) {
