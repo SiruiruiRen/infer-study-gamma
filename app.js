@@ -401,14 +401,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const welcomePage = document.getElementById('page-welcome');
         if (welcomePage) welcomePage.classList.add('d-none');
         
-        // Pre-fill the login form and show login page
+        // Pre-fill the login form, show login page, and auto-submit (skip ID entry and consent)
         setTimeout(() => {
             showPage('login');
             const codeInput = document.getElementById('participant-code-input');
             const studentIdInput = document.getElementById('student-id-input');
             if (codeInput) codeInput.value = anonymousId;
             if (studentIdInput) studentIdInput.value = studentId;
-        }, 100);
+            
+            // Auto-submit login after ensuring functions are ready
+            setTimeout(() => {
+                if (typeof handleLogin === 'function') {
+                    handleLogin();
+                } else {
+                    setTimeout(() => {
+                        if (typeof handleLogin === 'function') {
+                            handleLogin();
+                        }
+                    }, 500);
+                }
+            }, 500);
+        }, 200);
     }
     
     initializeApp();
