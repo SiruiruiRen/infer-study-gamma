@@ -2009,10 +2009,29 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                     }
                 }
                 
+                // Check if video is already completed (submitted) - check again here for button logic
+                const isVideoCompleted = currentParticipantProgress?.videos_completed?.includes(videoId) || false;
+                
                 // Gamma: Hide tabs (same feedback for both)
                 if (feedbackTabs) feedbackTabs.classList.add('d-none');
-                if (reviseBtn) reviseBtn.style.display = 'inline-block';
-                if (submitBtn) submitBtn.style.display = 'block';
+                
+                // Only show revise/submit buttons if not completed
+                if (!isVideoCompleted) {
+                    if (reviseBtn) reviseBtn.style.display = 'inline-block';
+                    if (submitBtn) submitBtn.style.display = 'block';
+                } else {
+                    // Hide edit buttons for completed videos
+                    if (reviseBtn) reviseBtn.style.display = 'none';
+                    if (submitBtn) submitBtn.style.display = 'none';
+                    
+                    // Disable generate button
+                    const generateBtn = document.getElementById(ids.generateBtn);
+                    if (generateBtn) generateBtn.disabled = true;
+                    
+                    // Disable clear button
+                    const clearBtn = document.getElementById(ids.clearBtn);
+                    if (clearBtn) clearBtn.disabled = true;
+                }
                 
                 // Display analysis distribution if available
                 if (reflection.analysis_percentages) {
