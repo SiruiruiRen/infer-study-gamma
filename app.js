@@ -1938,11 +1938,21 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
         const ids = getVideoElementIds(videoNum);
         
         if (reflection) {
+            // Check if video is already completed (submitted)
+            const isVideoCompleted = currentParticipantProgress?.videos_completed?.includes(videoId) || false;
+            
             // Load previous reflection text
             const reflectionText = document.getElementById(ids.reflectionText);
             if (reflectionText && reflection.reflection_text) {
                 reflectionText.value = reflection.reflection_text;
                 updateWordCountForVideo(videoNum);
+                
+                // Make read-only if video is completed
+                if (isVideoCompleted) {
+                    reflectionText.readOnly = true;
+                    reflectionText.style.backgroundColor = '#f5f5f5';
+                    reflectionText.style.cursor = 'not-allowed';
+                }
             }
             
             // Load previous feedback if available
