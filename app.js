@@ -1,8 +1,9 @@
 // INFER - 4-Video Experiment Version
-// STUDY VERSION: Gamma (Control Group)
-// - All videos: Simple feedback (8-9 sentences, no complex INFER analysis)
+// STUDY VERSION: Alpha (Control Group (Gamma))
+// - Video 2: All videos: Simple feedback feedback with PV analysis
+// - Videos 1 & 4 are reflection-only feedback with PV analysis
+// - Videos 1 & 4: Reflection only (no AI feedback)
 // - All surveys mandatory
-// - NO tutorial video (unlike Alpha)
 //
 // DATA COLLECTION:
 // - All binary classification results stored in Supabase database
@@ -33,20 +34,20 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // ============================================================================
 
 // Video Configuration - UPDATE WITH YOUR 4 VIDEOS
-// Control Group (Gamma): Videos 2 & 3 have simple feedback, Videos 1 & 4 are reflection-only (no feedback)
+// Control Group (Gamma): Video 2 has Tutorial + INFER, Video 3 has INFER, Videos 1 & 4 are reflection-only
 const VIDEOS = [
-    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: false },
-    { id: 'video2', name: 'Video 2: [Name]', link: 'VIDEO_LINK_2', password: 'PASSWORD_2', hasINFER: true },
-    { id: 'video3', name: 'Video 3: [Name]', link: 'VIDEO_LINK_3', password: 'PASSWORD_3', hasINFER: true },
-    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: false }
+    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: false, hasINFER: false },
+    { id: 'video2', name: 'Video 2: [Name]', link: 'VIDEO_LINK_2', password: 'PASSWORD_2', hasINFER: true, hasINFER: true },
+    { id: 'video3', name: 'Video 3: [Name]', link: 'VIDEO_LINK_3', password: 'PASSWORD_3', hasINFER: true, hasINFER: false },
+    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: false, hasINFER: false }
 ];
 
-// Tutorial Video Configuration - NOT USED IN GAMMA (Control Group has no tutorial)
+// Tutorial Video Configuration (shown before Video 2 for Control Group (Gamma))
+// Tutorial Video Configuration - NOT USED IN GAMMA
 // const TUTORIAL_VIDEO = {
 //     link: 'tutorial_german.mp4',
 //     password: ''
 // };
-
 // Qualtrics Survey Links
 const QUALTRICS_SURVEYS = {
     pre: 'https://unc.az1.qualtrics.com/jfe/form/SV_9XLC3Bd1eQfu2p0',
@@ -1014,7 +1015,14 @@ function showPage(pageId) {
                     titleEl.textContent = translations[currentLanguage].video_task_title;
                 }
                 if (subtitleEl) {
-                    subtitleEl.textContent = translations[currentLanguage].video_task_subtitle;
+                    // Show different subtitle based on whether video has INFER feedback
+                    if (video.hasINFER) {
+                        subtitleEl.setAttribute('data-lang-key', 'video_task_subtitle');
+                        subtitleEl.textContent = translations[currentLanguage].video_task_subtitle;
+                    } else {
+                        subtitleEl.setAttribute('data-lang-key', 'reflection_only_mode');
+                        subtitleEl.textContent = translations[currentLanguage].reflection_only_mode || 'Write your reflection about the video. After submission, you will proceed to a short questionnaire.';
+                    }
                 }
             }
         }
@@ -1585,7 +1593,7 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
 }
 
 // ============================================================================
-// TUTORIAL VIDEO (Treatment Group 1 Only)
+// TUTORIAL VIDEO (Control Group (Gamma) Only)
 // ============================================================================
 
 // Show tutorial page before Video 2
@@ -1883,7 +1891,19 @@ function getVideoElementIds(videoNum) {
 
 // Setup event listeners for a specific video page
 function setupVideoPageElements(videoNum) {
+    const videoId = `video${videoNum}`;
+    const video = VIDEOS.find(v => v.id === videoId);
     const ids = getVideoElementIds(videoNum);
+    
+    // Hide or show language toggle (Feedback Language selector) based on hasINFER
+    const languageToggle = document.querySelector(`#page-video-${videoNum} .language-toggle`);
+    if (languageToggle) {
+        if (video && video.hasINFER) {
+            languageToggle.style.display = '';
+        } else {
+            languageToggle.style.display = 'none';
+        }
+    }
     
     // Set up event listeners
     const reflectionText = document.getElementById(ids.reflectionText);
@@ -2174,6 +2194,16 @@ function configureVideoTaskUI(videoNum, hasINFER) {
     const reviseBtn = document.getElementById(ids.reviseBtn);
     const copyBtn = document.getElementById(ids.copyBtn);
     const conceptsSection = document.getElementById(`video-${videoNum}-concepts-section`);
+    
+    // Hide or show language toggle (Feedback Language selector) based on hasINFER
+    const languageToggle = document.querySelector(`#page-video-${videoNum} .language-toggle`);
+    if (languageToggle) {
+        if (hasINFER) {
+            languageToggle.style.display = '';
+        } else {
+            languageToggle.style.display = 'none';
+        }
+    }
     
     if (hasINFER) {
         // INFER mode: Show generate button and submit button
@@ -3643,7 +3673,14 @@ function switchLanguage(lang) {
                     titleEl.textContent = translations[currentLanguage].video_task_title;
                 }
             if (subtitleEl) {
-                subtitleEl.textContent = translations[currentLanguage].video_task_subtitle;
+                // Show different subtitle based on whether video has INFER feedback
+                if (video.hasINFER) {
+                    subtitleEl.setAttribute('data-lang-key', 'video_task_subtitle');
+                    subtitleEl.textContent = translations[currentLanguage].video_task_subtitle;
+                } else {
+                    subtitleEl.setAttribute('data-lang-key', 'reflection_only_mode');
+                    subtitleEl.textContent = translations[currentLanguage].reflection_only_mode || 'Write your reflection about the video. After submission, you will proceed to a short questionnaire.';
+                }
             }
         }
     }
