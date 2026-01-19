@@ -4779,12 +4779,12 @@ async function saveFeedbackToDatabase(data) {
             language: currentLanguage,
             task_id: `video-task-${data.videoSelected}`,
             reflection_text: data.reflectionText,
-            analysis_percentages: {
+            analysis_percentages: data.analysisResult ? {
                 raw: data.analysisResult.percentages_raw,
                 priority: data.analysisResult.percentages_priority,
                 displayed_to_student: data.analysisResult.percentages_raw
-            },
-            weakest_component: data.analysisResult.weakest_component,
+            } : null,
+            weakest_component: data.analysisResult?.weakest_component || null,
             feedback_extended: data.extendedFeedback,
             feedback_short: data.shortFeedback,
             // feedback_raw: data.rawFeedback || null,  // Store raw LLM response (column not in schema)
@@ -4823,9 +4823,9 @@ async function saveFeedbackToDatabase(data) {
             language: currentLanguage,
             reflection_id: result.id,
             reflection_length: data.reflectionText.length,
-            analysis_percentages_raw: data.analysisResult.percentages_raw,
-            analysis_percentages_priority: data.analysisResult.percentages_priority,
-            weakest_component: data.analysisResult.weakest_component
+            analysis_percentages_raw: data.analysisResult?.percentages_raw || null,
+            analysis_percentages_priority: data.analysisResult?.percentages_priority || null,
+            weakest_component: data.analysisResult?.weakest_component || null
         });
         
     } catch (error) {
