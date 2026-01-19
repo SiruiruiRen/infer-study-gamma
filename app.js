@@ -5,6 +5,7 @@
 // - NO tutorial video (unlike Alpha)
 //
 // DATA COLLECTION:
+// - All binary classification results stored in Supabase database
 // - All user interactions (clicks, navigations) logged to Supabase
 // - Reflection data and feedback stored in Supabase
 // - Progress tracking in participant_progress table
@@ -134,7 +135,9 @@ const translations = {
         language: "Feedback Language:",
         back_to_dashboard: "Dashboard",
         reflection_input: "Student Teacher Reflection",
-        paste_reflection: "Paste your reflection here...",
+        paste_reflection: "Paste or write your reflection here...",
+        write_reflection_placeholder: "Paste or write your reflection here...",
+        paste_reflection_placeholder: "Paste or write your reflection here...",
         clear: "Clear",
         words: "words",
         generate_feedback: "Generate Feedback",
@@ -174,11 +177,6 @@ const translations = {
         pre_survey_completed_message: "You have already completed the pre-survey. You can review it below or continue to the dashboard.",
         view_pre_survey: "View",
         presurvey_required: "You must complete the pre-survey before accessing video tasks.",
-        write_reflection_placeholder: "Paste or write your reflection here...",
-        paste_reflection_placeholder: "Paste or write your reflection here...",
-        paste_reflection: "Paste or write your reflection here...",
-        different_study_group_warning: "Warning: You are registered in a different study group. Please use the correct link for your assigned group.",
-        video_reflection_note: "In the next screen, you will submit your reflection on this video. As you watch the video, we recommend that you take notes and draft your reflection in a word processor (e.g., Word), so you can paste it into the text box.",
         video_tasks: "Video Tasks",
         video_completed: "Completed",
         start_video: "Start Video",
@@ -280,7 +278,9 @@ const translations = {
         language: "Feedback-Sprache:",
         back_to_dashboard: "Dashboard",
         reflection_input: "Reflexionstext",
-        paste_reflection: "Fügen Sie hier Ihre Reflexion ein...",
+        paste_reflection: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
+        write_reflection_placeholder: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
+        paste_reflection_placeholder: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
         clear: "Löschen",
         words: "Wörter",
         generate_feedback: "Feedback generieren",
@@ -295,7 +295,7 @@ const translations = {
         save_reflection: "Reflexion speichern",
         submit_final: "Endgültige Reflexion einreichen",
         submit_reflection_only: "Reflexion einreichen",
-        reflection_only_mode: "Schreiben Sie Ihre Reflexion über das Video. Nach der Einreichung werden Sie zu einem kurzen Fragebogen weitergeleitet.",
+        reflection_only_mode: "Schreiben Sie Ihre Reflexion über das Video. Nach der Einreichung werden Sie zu einem kurzen Fragebogen weitergeleitet. Hinweis: Der Nach-Video-Fragebogen ist ein wichtiger Teil dieser Aufgabe.",
         learn_key_concepts: "Lernen Sie die Schlüsselkonzepte für bessere Reflexion",
         concepts_help: "Das Verständnis dieser drei Dimensionen hilft Ihnen, umfassendere Unterrichtsreflexionen zu schreiben",
         description: "Beschreibung",
@@ -307,12 +307,12 @@ const translations = {
         post_video_survey_title: "Nach-Video-Umfrage",
         post_video_survey_subtitle: "Bitte teilen Sie Ihre Gedanken zu diesem Video mit",
         post_video_questionnaire: "Nach-Video-Fragebogen",
-        post_video_questionnaire_description: "Bitte vervollständigen Sie den Fragebogen unten. Dies dauert etwa 3-5 Minuten. Dieser Fragebogen ist ein wichtiger Teil der Aufgabe und muss ausgefüllt werden.",
+        post_video_questionnaire_description: "Bitte vervollständigen Sie den Fragebogen unten. Dies dauert etwa 3-5 Minuten.",
         post_video_instructions: "Vervollständigen Sie den Fragebogen oben und klicken Sie dann unten auf \"Zurück zum Dashboard\".",
         return_to_dashboard: "Zurück zum Dashboard",
         final_post_survey_title: "Abschließende Nach-Umfrage",
         final_post_survey_subtitle: "Vielen Dank, dass Sie alle Videos abgeschlossen haben!",
-        final_post_survey_description: "Bitte vervollständigen Sie die abschließende Umfrage unten. Dies dauert etwa 10-15 Minuten. Diese abschließende Umfrage ist ein wichtiger Teil der Studie und muss ausgefüllt werden.",
+        final_post_survey_description: "Bitte vervollständigen Sie die abschließende Umfrage unten. Dies dauert etwa 10-15 Minuten.",
         final_step: "Letzter Schritt:",
         final_survey_instructions: "Vervollständigen Sie die Umfrage oben und klicken Sie dann unten auf \"Studie abschließen\", um fertig zu werden.",
         complete_study: "Studie abschließen",
@@ -320,11 +320,6 @@ const translations = {
         pre_survey_completed_message: "Sie haben die Vor-Umfrage bereits abgeschlossen. Sie können sie unten überprüfen oder zum Dashboard fortfahren.",
         view_pre_survey: "Ansehen",
         presurvey_required: "Sie müssen die Vor-Umfrage abschließen, bevor Sie auf Video-Aufgaben zugreifen können.",
-        write_reflection_placeholder: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
-        paste_reflection_placeholder: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
-        paste_reflection: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
-        different_study_group_warning: "Warnung: Sie sind in einer anderen Studiengruppe registriert. Bitte verwenden Sie den korrekten Link für Ihre zugewiesene Gruppe.",
-        video_reflection_note: "Im nächsten Bildschirm werden Sie Ihre Reflexion zu diesem Video einreichen. Während Sie das Video ansehen, empfehlen wir Ihnen, Notizen zu machen und Ihre Reflexion in einem Textverarbeitungsprogramm (z.B. Word) zu verfassen, damit Sie sie in das Textfeld einfügen können.",
         start_pre_survey: "Jetzt starten",
         video_completed: "Abgeschlossen",
         start_video: "Video starten",
@@ -584,12 +579,6 @@ async function directLoginFromAssignment(studentId, anonymousId) {
 // Initialize app
 function initializeApp(comingFromAssignment = false, studentId = null, anonymousId = null) {
     setupEventListeners();
-    
-    // Set default language to German FIRST
-    if (typeof switchLanguage === 'function') {
-        switchLanguage('de');
-    }
-    
     renderLanguageSwitchers();
     // Only call renderLanguageSwitcherInNav if it exists (it's defined later in the file)
     if (typeof renderLanguageSwitcherInNav === 'function') {
@@ -598,6 +587,11 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
     // Only call applyTranslations if it exists (it's defined later in the file)
     if (typeof applyTranslations === 'function') {
         applyTranslations();
+    }
+    
+    // Set default language to German
+    if (typeof switchLanguage === 'function') {
+        switchLanguage('de');
     }
     
     // Check if coming from assignment site (with URL params) - directly login and go to dashboard
@@ -709,7 +703,7 @@ function setupEventListeners() {
         document.getElementById(`video-${i}-lang-de`)?.addEventListener('change', () => switchLanguage('de'));
     }
     
-    // Tutorial button removed for Gamma (Control Group has no tutorial)
+    // Tutorial button removed for Beta (no tutorial in Treatment Group 2)
     
     // Language switchers (for all pages via language-switcher-container)
     document.addEventListener('click', (e) => {
@@ -825,8 +819,7 @@ function setupEventListeners() {
                 // Link will open in new tab via target="_blank"
             } else {
                 e.preventDefault();
-                const t = translations[currentLanguage];
-                showAlert(t.video_link_not_available || 'Video link not available yet.', 'warning');
+                showAlert('Video link not available yet.', 'warning');
             }
         });
     }
@@ -1001,6 +994,12 @@ function showPage(pageId) {
             if (typeof setupVideoPageElements === 'function') {
                 setupVideoPageElements(videoNum);
             }
+            // Ensure concept click handlers are set up after a short delay to allow DOM to be ready
+            setTimeout(() => {
+                if (typeof setupConceptCardClickHandlers === 'function') {
+                    setupConceptCardClickHandlers(videoNum);
+                }
+            }, 100);
             
             // Update video page titles/subtitles
             const videoId = `video${videoNum}`;
@@ -1564,6 +1563,7 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
         startBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            console.log(`Start video button clicked for ${video.id}`);
             startVideoTask(video.id);
             return false;
         });
@@ -1573,7 +1573,10 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
         viewBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
-            startVideoTask(video.id);
+            console.log(`View video button clicked for ${video.id}`);
+            // For completed videos, go directly to task page (skip video link page)
+            const videoNum = getVideoPageNumber(video.id);
+            continueToReflectionTask(videoNum);
             return false;
         });
     }
@@ -2032,6 +2035,8 @@ function setupConceptCardClickHandlers(videoNum) {
 
 // Start video task - now goes to video link page first
 async function startVideoTask(videoId) {
+    console.log(`startVideoTask called for ${videoId}`);
+    
     // Pre-survey is MANDATORY - block access if not completed
     if (!currentParticipantProgress?.pre_survey_completed) {
         const t = translations[currentLanguage];
@@ -2044,9 +2049,14 @@ async function startVideoTask(videoId) {
     currentVideoId = videoId;
     const video = VIDEOS.find(v => v.id === videoId);
     
-    if (!video) return;
+    if (!video) {
+        console.error(`Video not found: ${videoId}`);
+        return;
+    }
     
-    // Tutorial check removed for Gamma (Control Group has no tutorial)
+    console.log(`Found video:`, video);
+    
+    // Tutorial check removed for Beta (Treatment Group 2 has no tutorial)
     // if (video.hasTutorial && !currentParticipantProgress?.tutorial_watched) {
     //     showTutorialPage(videoId);
     //     return;
@@ -2130,10 +2140,14 @@ async function continueToReflectionTask(videoNum) {
     // Load previous reflection and feedback for this video
     await loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum);
     
-    // Gamma: Never show percentage explanation (no complex analysis in Gamma)
+    // Show percentage explanation only for INFER videos
     const explanationEl = document.getElementById(ids.percentageExplanation);
     if (explanationEl) {
-        explanationEl.classList.add('d-none'); // Always hide in Gamma
+        if (video.hasINFER) {
+            explanationEl.classList.remove('d-none');
+        } else {
+            explanationEl.classList.add('d-none');
+        }
     }
     
     // Show task page for this video (use page-video-X format)
@@ -2148,7 +2162,7 @@ async function continueToReflectionTask(videoNum) {
     });
 }
 
-// Configure UI for Gamma (Control Group): All videos have simple feedback
+// Configure UI for INFER vs reflection-only mode
 function configureVideoTaskUI(videoNum, hasINFER) {
     const ids = getVideoElementIds(videoNum);
     const t = translations[currentLanguage];
@@ -2160,16 +2174,9 @@ function configureVideoTaskUI(videoNum, hasINFER) {
     const reviseBtn = document.getElementById(ids.reviseBtn);
     const copyBtn = document.getElementById(ids.copyBtn);
     const conceptsSection = document.getElementById(`video-${videoNum}-concepts-section`);
-    const percentageExplanation = document.getElementById(ids.percentageExplanation);
     
-    // Gamma: Always hide percentage explanation (no complex analysis in Gamma)
-    if (percentageExplanation) {
-        percentageExplanation.classList.add('d-none');
-    }
-    
-    // Gamma: All videos have simple feedback (hasINFER is true for all)
     if (hasINFER) {
-        // Simple feedback mode: Show generate button and submit button
+        // INFER mode: Show generate button and submit button
         if (generateBtn) {
             generateBtn.classList.remove('d-none');
             generateBtn.textContent = t.generate_feedback || 'Generate Feedback';
@@ -2179,8 +2186,7 @@ function configureVideoTaskUI(videoNum, hasINFER) {
             submitBtn.disabled = false;
         }
         if (feedbackSection) feedbackSection.classList.remove('d-none');
-        // Hide concepts section in Gamma (no complex analysis)
-        if (conceptsSection) conceptsSection.classList.add('d-none');
+        if (conceptsSection) conceptsSection.classList.remove('d-none');
     } else {
         // Reflection-only mode: Hide generate button, show submit directly
         if (generateBtn) {
@@ -2276,64 +2282,36 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
             }
             
             // Load previous feedback if available
-            // BUT: Don't overwrite if we just generated new feedback
-            if (!currentTaskState.justGeneratedFeedback && (reflection.feedback_extended || reflection.feedback_short)) {
+            if (reflection.feedback_extended || reflection.feedback_short) {
                 const feedbackExtended = document.getElementById(ids.feedbackExtended);
                 const feedbackShort = document.getElementById(ids.feedbackShort);
                 const feedbackTabs = document.getElementById(ids.feedbackTabs);
                 const reviseBtn = document.getElementById(ids.reviseBtn);
                 const submitBtn = document.getElementById(ids.submitBtn);
-                const extendedPane = document.getElementById(`video-${videoNum}-feedback-extended-pane`);
-                
-                // Gamma: Use simple feedback display (no structured formatting)
-                // Check if this is simple feedback (no analysis_percentages means it's Gamma simple feedback)
-                const isSimpleFeedback = !reflection.analysis_percentages;
-                
-                // Ensure extended pane is visible when loading feedback
-                if (extendedPane) {
-                    extendedPane.classList.add('show', 'active');
-                    extendedPane.classList.remove('fade');
-                }
                 
                 if (reflection.feedback_extended && feedbackExtended) {
-                    if (isSimpleFeedback) {
-                        // Gamma simple feedback: display directly without formatting
-                        const feedbackHTML = reflection.feedback_extended.replace(/\n/g, '<br>');
-                        feedbackExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-                        console.log('Gamma: Loaded simple feedback from database, length:', reflection.feedback_extended.length);
-                        console.log('Gamma: Loaded feedback text:', reflection.feedback_extended);
-                    } else {
-                        // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
-                        const analysisResult = reflection.analysis_percentages ? {
-                            percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
-                            percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
-                            weakest_component: reflection.weakest_component || 'Prediction'
-                        } : null;
-                        feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
-                    }
+                    const analysisResult = reflection.analysis_percentages ? {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    } : null;
+                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
-                    if (isSimpleFeedback) {
-                        // Gamma simple feedback: display directly without formatting
-                        const feedbackHTML = reflection.feedback_short.replace(/\n/g, '<br>');
-                        feedbackShort.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-                    } else {
-                        // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
-                        const analysisResult = reflection.analysis_percentages ? {
-                            percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
-                            percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
-                            weakest_component: reflection.weakest_component || 'Prediction'
-                        } : null;
-                        feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
-                    }
+                    const analysisResult = reflection.analysis_percentages ? {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    } : null;
+                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
                 }
                 
-                // Check if video is already completed (submitted) - check again here for button logic
+                // Check if video is already completed (submitted)
                 const isVideoCompleted = currentParticipantProgress?.videos_completed?.includes(videoId) || false;
                 
-                // Gamma: Hide tabs (same feedback for both)
-                if (feedbackTabs) feedbackTabs.classList.add('d-none');
+                // Show feedback tabs
+                if (feedbackTabs) feedbackTabs.classList.remove('d-none');
                 
                 // Only show revise/submit buttons if not completed
                 if (!isVideoCompleted) {
@@ -2432,45 +2410,26 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                 const reviseBtn = document.getElementById(ids.reviseBtn);
                 const submitBtn = document.getElementById(ids.submitBtn);
                 
-                // Gamma: Use simple feedback display (no structured formatting)
-                // Check if this is simple feedback (no analysis_percentages means it's Gamma simple feedback)
-                const isSimpleFeedback = !reflection.analysis_percentages;
-                
                 if (reflection.feedback_extended && feedbackExtended) {
-                    if (isSimpleFeedback) {
-                        // Gamma simple feedback: display directly without formatting
-                        const feedbackHTML = reflection.feedback_extended.replace(/\n/g, '<br>');
-                        feedbackExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-                        console.log('Gamma: Loaded simple feedback (legacy), length:', reflection.feedback_extended.length);
-                    } else {
-                        // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
-                        const analysisResult = reflection.analysis_percentages ? {
-                            percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
-                            percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
-                            weakest_component: reflection.weakest_component || 'Prediction'
-                        } : null;
-                        feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
-                    }
+                    const analysisResult = reflection.analysis_percentages ? {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    } : null;
+                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
-                    if (isSimpleFeedback) {
-                        // Gamma simple feedback: display directly without formatting
-                        const feedbackHTML = reflection.feedback_short.replace(/\n/g, '<br>');
-                        feedbackShort.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-                    } else {
-                        // Structured feedback (shouldn't happen in Gamma, but handle for compatibility)
-                        const analysisResult = reflection.analysis_percentages ? {
-                            percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
-                            percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
-                            weakest_component: reflection.weakest_component || 'Prediction'
-                        } : null;
-                        feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
-                    }
+                    const analysisResult = reflection.analysis_percentages ? {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    } : null;
+                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
                 }
                 
-                // Gamma: Hide tabs (same feedback for both)
-                if (feedbackTabs) feedbackTabs.classList.add('d-none');
+                // Show feedback tabs and buttons
+                if (feedbackTabs) feedbackTabs.classList.remove('d-none');
                 if (reviseBtn) reviseBtn.style.display = 'inline-block';
                 if (submitBtn) submitBtn.style.display = 'block';
                 
@@ -2786,8 +2745,18 @@ async function handleGenerateFeedbackForVideo(videoNum) {
         return;
     }
     
-    // Gamma (Control Group): Use simple feedback generation (no preference modal, no complex analysis)
-    generateSimpleFeedbackForVideo(reflection, videoNum);
+    // Show style preference modal on first generation
+    if (!currentTaskState.feedbackGenerated) {
+        const modal = new bootstrap.Modal(document.getElementById('feedback-preference-modal'));
+        modal.show();
+        
+        document.getElementById('feedback-preference-modal').addEventListener('hidden.bs.modal', function handler() {
+            this.removeEventListener('hidden.bs.modal', handler);
+            generateFeedbackForVideo(reflection, videoNum);
+        });
+    } else {
+        generateFeedbackForVideo(reflection, videoNum);
+    }
 }
 
 // Generate feedback handler (legacy - kept for compatibility)
@@ -2802,289 +2771,6 @@ async function handleGenerateFeedback() {
 }
 
 // Generate feedback for specific video page
-// Generate simple feedback for Gamma (Control Group) - no complex analysis
-async function generateSimpleFeedbackForVideo(reflection, videoNum) {
-    const ids = getVideoElementIds(videoNum);
-    const generateBtn = document.getElementById(ids.generateBtn);
-    const loadingSpinner = document.getElementById(ids.loadingSpinner);
-    const loadingText = document.getElementById(ids.loadingText);
-    
-    // Show loading
-    if (loadingSpinner) loadingSpinner.style.display = 'flex';
-    if (generateBtn) generateBtn.disabled = true;
-    
-    // Rotate loading messages (same as Alpha/Beta)
-    let loadingMessageIndex = 0;
-    const loadingInterval = setInterval(() => {
-        loadingMessageIndex = (loadingMessageIndex + 1) % translations[currentLanguage].loading_messages.length;
-        if (loadingText) {
-            loadingText.textContent = translations[currentLanguage].loading_messages[loadingMessageIndex];
-            loadingText.style.display = 'block'; // Ensure loading text is visible
-        }
-    }, 8000);
-    
-    try {
-        // Step 0: Check for duplicate reflection
-        const previousReflection = sessionStorage.getItem(`reflection-${currentVideoId}`);
-        if (previousReflection && previousReflection.trim() === reflection.trim()) {
-            const duplicateMessage = currentLanguage === 'en'
-                ? "⚠️ You submitted the same reflection as before. Please revise your reflection to improve it based on the previous feedback, then generate new feedback."
-                : "⚠️ Sie haben dieselbe Reflexion wie zuvor eingereicht. Bitte überarbeiten Sie Ihre Reflexion, um sie basierend auf dem vorherigen Feedback zu verbessern, und generieren Sie dann neues Feedback.";
-            
-            logEvent('duplicate_reflection_detected', {
-                participant_name: currentParticipant,
-                video_id: currentVideoId,
-                language: currentLanguage,
-                reflection_length: reflection.length,
-                revision_count: currentTaskState.revisionCount || 0
-            });
-            
-            clearInterval(loadingInterval);
-            if (loadingSpinner) loadingSpinner.style.display = 'none';
-            if (loadingText) loadingText.style.display = 'none';
-            if (generateBtn) generateBtn.disabled = false;
-            
-            showAlert(duplicateMessage, 'warning');
-            return;
-        }
-        
-        // Step 0.5: Check for very short reflection
-        const wordCount = reflection.split(/\s+/).length;
-        const isVeryShort = wordCount < 20;
-        
-        if (isVeryShort) {
-            const warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand your reflection to at least 50 words, providing more detail about what you observed, why it happened, and its effects on student learning."
-                : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie Ihre Reflexion auf mindestens 50 Wörter und geben Sie mehr Details zu dem, was Sie beobachtet haben, warum es passiert ist und welche Auswirkungen es auf das Lernen der Schüler hat.";
-            
-            logEvent('very_short_reflection_detected', {
-                participant_name: currentParticipant,
-                video_id: currentVideoId,
-                language: currentLanguage,
-                word_count: wordCount,
-                is_very_short: isVeryShort
-            });
-            
-            clearInterval(loadingInterval);
-            if (loadingSpinner) loadingSpinner.style.display = 'none';
-            if (loadingText) loadingText.style.display = 'none';
-            if (generateBtn) generateBtn.disabled = false;
-            
-            showAlert(warningMessage, 'warning');
-            return;
-        }
-        
-        // Step 0.6: Check for irrelevant content (simple check - look for common irrelevant words)
-        const irrelevantPatterns = currentLanguage === 'en' 
-            ? /\b(test|testing|hello|hi|asdf|qwerty|123|abc|xyz|lorem|ipsum)\b/gi
-            : /\b(test|testen|hallo|hi|asdf|qwerty|123|abc|xyz|lorem|ipsum)\b/gi;
-        
-        const hasIrrelevantContent = irrelevantPatterns.test(reflection);
-        if (hasIrrelevantContent && reflection.length < 100) {
-            const warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your reflection does not relate to the teaching video. Please write a reflection about what you observed in the video."
-                : "⚠️ Ihre Reflexion bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine Reflexion über das, was Sie im Video beobachtet haben.";
-            
-            logEvent('irrelevant_reflection_detected', {
-                participant_name: currentParticipant,
-                video_id: currentVideoId,
-                language: currentLanguage,
-                reflection_length: reflection.length
-            });
-            
-            clearInterval(loadingInterval);
-            if (loadingSpinner) loadingSpinner.style.display = 'none';
-            if (loadingText) loadingText.style.display = 'none';
-            if (generateBtn) generateBtn.disabled = false;
-            
-            showAlert(warningMessage, 'warning');
-            return;
-        }
-        
-        // Gamma: Simple feedback generation without complex analysis
-        const simpleFeedback = await generateSimpleFeedback(reflection, currentLanguage);
-        
-        // Log the full feedback to console for debugging
-        console.log('Gamma: Full feedback received from API:', simpleFeedback);
-        console.log('Gamma: Feedback length:', simpleFeedback.length, 'characters');
-        
-        // Display feedback (same format for both extended and short in Gamma)
-        const feedbackExtended = document.getElementById(ids.feedbackExtended);
-        const feedbackShort = document.getElementById(ids.feedbackShort);
-        const feedbackTabs = document.getElementById(ids.feedbackTabs);
-        const extendedPane = document.getElementById(`video-${videoNum}-feedback-extended-pane`);
-        const shortPane = document.getElementById(`video-${videoNum}-feedback-short-pane`);
-        
-        // Ensure we're displaying the full feedback - use textContent to preserve all content
-        const feedbackHTML = simpleFeedback.replace(/\n/g, '<br>');
-        
-        // Log detailed information
-        console.log('Gamma: Setting feedback...');
-        console.log('Gamma: Full feedback text:', simpleFeedback);
-        console.log('Gamma: FeedbackExtended element:', feedbackExtended);
-        console.log('Gamma: FeedbackShort element:', feedbackShort);
-        console.log('Gamma: Extended pane:', extendedPane);
-        console.log('Gamma: Short pane:', shortPane);
-        
-        // Ensure extended pane is visible (show active)
-        if (extendedPane) {
-            extendedPane.classList.add('show', 'active');
-            extendedPane.classList.remove('fade');
-            console.log('Gamma: Extended pane classes:', extendedPane.className);
-        }
-        if (shortPane) {
-            shortPane.classList.remove('show', 'active');
-        }
-        
-        if (feedbackExtended) {
-            feedbackExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-            const displayedText = feedbackExtended.textContent || feedbackExtended.innerText;
-            console.log('Gamma: Feedback set to feedbackExtended element');
-            console.log('Gamma: Displayed text length:', displayedText.length);
-            console.log('Gamma: Displayed text (first 200 chars):', displayedText.substring(0, 200));
-            console.log('Gamma: Full displayed text:', displayedText);
-            
-            // Verify the content is actually there
-            setTimeout(() => {
-                const verifyText = feedbackExtended.textContent || feedbackExtended.innerText;
-                console.log('Gamma: Verification after 100ms - text length:', verifyText.length);
-                console.log('Gamma: Verification - full text:', verifyText);
-            }, 100);
-        }
-        if (feedbackShort) {
-            feedbackShort.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-            console.log('Gamma: Feedback set to feedbackShort element, length:', feedbackShort.textContent.length);
-        }
-        if (feedbackTabs) feedbackTabs.classList.add('d-none'); // Hide tabs in Gamma (same feedback for both)
-        
-        // Save feedback to database
-        if (supabase && currentParticipant && currentVideoId) {
-            try {
-                const revisionNumber = currentTaskState.revisionCount || 1;
-                const parentReflectionId = currentTaskState.parentReflectionId || null;
-                
-                let revisionTimeSeconds = null;
-                if (revisionNumber > 1 && currentTaskState.lastRevisionTime) {
-                    revisionTimeSeconds = (Date.now() - currentTaskState.lastRevisionTime) / 1000;
-                }
-                
-                const reflectionData = {
-                    session_id: currentSessionId,
-                    participant_name: currentParticipant,
-                    video_id: currentVideoId,
-                    language: currentLanguage,
-                    task_id: `video-task-${currentVideoId}`,
-                    reflection_text: reflection,
-                    feedback_extended: simpleFeedback, // Save the full feedback
-                    feedback_short: simpleFeedback,   // Same for short (Gamma uses same feedback)
-                    // Note: feedback_raw column may not exist in schema, so we store it in feedback_extended
-                    revision_number: revisionNumber,
-                    parent_reflection_id: parentReflectionId,
-                    revision_time_seconds: revisionTimeSeconds,
-                    created_at: new Date().toISOString()
-                };
-                
-                const { data: result, error } = await supabase
-                    .from('reflections')
-                    .insert([reflectionData])
-                    .select()
-                    .single();
-                
-                if (error) {
-                    console.error('Gamma: Error saving feedback to database:', error);
-                } else {
-                    console.log('Gamma: Feedback saved to database successfully');
-                    currentTaskState.currentReflectionId = result.id;
-                    if (revisionNumber === 1) {
-                        currentTaskState.parentReflectionId = result.id;
-                    }
-                }
-            } catch (dbError) {
-                console.error('Gamma: Error in saveFeedbackToDatabase:', dbError);
-            }
-        }
-        
-        // Step 7: Store reflection for duplicate detection
-        sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
-        
-        // Mark that we just generated new feedback to prevent it from being overwritten
-        currentTaskState.feedbackGenerated = true;
-        currentTaskState.justGeneratedFeedback = true; // Flag to prevent overwriting
-        
-        clearInterval(loadingInterval);
-        if (loadingSpinner) loadingSpinner.style.display = 'none';
-        if (loadingText) loadingText.style.display = 'none'; // Hide loading text when done
-        if (generateBtn) generateBtn.disabled = false;
-        
-        // Final verification - check what's actually visible in the UI
-        setTimeout(() => {
-            const finalCheckExtended = document.getElementById(ids.feedbackExtended);
-            if (finalCheckExtended) {
-                const finalText = finalCheckExtended.textContent || finalCheckExtended.innerText;
-                console.log('Gamma: FINAL CHECK - Extended element text length:', finalText.length);
-                console.log('Gamma: FINAL CHECK - Extended element full text:', finalText);
-                console.log('Gamma: FINAL CHECK - Extended element innerHTML length:', finalCheckExtended.innerHTML.length);
-                
-                // Compare with what we set
-                if (finalText.length !== simpleFeedback.length) {
-                    console.warn('Gamma: WARNING - Feedback length mismatch! Expected:', simpleFeedback.length, 'Got:', finalText.length);
-                    console.warn('Gamma: Expected text:', simpleFeedback);
-                    console.warn('Gamma: Actual text:', finalText);
-                    
-                    // Restore the correct feedback if it was overwritten
-                    const feedbackHTML = simpleFeedback.replace(/\n/g, '<br>');
-                    finalCheckExtended.innerHTML = `<div class="feedback-content">${feedbackHTML}</div>`;
-                    console.log('Gamma: Restored correct feedback');
-                }
-                
-                // Also check if the pane is visible
-                const finalPane = document.getElementById(`video-${videoNum}-feedback-extended-pane`);
-                if (finalPane) {
-                    const isVisible = finalPane.classList.contains('show') && finalPane.classList.contains('active');
-                    console.log('Gamma: FINAL CHECK - Extended pane visible:', isVisible);
-                    console.log('Gamma: FINAL CHECK - Extended pane classes:', finalPane.className);
-                    console.log('Gamma: FINAL CHECK - Extended pane computed display:', window.getComputedStyle(finalPane).display);
-                    
-                    // Force visibility if needed
-                    if (!isVisible) {
-                        finalPane.classList.add('show', 'active');
-                        finalPane.classList.remove('fade');
-                        console.log('Gamma: Forced extended pane to be visible');
-                    }
-                }
-            }
-        }, 500);
-        
-        // Clear the flag after a delay to allow normal loading behavior later
-        setTimeout(() => {
-            currentTaskState.justGeneratedFeedback = false;
-        }, 2000);
-        
-        logEvent('simple_feedback_generated', {
-            video_id: `video${videoNum}`,
-            participant_name: currentParticipant,
-            language: currentLanguage,
-            feedback_length: simpleFeedback.length
-        });
-    } catch (error) {
-        console.error('Gamma: Error generating simple feedback:', error);
-        console.error('Gamma: Error details:', {
-            message: error.message,
-            stack: error.stack,
-            apiUrl: OPENAI_API_URL,
-            corsProxy: CORS_PROXY_URL
-        });
-        clearInterval(loadingInterval);
-        if (loadingSpinner) loadingSpinner.style.display = 'none';
-        if (loadingText) loadingText.style.display = 'none'; // Hide loading text on error
-        if (generateBtn) generateBtn.disabled = false;
-        const errorMessage = currentLanguage === 'en' 
-            ? `Error generating feedback: ${error.message}. Please check the console for details.`
-            : `Fehler beim Generieren des Feedbacks: ${error.message}. Bitte überprüfen Sie die Konsole für Details.`;
-        showAlert(errorMessage, 'danger');
-    }
-}
-
 async function generateFeedbackForVideo(reflection, videoNum) {
     const ids = getVideoElementIds(videoNum);
     const loadingSpinner = document.getElementById(ids.loadingSpinner);
@@ -3147,16 +2833,16 @@ async function generateFeedbackForVideo(reflection, videoNum) {
             let warningMessage = '';
             if (isVeryShort && isNonRelevant) {
                 warningMessage = currentLanguage === 'en'
-                    ? "⚠️ Your reflection is very short and does not relate to the teaching video. Please write a longer reflection (at least 50 words) that describes what you observed, explains why it happened using educational theories, and predicts the effects on student learning."
-                    : "⚠️ Ihre Reflexion ist sehr kurz und bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine längere Reflexion (mindestens 50 Wörter), die beschreibt, was Sie beobachtet haben, erklärt, warum es passiert ist (unter Verwendung pädagogischer Theorien), und die Auswirkungen auf das Lernen der Schüler vorhersagt.";
+                    ? "⚠️ Your reflection is very short and does not relate to the teaching video. Please write a longer reflection (at least 50 words) about what you observed in the video."
+                    : "⚠️ Ihre Reflexion ist sehr kurz und bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine längere Reflexion (mindestens 50 Wörter) über das, was Sie im Video beobachtet haben.";
             } else if (isVeryShort) {
                 warningMessage = currentLanguage === 'en'
-                    ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand your reflection to at least 50 words, providing more detail about what you observed, why it happened, and its effects on student learning."
-                    : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie Ihre Reflexion auf mindestens 50 Wörter und geben Sie mehr Details zu dem, was Sie beobachtet haben, warum es passiert ist und welche Auswirkungen es auf das Lernen der Schüler hat.";
+                    ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand it to at least 50 words."
+                    : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie sie auf mindestens 50 Wörter.";
             } else {
                 warningMessage = currentLanguage === 'en'
-                    ? "⚠️ Your reflection does not relate to the teaching video you watched. Please revise your reflection to focus on describing what you observed, explaining why it happened using educational theories, and predicting the effects on student learning."
-                    : "⚠️ Ihre Reflexion bezieht sich nicht auf das Unterrichtsvideo, das Sie sich angeschaut haben. Bitte überarbeiten Sie Ihre Reflexion, um sich auf die Beschreibung Ihrer Beobachtungen, die Erklärung mit Hilfe pädagogischer Theorien und die Vorhersage der Auswirkungen auf das Lernen der Schüler zu konzentrieren.";
+                    ? "⚠️ Your reflection does not relate to the teaching video. Please write a reflection about what you observed in the video."
+                    : "⚠️ Ihre Reflexion bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine Reflexion über das, was Sie im Video beobachtet haben.";
             }
             
             logEvent('non_relevant_reflection_detected', {
@@ -3939,9 +3625,7 @@ function switchLanguage(lang) {
     
     // Re-render dashboard if on dashboard page (to update video cards with new language)
     if (currentPage === 'dashboard' && currentParticipantProgress) {
-        if (typeof renderDashboard === 'function') {
-            renderDashboard();
-        }
+        renderDashboard();
     }
     
     // Update video page titles/subtitles if on a video page
@@ -4002,38 +3686,26 @@ function renderLanguageSwitchers() {
             new bootstrap.Tooltip(tooltipTriggerEl);
         });
     });
-    
-    // Initialize Bootstrap tooltips
-    containers.forEach(container => {
-        const tooltipTriggerList = container.querySelectorAll('[title]');
-        tooltipTriggerList.forEach(tooltipTriggerEl => {
-            new bootstrap.Tooltip(tooltipTriggerEl);
-        });
-    });
 }
 
 function renderLanguageSwitcherInNav() {
     const navContainer = document.querySelector('.language-switcher-container-inline');
     const t = translations[currentLanguage];
+    const tooltipText = t.language_tooltip || (currentLanguage === 'en' 
+        ? "Select the language for feedback generation. Feedback will be generated in the selected language (English or German). Switch before generating, or regenerate to change the feedback language."
+        : "Wählen Sie die Sprache für die Feedback-Generierung. Das Feedback wird in der ausgewählten Sprache (Englisch oder Deutsch) generiert. Vor der Generierung wechseln oder neu generieren, um die Feedback-Sprache zu ändern.");
     
-    // Don't show tooltip in nav (it's only relevant for video tasks)
     if (navContainer) {
         navContainer.innerHTML = `
             <div class="btn-group" role="group">
-                <button type="button" class="btn btn-sm ${currentLanguage === 'en' ? 'btn-primary' : 'btn-outline-primary'}" id="nav-lang-switch-en">English</button>
-                <button type="button" class="btn btn-sm ${currentLanguage === 'de' ? 'btn-primary' : 'btn-outline-primary'}" id="nav-lang-switch-de">Deutsch</button>
+                <button type="button" class="btn btn-sm ${currentLanguage === 'en' ? 'btn-primary' : 'btn-outline-primary'}" id="nav-lang-switch-en" title="${tooltipText}">English</button>
+                <button type="button" class="btn btn-sm ${currentLanguage === 'de' ? 'btn-primary' : 'btn-outline-primary'}" id="nav-lang-switch-de" title="${tooltipText}">Deutsch</button>
             </div>
         `;
         
         // Add event listeners
         document.getElementById('nav-lang-switch-en')?.addEventListener('click', () => switchLanguage('en'));
         document.getElementById('nav-lang-switch-de')?.addEventListener('click', () => switchLanguage('de'));
-        
-        // Initialize Bootstrap tooltips
-        const tooltipTriggerList = navContainer.querySelectorAll('[title]');
-        tooltipTriggerList.forEach(tooltipTriggerEl => {
-            new bootstrap.Tooltip(tooltipTriggerEl);
-        });
     }
     
     // Also render language switcher in dashboard header
@@ -4050,12 +3722,6 @@ function renderLanguageSwitcherInNav() {
         // Add event listeners
         document.getElementById('header-lang-switch-en')?.addEventListener('click', () => switchLanguage('en'));
         document.getElementById('header-lang-switch-de')?.addEventListener('click', () => switchLanguage('de'));
-        
-        // Initialize Bootstrap tooltips
-        const tooltipTriggerList = dashboardHeaderSwitcher.querySelectorAll('[title]');
-        tooltipTriggerList.forEach(tooltipTriggerEl => {
-            new bootstrap.Tooltip(tooltipTriggerEl);
-        });
     }
 }
 
@@ -4075,7 +3741,7 @@ function applyTranslations() {
     document.querySelectorAll('[data-lang-key]').forEach(element => {
         const key = element.getAttribute('data-lang-key');
         if (t[key]) {
-            // Check if it's a placeholder (has placeholder attribute)
+            // Check if it's a placeholder (has placeholder attribute but not data-lang-key-placeholder)
             if (element.hasAttribute('placeholder') && !element.hasAttribute('data-lang-key-placeholder')) {
                 element.placeholder = t[key];
             } 
@@ -4285,28 +3951,51 @@ function createSentenceWindows(text) {
 }
 
 async function classifyDescription(windowText) {
-    const prompt = `You are an expert in analyzing teaching reflections. Determine if this text contains descriptions of observable teaching events.
+    const prompt = `Task: Identify whether the following text belongs to the category "Description of Relevant Classroom Events."
 
-DEFINITION: Descriptions identify and differentiate teaching events based on educational knowledge, WITHOUT making evaluations, interpretations, or speculations.
+Core Principle: Descriptions identify and differentiate observable classroom events based on educational knowledge, WITHOUT making evaluations, interpretations, or speculations.
 
-CRITERIA FOR "1" (Contains Description):
-- Identifies observable teacher or student actions
-- Relates to learning processes, teaching processes, or learning activities
-- Uses neutral, observational language
-- Must be relevant to teaching/learning context
+Key Question: Has the person described relevant classroom events that provide insights into learning processes, learning activities, and/or teaching processes?
 
-CRITERIA FOR "0" (No Description):
-- Contains evaluations, interpretations, or speculations
-- Not about teaching/learning events
-- Non-relevant content (e.g., personal opinions unrelated to teaching, random text)
-- Too short or meaningless fragments
+Definition: Descriptions identify and differentiate classroom events based on educational knowledge. Relevant events include both events initiated by teachers that affect student learning, and events initiated by students that are central to teacher action.
 
-INSTRUCTIONS: 
-- Respond with ONLY "1" or "0"
-- Be conservative: only respond "1" if clearly certain the criteria are met
-- If text is non-relevant or too short, respond "0"
+Code as "1" (Description) when the text contains:
+* Identification and differentiation of observable classroom events
+* Events relate to learning processes, learning activities, or teaching processes
+* Uses neutral, observational language
+* Events are observable (perceivable through senses, especially sight and hearing)
 
-TEXT: ${windowText}`;
+Code as "0" (Non-Description) when the text contains:
+* Evaluations (indicators: "In my opinion...", "I think that...", "The teacher did well...")
+* Interpretations (indicators: "This probably activates prior knowledge")
+* Overgeneralizations (hasty conclusions based on few previous experiences)
+* Speculations (indicators: "probably", "likely", use of subjunctive)
+* Hypothetical or future actions (e.g., "I would have...", "If the teacher had done X/Y")
+* Non-observable events (not perceivable through senses)
+* Not about relevant classroom events
+
+Coding Rules:
+1. Be INCLUSIVE regarding relevant classroom events. If there are no concrete indicators that no relevant classroom event is described, assume a relevant event is present.
+2. Consider only the individual segments - do not rely on prior knowledge from videos when coding.
+3. A "1" is justified if parts of the text can be identified as "Description," even if other parts do not correspond to this category.
+
+Positive Examples (Code as "1"):
+1. "The teacher refers to the lesson topic: Binomial formulas"
+2. "Students work on worksheets while the teacher walks through the rows"
+3. "A student raises their hand"
+4. "The teacher writes something on the board"
+5. "The teacher goes through the rows"
+
+Negative Examples (Code as "0"):
+1. "The teacher probably wanted to activate prior knowledge" (speculation)
+2. "I think the teacher did a good job explaining" (evaluation)
+3. "The teacher should have given more time" (hypothetical action)
+4. "The teacher probably wanted to..." (speculation)
+5. "The students seem tired" (interpretation, not observable)
+
+Output only "1" or "0" without any additional text or quotation marks.
+
+Text to be evaluated: ${windowText}`;
 
     return await callBinaryClassifier(prompt);
 }
@@ -4314,59 +4003,44 @@ TEXT: ${windowText}`;
 async function classifyExplanation(windowText) {
     const prompt = `Task: Identify whether the following text belongs to the category "Explanation of Relevant Classroom Events."
 
-Core Principle: An explanation connects observable classroom events with reasons WHY they occurred or WHY they matter for teaching and learning.
+Core Principle: Explanations connect observable classroom events with theories of effective teaching, focusing on WHY events occur.
 
-Key Question: Does the text explain WHY something happened in the classroom that relates to teaching or learning processes?
+Key Question: Has the person explained relevant classroom events that provide insights into learning processes, learning activities, and/or teaching processes? Note: Explanations focus on the CAUSE perspective.
+
+Definition: Explanations connect observable classroom events (what is being explained) with theories of effective teaching. The focus is on WHY an event occurs. The event being explained must be observable (perceivable through senses, especially sight and hearing).
 
 Code as "1" (Explanation) when the text contains:
-* An observable classroom event (what teacher/students actually did)
-* PLUS a reason WHY it happened or WHY it affects learning
-* Even basic pedagogical reasoning counts
-* Partial explanations are sufficient - if ANY part explains, code as "1"
+* An observable classroom event connected with concrete educational science knowledge to explain it
+* Educational science knowledge includes: principles of cognitive activation, clarity of learning goals, use of advance organizers, learning psychology theories (self-determination theory, Bloom's taxonomy, constructivism, social-cognitive learning theory)
+* The explanation relates to relevant classroom events (learning processes, learning activities, or teaching processes)
+* The event being explained must be observable (not hypothetical or future actions)
 
-Be INCLUSIVE - Accept these as explanations:
-* Simple cause-effect statements about classroom dynamics
-* Common-sense pedagogical reasoning without technical terms
-* Connections between teaching actions and student responses
-* Basic explanations of learning processes
-* Informal observations about why teaching methods work/don't work
+Code as "0" (Non-Explanation) when the text contains:
+* What is being explained is not observable (hypothetical or future actions, e.g., "I would have...", "If the teacher had done X/Y")
+* Explanation without reference to a relevant classroom event
+* Explanation without reference to educational science knowledge
+* Pure description without theoretical connection
 
-Code as "0" (Non-Explanation) only when:
-* Text is purely descriptive with no causal reasoning
-* Discusses hypothetical/future actions ("should have," "would have")
-* Contains no WHY reasoning about actual classroom events
-* Lacks any connection to teaching/learning processes
+Coding Rules:
+1. Causal connectors like "because" or "since" are neither necessary nor sufficient for an explanation.
+2. Interpret the term "educational science knowledge" BROADLY. Be very INCLUSIVE here. Even if uncertainty exists about whether educational science knowledge is present, code inclusively.
+3. The event being explained must be observable but need not be explicitly named (e.g., "learning goals" instead of "setting learning goals").
+4. If uncertainty exists about whether a segment should be coded as Explanation or Prediction, assign it to the "Prediction" category (as the higher category).
+5. A "1" is justified if parts of the text can be identified as "Explanation," even if other parts do not correspond to this category.
 
 Positive Examples (Code as "1"):
-* "The students were engaged because the activity was hands-on"
-* "The teacher's open questions give students room for their own thoughts"
-* "Through repetition, students can better remember the conjugations"
-* "The unclear instructions confused the students"
-* "Students don't participate because the teacher doesn't give them enough time to think"
-* "Using role-play helps students remember vocabulary better"
-* "The teacher goes through the rows to ensure all students are working"
-* "By connecting to prior knowledge, learning becomes easier"
-* "The negative feedback could discourage future participation"
-* "Clear learning goals help students understand what's expected"
+1. "The teacher's open question should cognitively activate students"
+2. "This connection links today's learning goal with prior knowledge"
+3. "Because open questions give students room for their own thoughts"
+4. "Through repetition, students can better remember the conjugations" (relates to learning theory)
+5. "The unclear instructions confused the students" (connects event to learning effect)
 
 Negative Examples (Code as "0"):
-* "The teacher writes the topic on the board"
-* "Students work on the worksheet"
-* "The classroom is noisy"
-* "The teacher should have given more time"
-* "I would have explained it differently"
-* "The students seem tired"
-* "Two newspaper articles are hanging on the board"
-* "The lesson continues with the next exercise"
-* "This happens in math class"
-* "The teacher is male and middle-aged"
-
-Remember:
-* Focus on finding ANY explanatory content about WHY classroom events occur
-* Don't require formal educational terminology
-* Accept partial explanations within longer texts
-* When uncertain, lean toward inclusion (code as "1")
-* Look for connections between events and their effects on teaching/learning
+1. "Because the teacher communicated expectations" (no educational theory)
+2. "The teacher should use different methods" (hypothetical event)
+3. "The teacher writes the topic on the board" (pure description, no explanation)
+4. "Students work on the worksheet" (pure description, no explanation)
+5. "I would have explained it differently" (hypothetical/future action)
 
 Output only "1" or "0" without any additional text or quotation marks.
 
@@ -4376,33 +4050,51 @@ Text to be evaluated: ${windowText}`;
 }
 
 async function classifyPrediction(windowText) {
-    const prompt = `You are an expert in analyzing teaching reflections. Determine if this text contains predictions about effects of teaching events on student learning.
+    const prompt = `Task: Identify whether the following text belongs to the category "Prediction."
 
-DEFINITION: Predictions estimate potential consequences of teaching events for students based on learning theories.
+Core Principle: Predictions estimate potential consequences of classroom events for students based on learning theories.
 
-CRITERIA FOR "1" (Contains Prediction):
-- Predicts effects on student learning, motivation, or understanding
-- Based on educational knowledge about learning
-- Focuses on consequences for students
-- Examples: "This feedback could increase motivation", "Students may feel confused"
-- Must be relevant to teaching/learning context
+Key Question: Has the person predicted potential effects of relevant classroom events on the learning process of students? Note: Predictions focus on the CONSEQUENCE perspective.
 
-CRITERIA FOR "0" (No Prediction):
-- No effects on student learning mentioned
-- Predictions without educational basis
-- No connection to teaching events
-- Predictions about non-learning outcomes
-- Non-relevant content unrelated to teaching
-- Too short or meaningless fragments
+Definition: Predictions estimate (possible, observable or non-observable) consequences of different classroom events for students based on learning theories.
 
-INSTRUCTIONS:
-- Respond with ONLY "1" or "0"
-- No explanations, quotes, or other text
-- "1" if ANY part predicts effects on student learning
-- "0" if no learning consequences mentioned OR if content is non-relevant
-- Be conservative: only respond "1" if clearly certain
+Code as "1" (Prediction) when the text contains:
+* Potential effects of relevant classroom events on student learning are predicted with reference to educational science knowledge about learning
+* Predictions relate to relevant classroom events (learning processes, learning activities, or teaching processes)
+* Effects on student learning, motivation, understanding, engagement, cognitive processes, emotional responses, academic performance, participation, retention
+* Based on learning theories (interpreted broadly and inclusively)
 
-TEXT: ${windowText}`;
+Code as "0" (Non-Prediction) when the text contains:
+* No effects on future student learning mentioned
+* Prediction without reference to a classroom event
+* Prediction without reference to educational science knowledge about learning
+* Too vague or not connected to learning theory
+
+Coding Rules:
+1. Because it's about potential effects, statements about non-observable and future actions regarding consequences for student learning are allowed.
+2. Use of subjunctive (e.g., "could") is neither necessary nor sufficient for a prediction.
+3. If optional classroom events (e.g., other teacher actions) and their consequences for student learning are mentioned, these also count as predictions.
+4. Interpret the term "learning theories" BROADLY. Be very INCLUSIVE here. Even statements like "This could increase motivation" are acceptable, even if not explicitly referring to a specific theory or model.
+5. If uncertainty exists about whether a segment should be coded as Explanation or Prediction, assign it to the "Prediction" category (as the higher category).
+6. A "1" is justified if parts of the text can be identified as "Prediction," even if other parts do not correspond to this category.
+
+Positive Examples (Code as "1"):
+1. "Teacher feedback could increase student learning motivation"
+2. "This questioning strategy may help students identify knowledge gaps"
+3. "Through this feedback, the students' learning motivation could grow"
+4. "Following self-determination theory, stronger autonomy experience with tasks likely leads to stronger intrinsic motivation"
+5. "This feedback could discourage future participation" (negative effect, but still a prediction about learning)
+
+Negative Examples (Code as "0"):
+1. "This creates a good working climate" (too vague, no learning theory)
+2. "The teacher will continue the lesson" (no student learning effect)
+3. "The students were engaged because..." (this is explanation, not prediction)
+4. "The teacher writes on the board" (description, no prediction)
+5. "This could be better" (too vague, no learning theory connection)
+
+Output only "1" or "0" without any additional text or quotation marks.
+
+Text to be evaluated: ${windowText}`;
 
     return await callBinaryClassifier(prompt);
 }
@@ -4545,65 +4237,24 @@ function calculatePercentages(classificationResults) {
 // Feedback Generation (Same as original)
 // ============================================================================
 
-// Generate simple feedback for Gamma (Control Group) - 8-9 sentences
-async function generateSimpleFeedback(reflection, language) {
+async function generateWeightedFeedback(reflection, language, style, analysisResult) {
+    const promptType = `${style} ${language === 'en' ? 'English' : 'German'}`;
+    const systemPrompt = getFeedbackPrompt(promptType, analysisResult);
+    const pctPriority = analysisResult.percentages_priority;
+    
     const languageInstruction = language === 'en' 
         ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
         : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
     
-    // Simple and direct feedback prompt for Gamma (Control Group)
-    // Request 8-9 sentences of feedback
-    const simplePrompt = language === 'en'
-        ? "Provide feedback (8-9 sentences) for my teaching reflection."
-        : "Geben Sie Feedback (8-9 Sätze) für meine Unterrichtsreflexion.";
-    
     const requestData = {
         model: model,
         messages: [
-            { role: "system", content: languageInstruction + "\n\n" + simplePrompt },
-            { role: "user", content: reflection }
+            { role: "system", content: languageInstruction + "\n\n" + systemPrompt },
+            { role: "user", content: `Based on the analysis showing ${pctPriority.description}% description, ${pctPriority.explanation}% explanation, ${pctPriority.prediction}% prediction (Professional Vision: ${pctPriority.professional_vision}%) + Other: ${pctPriority.other}% = 100%, provide feedback for this reflection:\n\n${reflection}` }
         ],
         temperature: 0.3,
         max_tokens: 2000
     };
-    
-    try {
-        console.log('Gamma: Calling OpenAI API via CORS proxy:', OPENAI_API_URL);
-        console.log('Gamma: Request data:', JSON.stringify(requestData, null, 2));
-        
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            console.error('Gamma: API response error:', response.status, errorText);
-            let errorData = {};
-            try {
-                errorData = JSON.parse(errorText);
-            } catch (e) {
-                errorData = { error: { message: errorText } };
-            }
-            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        console.log('Gamma: API response received successfully');
-        return result.choices[0].message.content;
-    } catch (error) {
-        console.error('Gamma: Error in generateSimpleFeedback:', error);
-        console.error('Gamma: API URL was:', OPENAI_API_URL);
-        console.error('Gamma: CORS Proxy URL:', CORS_PROXY_URL);
-        throw error;
-    }
-}
-
-async function generateWeightedFeedback(reflection, language, style, analysisResult) {
-    // This function is not used in Gamma (Control Group) - kept for compatibility
-    // Gamma uses generateSimpleFeedback instead
-    return await generateSimpleFeedback(reflection, language);
     
     try {
         const response = await fetch(OPENAI_API_URL, {
