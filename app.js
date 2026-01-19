@@ -36,10 +36,10 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Video Configuration - UPDATE WITH YOUR 4 VIDEOS
 // Control Group (Gamma): Video 2 has Tutorial + INFER, Video 3 has INFER, Videos 1 & 4 are reflection-only
 const VIDEOS = [
-    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: false, hasINFER: false },
-    { id: 'video2', name: 'Video 2: [Name]', link: 'VIDEO_LINK_2', password: 'PASSWORD_2', hasINFER: true, hasINFER: true },
-    { id: 'video3', name: 'Video 3: [Name]', link: 'VIDEO_LINK_3', password: 'PASSWORD_3', hasINFER: true, hasINFER: false },
-    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: false, hasINFER: false }
+    { id: 'video1', name: 'Video 1: 01 Palästina', link: 'https://unitc-my.sharepoint.com/:v:/g/personal/sebft01_cloud_uni-tuebingen_de/IQAlV5knBnzmSqXI1k6JcBQ4ASfhxX7-jlefJy63sKUHOpk?e=OClxDB', password: '01pana', hasINFER: false },
+    { id: 'video2', name: 'Video 2: 02 Spinne fängt Fliege', link: 'https://unitc-my.sharepoint.com/:v:/g/personal/sebft01_cloud_uni-tuebingen_de/IQBEKSXETHcOR5ArCxT4XuieAUt5frf9SMVOAPLbcfeq5B4?e=QXxVt2', password: '02spge', hasINFER: true },
+    { id: 'video3', name: 'Video 3: 03 Höhendifferenz', link: 'https://unitc-my.sharepoint.com/:v:/g/personal/sebft01_cloud_uni-tuebingen_de/IQCWmAF5DMTVRqGfS2jO8z9XAdtkCcrnZlCYzS1eOJsNbyY?e=csJxJJ', password: '03honz', hasINFER: true },
+    { id: 'video4', name: 'Video 4: 04 Binomische Formeln', link: 'https://unitc-my.sharepoint.com/:v:/g/personal/sebft01_cloud_uni-tuebingen_de/IQBIo8KImiVlQrNspfjpwuVlARSmJ3DOJhQ8uqroL0GKSkc?e=iexZCN', password: '04biln', hasINFER: false }
 ];
 
 // Tutorial Video Configuration (shown before Video 2 for Control Group (Gamma))
