@@ -3148,6 +3148,15 @@ async function generateFeedbackForVideo(reflection, videoNum) {
             revision_count: currentTaskState.revisionCount || 0
         });
         
+        // Clean up any modal backdrop that might be stuck (especially from feedback-preference-modal)
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.remove();
+        }
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        
         showAlert('✅ Feedback generated successfully!', 'success');
         
     } catch (error) {
@@ -3157,6 +3166,17 @@ async function generateFeedbackForVideo(reflection, videoNum) {
         clearInterval(loadingInterval);
         if (loadingSpinner) loadingSpinner.style.display = 'none';
         if (generateBtn) generateBtn.disabled = false;
+        
+        // Final cleanup: ensure no modal backdrop remains
+        setTimeout(() => {
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }, 100);
     }
 }
 
