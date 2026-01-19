@@ -398,12 +398,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const anonymousId = urlParams.get('anonymous_id');
     const comingFromAssignment = !!(studentId && anonymousId);
     
-    // Show loading indicator if coming from assignment
     if (comingFromAssignment) {
-        const loadingIndicator = document.getElementById('loading-indicator');
-        if (loadingIndicator) {
-            loadingIndicator.style.display = 'flex';
-        }
         // Coming from assignment site - hide welcome page immediately
         const welcomePage = document.getElementById('page-welcome');
         if (welcomePage) welcomePage.classList.add('d-none');
@@ -485,12 +480,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // Direct login function - bypasses form, directly uses provided IDs
 async function directLoginFromAssignment(studentId, anonymousId) {
-    // Hide loading indicator
-    const loadingIndicator = document.getElementById('loading-indicator');
-    if (loadingIndicator) {
-        loadingIndicator.style.display = 'none';
-    }
-    
     const participantCode = anonymousId.toUpperCase();
     
     console.log('Direct login from assignment:', { studentId, anonymousId, participantCode });
@@ -595,12 +584,6 @@ async function directLoginFromAssignment(studentId, anonymousId) {
         if (typeof renderDashboard === 'function') {
             renderDashboard();
         }
-    }
-    
-    // Hide loading indicator after everything is done
-    const loadingIndicator = document.getElementById('loading-indicator');
-    if (loadingIndicator) {
-        loadingIndicator.style.display = 'none';
     }
 }
 
@@ -1265,9 +1248,9 @@ function assignCondition(participantName) {
 
 // Load participant progress
 async function loadParticipantProgress(participantName) {
-    // Wait for supabase to be initialized (with timeout)
+    // Wait briefly for supabase to be initialized (with short timeout)
     let retries = 0;
-    const maxRetries = 50; // 10 seconds max wait
+    const maxRetries = 5; // 1 second max wait (5 * 200ms)
     while (!supabase && retries < maxRetries) {
         await new Promise(resolve => setTimeout(resolve, 200));
         retries++;
