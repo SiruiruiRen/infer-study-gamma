@@ -184,6 +184,8 @@ const translations = {
         continue_video: "Continue",
         survey_completed: "Survey Done",
         complete_presurvey_first: "Complete Pre-Survey First",
+        complete_previous_video: "Complete Previous Video First",
+        complete_previous_video_first: "You must complete the previous video before starting this one.",
         thank_you_title: "Thank You!",
         participation_complete: "Your participation is complete",
         study_complete: "Study Complete!",
@@ -329,6 +331,8 @@ const translations = {
         continue_video: "Fortsetzen",
         survey_completed: "Umfrage erledigt",
         complete_presurvey_first: "Zuerst Vor-Umfrage abschließen",
+        complete_previous_video: "Zuerst vorheriges Video abschließen",
+        complete_previous_video_first: "Sie müssen das vorherige Video abschließen, bevor Sie dieses starten können.",
         data_protection_header: "Datenschutzinformationen",
         data_protection_intro: "Bitte lesen Sie das unten stehende Datenschutzdokument.",
         open_data_protection_doc: "Datenschutzdokument öffnen",
@@ -1579,6 +1583,28 @@ function updatePostSurveyStatus() {
 }
 
 // Create video card
+// Check if a video can be accessed (pre-survey completed AND previous videos completed)
+function canAccessVideo(videoIndex) {
+    // Pre-survey is MANDATORY - block all videos until completed
+    if (!currentParticipantProgress?.pre_survey_completed) {
+        return false;
+    }
+    
+    // First video (index 0) is always accessible if pre-survey is completed
+    if (videoIndex === 0) {
+        return true;
+    }
+    
+    // For subsequent videos, check if previous video is completed
+    const previousVideo = VIDEOS[videoIndex - 1];
+    if (!previousVideo) {
+        return true; // Safety fallback
+    }
+    
+    const previousVideoCompleted = currentParticipantProgress.videos_completed?.includes(previousVideo.id) || false;
+    return previousVideoCompleted;
+}
+
 function createVideoCard(video, number, isCompleted, surveyCompleted) {
     const card = document.createElement('div');
     card.className = 'col-md-6 col-lg-3';
@@ -1589,9 +1615,14 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
     const continueText = t.continue_video || (currentLanguage === 'en' ? 'Continue' : 'Fortsetzen');
     const surveyText = t.survey_completed || (currentLanguage === 'en' ? 'Survey Done' : 'Umfrage erledigt');
     const preSurveyRequired = t.complete_presurvey_first || (currentLanguage === 'en' ? 'Complete Pre-Survey First' : 'Zuerst Vor-Umfrage abschließen');
+    const completePreviousVideo = t.complete_previous_video || (currentLanguage === 'en' ? 'Complete Previous Video First' : 'Zuerst vorheriges Video abschließen');
     
-    // Pre-survey is MANDATORY - block videos until completed
-    const canAccess = currentParticipantProgress?.pre_survey_completed || false;
+    // Find video index in VIDEOS array
+    const videoIndex = VIDEOS.findIndex(v => v.id === video.id);
+    
+    // Check access: pre-survey completed AND (first video OR previous video completed)
+    const canAccess = canAccessVideo(videoIndex);
+    const isLocked = !canAccess;
     
     // Button texts based on language
     const btnCompletedText = t.video_completed;
@@ -1599,14 +1630,22 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
     const btnContinueText = t.continue_video;
     const btnSurveyText = t.survey_completed;
     
+    // Determine lock message
+    let lockMessage = '';
+    if (!currentParticipantProgress?.pre_survey_completed) {
+        lockMessage = preSurveyRequired;
+    } else if (videoIndex > 0) {
+        lockMessage = completePreviousVideo;
+    }
+    
     card.innerHTML = `
-        <div class="card h-100 video-card ${isCompleted ? 'completed' : ''} ${!canAccess ? 'locked' : ''}" data-video-id="${video.id}">
+        <div class="card h-100 video-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}" data-video-id="${video.id}">
             <div class="card-body text-center">
                 <h5>${currentLanguage === 'en' ? 'Video' : 'Video'} ${number}</h5>
                 <p class="text-muted small">${video.name}</p>
-                ${!canAccess 
+                ${isLocked 
                     ? `<div>
-                        <span class="badge bg-warning text-dark mb-2"><i class="bi bi-lock"></i> ${preSurveyRequired}</span>
+                        <span class="badge bg-warning text-dark mb-2"><i class="bi bi-lock"></i> ${lockMessage}</span>
                         <button class="btn btn-secondary btn-sm mt-2 locked-video-btn" disabled>${btnStartText}</button>
                        </div>`
                     : isCompleted 
@@ -2237,6 +2276,20 @@ async function startVideoTask(videoId) {
     
     if (!video) {
         console.error(`Video not found: ${videoId}`);
+        return;
+    }
+    
+    // Check sequential unlock: must complete previous video first
+    const videoIndex = VIDEOS.findIndex(v => v.id === videoId);
+    if (!canAccessVideo(videoIndex)) {
+        const t = translations[currentLanguage];
+        if (videoIndex > 0) {
+            const previousVideo = VIDEOS[videoIndex - 1];
+            const previousVideoName = previousVideo?.name || `Video ${videoIndex}`;
+            showAlert(t.complete_previous_video_first || `You must complete ${previousVideoName} before starting this video.`, 'warning');
+        } else {
+            showAlert(t.presurvey_required || 'You must complete the pre-survey before accessing video tasks.', 'warning');
+        }
         return;
     }
     
