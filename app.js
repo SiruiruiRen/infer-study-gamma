@@ -3219,13 +3219,20 @@ async function generateFeedback(reflection) {
                 word_count: wordCount
             });
             
-            const ids = getVideoElementIds(videoNum);
-            const feedbackExtended = document.getElementById(ids.feedbackExtended);
-            const feedbackShort = document.getElementById(ids.feedbackShort);
+            // Try to detect current video page for legacy function
+            const currentVideoPage = document.querySelector('.video-task-page:not(.d-none)');
+            let videoNum = null;
+            if (currentVideoPage) {
+                const videoId = currentVideoPage.dataset.videoId;
+                videoNum = getVideoPageNumber(videoId);
+            }
+            
+            const feedbackExtended = videoNum ? document.getElementById(`video-${videoNum}-feedback-extended`) : document.getElementById('task-feedback-extended');
+            const feedbackShort = videoNum ? document.getElementById(`video-${videoNum}-feedback-short`) : document.getElementById('task-feedback-short');
             if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
             if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
             
-            const feedbackTabs = document.getElementById(ids.feedbackTabs);
+            const feedbackTabs = videoNum ? document.getElementById(`video-${videoNum}-feedback-tabs`) : document.getElementById('task-feedback-tabs');
             if (feedbackTabs) feedbackTabs.classList.remove('d-none');
             
             clearInterval(loadingInterval);
@@ -3241,9 +3248,18 @@ async function generateFeedback(reflection) {
         ]);
         
         // Step 3: Save to database (no analysisResult for Gamma)
+        // Try to detect current video page for legacy function
+        const currentVideoPage = document.querySelector('.video-task-page:not(.d-none)');
+        let videoNum = null;
+        let videoId = currentVideoId;
+        if (currentVideoPage) {
+            videoId = currentVideoPage.dataset.videoId;
+            videoNum = getVideoPageNumber(videoId);
+        }
+        
         await saveFeedbackToDatabase({
             participantCode: currentParticipant,
-            videoSelected: currentVideoId,
+            videoSelected: videoId,
             reflectionText: reflection,
             analysisResult: null, // Gamma doesn't use chain analysis
             extendedFeedback: extendedFeedback,
@@ -3251,31 +3267,32 @@ async function generateFeedback(reflection) {
         });
         
         // Step 4: Store reflection for duplicate detection
-        sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
+        sessionStorage.setItem(`reflection-${videoId}`, reflection.trim());
         
         // Step 5: Display feedback (no analysisResult formatting for Gamma)
-        const ids = getVideoElementIds(videoNum);
-        const feedbackExtended = document.getElementById(ids.feedbackExtended);
-        const feedbackShort = document.getElementById(ids.feedbackShort);
+        const feedbackExtended = videoNum ? document.getElementById(`video-${videoNum}-feedback-extended`) : document.getElementById('task-feedback-extended');
+        const feedbackShort = videoNum ? document.getElementById(`video-${videoNum}-feedback-short`) : document.getElementById('task-feedback-short');
         if (feedbackExtended) feedbackExtended.innerHTML = extendedFeedback;
         if (feedbackShort) feedbackShort.innerHTML = shortFeedback;
         
-        // Step 6: Show tabs (using video-specific IDs)
-        const feedbackTabs = document.getElementById(ids.feedbackTabs);
+        // Step 6: Show tabs
+        const feedbackTabs = videoNum ? document.getElementById(`video-${videoNum}-feedback-tabs`) : document.getElementById('task-feedback-tabs');
         if (feedbackTabs) feedbackTabs.classList.remove('d-none');
         
         if (userPreferredFeedbackStyle === 'short') {
-            document.getElementById(ids.shortTab)?.click();
+            const shortTab = videoNum ? document.getElementById(`video-${videoNum}-short-tab`) : document.getElementById('task-short-tab');
+            shortTab?.click();
         } else {
-            document.getElementById(ids.extendedTab)?.click();
+            const extendedTab = videoNum ? document.getElementById(`video-${videoNum}-extended-tab`) : document.getElementById('task-extended-tab');
+            extendedTab?.click();
         }
         
         // Start feedback viewing tracking
         startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
         
-        // Step 7: Show revise and submit buttons (using correct video-specific IDs)
-        const reviseBtn = document.getElementById(ids.reviseBtn);
-        const submitBtn = document.getElementById(ids.submitBtn);
+        // Step 7: Show revise and submit buttons
+        const reviseBtn = videoNum ? document.getElementById(`video-${videoNum}-revise-btn`) : document.getElementById('task-revise-btn');
+        const submitBtn = videoNum ? document.getElementById(`video-${videoNum}-submit-btn`) : document.getElementById('task-submit-btn');
         if (reviseBtn) reviseBtn.classList.remove('d-none');
         if (submitBtn) submitBtn.classList.remove('d-none');
         
@@ -3284,7 +3301,7 @@ async function generateFeedback(reflection) {
         // Log successful feedback generation
         logEvent('feedback_generated_successfully', {
             participant_name: currentParticipant,
-            video_id: currentVideoId,
+            video_id: videoId,
             language: currentLanguage,
             reflection_length: reflection.length,
             word_count: wordCount,
