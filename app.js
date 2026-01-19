@@ -478,11 +478,109 @@ document.addEventListener('DOMContentLoaded', function() {
     }, 5000);
 });
 
+// Direct login function - bypasses form, directly uses provided IDs
+async function directLoginFromAssignment(studentId, anonymousId) {
+    const participantCode = anonymousId.toUpperCase();
+    
+    console.log('Direct login from assignment:', { studentId, anonymousId, participantCode });
+    
+    // Check if participant exists
+    const progress = await loadParticipantProgress(participantCode);
+    
+    if (progress) {
+        // Returning participant - restore all progress
+        currentParticipant = participantCode;
+        currentParticipantProgress = progress;
+        
+        // Verify treatment_group matches current site (prevent group switching)
+        const existingTreatmentGroup = progress.treatment_group;
+        if (existingTreatmentGroup && existingTreatmentGroup !== STUDY_CONDITION) {
+            console.warn(`Participant ${participantCode} is assigned to ${existingTreatmentGroup} but accessing ${STUDY_CONDITION} site`);
+            showAlert(
+                `Error: You are registered in a different study group (${existingTreatmentGroup}). Please use the correct link for your assigned group. Access blocked.`,
+                'danger'
+            );
+            logEvent('wrong_site_access_attempt', {
+                participant_name: participantCode,
+                assigned_group: existingTreatmentGroup,
+                attempted_site: STUDY_CONDITION
+            });
+            return;
+        } else if (!existingTreatmentGroup) {
+            // If treatment_group is missing, set it based on current site
+            console.log(`Setting missing treatment_group to ${STUDY_CONDITION} for ${participantCode}`);
+            if (supabase) {
+                supabase.from('participant_progress')
+                    .update({ treatment_group: STUDY_CONDITION })
+                    .eq('participant_name', participantCode)
+                    .then(() => {
+                        currentParticipantProgress.treatment_group = STUDY_CONDITION;
+                        console.log('Updated treatment_group for', participantCode);
+                    });
+            }
+        }
+        
+        // Ensure arrays are properly initialized
+        if (!currentParticipantProgress.videos_completed) currentParticipantProgress.videos_completed = [];
+        if (!currentParticipantProgress.video_surveys) currentParticipantProgress.video_surveys = {};
+        
+        // Update last active time, student_id, and anonymous_id
+        if (supabase) {
+            const updateData = { 
+                last_active_at: new Date().toISOString(),
+                anonymous_id: participantCode,
+                student_id: studentId
+            };
+            supabase.from('participant_progress')
+                .update(updateData)
+                .eq('participant_name', participantCode)
+                .then(() => console.log('Updated last_active_at, student_id, and anonymous_id for', participantCode));
+        }
+        
+        console.log('Restored progress for', participantCode, ':', currentParticipantProgress);
+        
+        // Go directly to dashboard
+        showPage('dashboard');
+        renderDashboard();
+    } else {
+        // New participant - create progress record
+        currentParticipant = participantCode;
+        const condition = assignCondition(participantCode);
+        
+        // Create new progress record
+        await createParticipantProgress(participantCode, condition, studentId);
+        currentParticipantProgress = {
+            participant_name: participantCode,
+            assigned_condition: condition,
+            treatment_group: STUDY_CONDITION,
+            videos_completed: [],
+            pre_survey_completed: false,
+            post_survey_completed: false,
+            video_surveys: {}
+        };
+        
+        logEvent('participant_registered', {
+            participant_name: participantCode,
+            assigned_condition: condition,
+            treatment_group: STUDY_CONDITION,
+            student_id: studentId,
+            anonymous_id: participantCode
+        });
+        
+        // Go directly to dashboard
+        showPage('dashboard');
+        renderDashboard();
+    }
+}
+
 // Initialize app
 function initializeApp(comingFromAssignment = false, studentId = null, anonymousId = null) {
     setupEventListeners();
     renderLanguageSwitchers();
-    renderLanguageSwitcherInNav();
+    // Only call renderLanguageSwitcherInNav if it exists (it's defined later in the file)
+    if (typeof renderLanguageSwitcherInNav === 'function') {
+        renderLanguageSwitcherInNav();
+    }
     applyTranslations();
     
     // Set default language to German
@@ -490,51 +588,21 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
     
     // Check if coming from assignment site (with URL params) - directly login and go to dashboard
     if (comingFromAssignment && studentId && anonymousId) {
-        // Coming from assignment site - skip login/consent pages, directly login and go to dashboard
-        console.log('Coming from assignment site, auto-logging in and going to dashboard...', { studentId, anonymousId });
+        // Coming from assignment site - completely skip login/consent pages, go directly to dashboard
+        console.log('Coming from assignment site, skipping login/consent, going directly to dashboard...', { studentId, anonymousId });
         
-        // Show login page first to ensure form elements exist, but hide it visually
-        showPage('login');
-        
-        // Directly call handleLogin after filling form
-        const directLogin = async () => {
-            // Wait for form elements to be available
-            const codeInput = document.getElementById('participant-code-input');
-            const studentIdInput = document.getElementById('student-id-input');
-            
-            if (!codeInput || !studentIdInput) {
-                console.log('Form elements not ready, retrying...', { codeInput: !!codeInput, studentIdInput: !!studentIdInput });
-                setTimeout(directLogin, 100);
-                return;
+        // Wait for Supabase to be ready, then login directly
+        const attemptDirectLogin = async () => {
+            if (typeof loadParticipantProgress === 'function' && typeof createParticipantProgress === 'function') {
+                await directLoginFromAssignment(studentId, anonymousId);
+            } else {
+                console.log('Login functions not ready yet, retrying...');
+                setTimeout(attemptDirectLogin, 200);
             }
-            
-            // Fill the form fields
-            codeInput.value = anonymousId.toUpperCase();
-            studentIdInput.value = studentId;
-            
-            // Dispatch input events to trigger any listeners
-            codeInput.dispatchEvent(new Event('input', { bubbles: true }));
-            studentIdInput.dispatchEvent(new Event('input', { bubbles: true }));
-            
-            console.log('Form fields filled:', { 
-                anonymousId: codeInput.value, 
-                studentId: studentIdInput.value 
-            });
-            
-            // Wait a moment for form to update, then call handleLogin
-            setTimeout(async () => {
-                if (typeof handleLogin === 'function') {
-                    console.log('Calling handleLogin...');
-                    await handleLogin();
-                } else {
-                    console.log('handleLogin not available yet, retrying...');
-                    setTimeout(directLogin, 200);
-                }
-            }, 200);
         };
         
-        // Start login process after a short delay to ensure page is shown and elements are ready
-        setTimeout(directLogin, 500);
+        // Start direct login after a short delay
+        setTimeout(attemptDirectLogin, 300);
     } else {
         // Direct visitor - show login page (welcome page stays hidden)
         showPage('login');
