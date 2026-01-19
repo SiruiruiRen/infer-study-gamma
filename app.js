@@ -520,7 +520,6 @@ async function directLoginFromAssignment(studentId, anonymousId) {
                 window.location.href = redirectUrl;
                 return;
             }
-        }
         } else if (!existingTreatmentGroup) {
             // If treatment_group is missing, set it based on current site
             // Setting missing treatment_group (don't log to avoid exposing group assignment)
