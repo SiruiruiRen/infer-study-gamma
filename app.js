@@ -4989,11 +4989,13 @@ window.addEventListener('beforeunload', () => {
         endFeedbackViewing(currentTaskState.currentFeedbackType, currentLanguage);
     }
     
-    logEvent('session_end', {
-        session_duration: Date.now() - performance.timing.navigationStart,
-        language: currentLanguage,
-        final_page: currentPage,
-        video_id: currentVideoId,
-        participant_name: currentParticipant || null
-    });
+    if (typeof logEvent === 'function') {
+        logEvent('session_end', {
+            session_duration: Date.now() - performance.timing.navigationStart,
+            language: currentLanguage,
+            final_page: currentPage,
+            video_id: currentVideoId,
+            participant_name: currentParticipant || null
+        });
+    }
 });
