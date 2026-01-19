@@ -1682,18 +1682,35 @@ function showTutorialPage(videoId) {
     // Store the target video ID
     tutorialPage.dataset.targetVideoId = videoId;
     
+    // Reset tutorial tracking when showing tutorial page again
+    if (tutorialPlayCount > 0) {
+        // User is watching tutorial again
+        logEvent('tutorial_page_revisited', {
+            participant_name: currentParticipant,
+            target_video_id: videoId,
+            previous_play_count: tutorialPlayCount
+        });
+    }
+    
     // Show tutorial page
     showPage('tutorial');
     
     logEvent('tutorial_page_shown', {
         participant_name: currentParticipant,
-        target_video_id: videoId
+        target_video_id: videoId,
+        is_first_view: tutorialPlayCount === 0
     });
 }
 
 // Track tutorial watch status
 let tutorialWatchProgress = 0;
 let tutorialWatched = false;
+let tutorialPlayCount = 0; // Track how many times tutorial was played
+let tutorialLastPauseTime = null;
+let tutorialTotalWatchTime = 0; // Total time spent watching tutorial
+let tutorialSeekCount = 0; // Count of seek operations
+let tutorialRewindCount = 0; // Count of backward seeks
+let tutorialFastForwardCount = 0; // Count of forward seeks
 
 // Create tutorial page HTML
 function createTutorialPage() {
@@ -1787,8 +1804,113 @@ function createTutorialPage() {
             }
         });
         
+        // Note: ended event handler moved above to include logging
+        
+        // Track video play events
+        let lastPlayTime = null;
+        let isFirstPlay = true;
+        
+        videoPlayer.addEventListener('play', () => {
+            tutorialPlayCount++;
+            const isReplay = tutorialPlayCount > 1;
+            lastPlayTime = Date.now();
+            
+            logEvent('tutorial_video_play', {
+                participant_name: currentParticipant,
+                tutorial_url: TUTORIAL_VIDEO.link,
+                play_count: tutorialPlayCount,
+                is_replay: isReplay,
+                current_time: videoPlayer.currentTime,
+                duration: videoPlayer.duration
+            });
+            
+            if (isFirstPlay) {
+                logEvent('tutorial_video_started', {
+                    participant_name: currentParticipant,
+                    tutorial_url: TUTORIAL_VIDEO.link
+                });
+                isFirstPlay = false;
+            }
+        });
+        
+        // Track pause events
+        videoPlayer.addEventListener('pause', () => {
+            const pauseTime = Date.now();
+            const watchDuration = lastPlayTime ? (pauseTime - lastPlayTime) / 1000 : 0;
+            tutorialTotalWatchTime += watchDuration;
+            tutorialLastPauseTime = videoPlayer.currentTime;
+            
+            logEvent('tutorial_video_pause', {
+                participant_name: currentParticipant,
+                tutorial_url: TUTORIAL_VIDEO.link,
+                pause_time: videoPlayer.currentTime,
+                duration: videoPlayer.duration,
+                watch_duration_this_session: watchDuration,
+                total_watch_time: tutorialTotalWatchTime
+            });
+        });
+        
+        // Track seeking (fast forward/rewind)
+        let lastSeekTime = videoPlayer.currentTime;
+        videoPlayer.addEventListener('seeking', () => {
+            const currentTime = videoPlayer.currentTime;
+            const seekDifference = currentTime - lastSeekTime;
+            tutorialSeekCount++;
+            
+            if (seekDifference < -1) {
+                // Rewind (backward seek)
+                tutorialRewindCount++;
+                logEvent('tutorial_video_rewind', {
+                    participant_name: currentParticipant,
+                    tutorial_url: TUTORIAL_VIDEO.link,
+                    from_time: lastSeekTime,
+                    to_time: currentTime,
+                    seek_difference: seekDifference,
+                    rewind_count: tutorialRewindCount
+                });
+            } else if (seekDifference > 1) {
+                // Fast forward
+                tutorialFastForwardCount++;
+                logEvent('tutorial_video_fast_forward', {
+                    participant_name: currentParticipant,
+                    tutorial_url: TUTORIAL_VIDEO.link,
+                    from_time: lastSeekTime,
+                    to_time: currentTime,
+                    seek_difference: seekDifference,
+                    fast_forward_count: tutorialFastForwardCount
+                });
+            }
+            
+            lastSeekTime = currentTime;
+        });
+        
+        videoPlayer.addEventListener('seeked', () => {
+            logEvent('tutorial_video_seeked', {
+                participant_name: currentParticipant,
+                tutorial_url: TUTORIAL_VIDEO.link,
+                seeked_to_time: videoPlayer.currentTime,
+                duration: videoPlayer.duration,
+                total_seek_count: tutorialSeekCount
+            });
+        });
+        
+        // Track when video ends
         videoPlayer.addEventListener('ended', () => {
             tutorialWatched = true;
+            const finalWatchTime = lastPlayTime ? (Date.now() - lastPlayTime) / 1000 : 0;
+            tutorialTotalWatchTime += finalWatchTime;
+            
+            logEvent('tutorial_video_ended', {
+                participant_name: currentParticipant,
+                tutorial_url: TUTORIAL_VIDEO.link,
+                total_watch_time: tutorialTotalWatchTime,
+                play_count: tutorialPlayCount,
+                seek_count: tutorialSeekCount,
+                rewind_count: tutorialRewindCount,
+                fast_forward_count: tutorialFastForwardCount,
+                max_progress: tutorialWatchProgress
+            });
+            
             if (checkbox) {
                 checkbox.disabled = false;
                 checkbox.checked = true;
@@ -1799,13 +1921,6 @@ function createTutorialPage() {
                 continueBtn.classList.add('btn-success');
             }
             if (warning) warning.classList.add('d-none');
-        });
-        
-        videoPlayer.addEventListener('play', () => {
-            logEvent('tutorial_video_started', {
-                participant_name: currentParticipant,
-                tutorial_url: TUTORIAL_VIDEO.link
-            });
         });
     }
     
@@ -3466,14 +3581,27 @@ function handleCopyForVideo(videoNum) {
             logEvent('copy_feedback', {
                 video_id: `video${videoNum}`,
                 feedback_type: feedbackType,
-                reflection_id: currentTaskState.currentReflectionId
+                reflection_id: currentTaskState.currentReflectionId,
+                feedback_length: feedbackContent.length,
+                participant_name: currentParticipant,
+                language: currentLanguage
             });
         }).catch(err => {
             console.error('Error copying feedback:', err);
             showAlert('❌ Failed to copy feedback', 'danger');
+            logEvent('copy_feedback_failed', {
+                video_id: `video${videoNum}`,
+                feedback_type: feedbackType,
+                error: err.message,
+                participant_name: currentParticipant
+            });
         });
     } else {
         showAlert('⚠️ No feedback available to copy', 'warning');
+        logEvent('copy_feedback_no_content', {
+            video_id: `video${videoNum}`,
+            participant_name: currentParticipant
+        });
     }
 }
 
