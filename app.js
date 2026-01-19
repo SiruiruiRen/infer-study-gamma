@@ -875,23 +875,26 @@ function handleTabSwitch() {
     if (document.hidden) {
         lastHiddenTime = Date.now();
         tabSwitchCount++;
-        logEvent('tab_hidden', {
-            tab_switch_count: tabSwitchCount,
-            current_page: currentPage,
-            video_id: currentVideoId,
-            participant_name: currentParticipant || null,
-            language: currentLanguage,
-            timestamp: new Date().toISOString()
-        });
+        if (typeof logEvent === 'function') {
+            logEvent('tab_hidden', {
+                tab_switch_count: tabSwitchCount,
+                current_page: currentPage,
+                video_id: currentVideoId,
+                participant_name: currentParticipant || null,
+                language: currentLanguage,
+                timestamp: new Date().toISOString()
+            });
+        }
     } else {
         const timeAway = lastHiddenTime ? (Date.now() - lastHiddenTime) / 1000 : 0;
-        logEvent('tab_visible', {
-            tab_switch_count: tabSwitchCount,
-            time_away_seconds: timeAway,
-            current_page: currentPage,
-            video_id: currentVideoId,
-            participant_name: currentParticipant || null,
-            language: currentLanguage,
+        if (typeof logEvent === 'function') {
+            logEvent('tab_visible', {
+                tab_switch_count: tabSwitchCount,
+                time_away_seconds: timeAway,
+                current_page: currentPage,
+                video_id: currentVideoId,
+                participant_name: currentParticipant || null,
+                language: currentLanguage,
             timestamp: new Date().toISOString()
         });
         
