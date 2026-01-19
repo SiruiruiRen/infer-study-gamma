@@ -34,12 +34,12 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // ============================================================================
 
 // Video Configuration - UPDATE WITH YOUR 4 VIDEOS
-// Control Group (Gamma): Video 2 has INFER, Video 3 has INFER, Videos 1 & 4 are reflection-only
+// Control Group (Gamma): Video 2 has Tutorial + INFER, Video 3 has INFER, Videos 1 & 4 are reflection-only
 const VIDEOS = [
-    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: false, hasTutorial: false },
-    { id: 'video2', name: 'Video 2: [Name]', link: 'VIDEO_LINK_2', password: 'PASSWORD_2', hasINFER: true, hasTutorial: false },
-    { id: 'video3', name: 'Video 3: [Name]', link: 'VIDEO_LINK_3', password: 'PASSWORD_3', hasINFER: true, hasTutorial: false },
-    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: false, hasTutorial: false }
+    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: false, hasINFER: false },
+    { id: 'video2', name: 'Video 2: [Name]', link: 'VIDEO_LINK_2', password: 'PASSWORD_2', hasINFER: true, hasINFER: true },
+    { id: 'video3', name: 'Video 3: [Name]', link: 'VIDEO_LINK_3', password: 'PASSWORD_3', hasINFER: true, hasINFER: false },
+    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: false, hasINFER: false }
 ];
 
 // Tutorial Video Configuration (shown before Video 2 for Control Group (Gamma))
@@ -189,7 +189,7 @@ const translations = {
         study_complete: "Study Complete!",
         thank_you_message: "Thank you for your time and thoughtful reflections.",
         contribution_message: "Your contributions help improve teacher education and feedback systems.",
-        // percentage_explanation_simple removed for Gamma (Control Group doesn't show professional vision analysis)
+        percentage_explanation_simple: "The percentages of professional vision may exceed 100%, as each text segment can be coded for multiple components: description, explanation, and prediction.",
         choose_feedback_style: "Choose Your Preferred Feedback Style",
         feedback_style_intro: "We generate two types of feedback. Which would you like to see first?",
         extended_description: "Detailed academic feedback with comprehensive analysis and educational theory references",
@@ -347,7 +347,7 @@ const translations = {
         study_complete: "Studie abgeschlossen!",
         thank_you_message: "Vielen Dank für Ihre Zeit und Ihre durchdachten Reflexionen.",
         contribution_message: "Ihre Beiträge helfen, die Lehrerausbildung und Feedback-Systeme zu verbessern.",
-        // percentage_explanation_simple removed for Gamma (Control Group doesn't show professional vision analysis)
+        percentage_explanation_simple: "Die Prozentsätze der professionellen Wahrnehmung können 100% überschreiten, da jedes Textsegment für mehrere Komponenten kodiert werden kann: Beschreibung, Erklärung und Vorhersage.",
         choose_feedback_style: "Wählen Sie Ihren bevorzugten Feedback-Stil",
         feedback_style_intro: "Wir generieren zwei Arten von Feedback. Welches möchten Sie zuerst sehen?",
         extended_description: "Detailliertes akademisches Feedback mit umfassender Analyse und pädagogischen Theoriereferenzen",
@@ -493,7 +493,7 @@ async function directLoginFromAssignment(studentId, anonymousId) {
         if (existingTreatmentGroup && existingTreatmentGroup !== STUDY_CONDITION) {
             // Silently redirect to correct site without exposing group information
             const STUDY_GROUP_URLS = {
-                'treatment_1': 'https://infer-study-alpha.onrender.com',
+                'control': 'https://infer-study-gamma.onrender.com',
                 'treatment_2': 'https://infer-study-beta.onrender.com',
                 'control': 'https://infer-study-gamma.onrender.com'
             };
@@ -1175,7 +1175,7 @@ async function handleLogin() {
         if (existingTreatmentGroup && existingTreatmentGroup !== STUDY_CONDITION) {
             // Silently redirect to correct site without exposing group information
             const STUDY_GROUP_URLS = {
-                'treatment_1': 'https://infer-study-alpha.onrender.com',
+                'control': 'https://infer-study-gamma.onrender.com',
                 'treatment_2': 'https://infer-study-beta.onrender.com',
                 'control': 'https://infer-study-gamma.onrender.com'
             };
@@ -1820,11 +1820,10 @@ function createTutorialPage() {
             // Mark tutorial as watched
             markTutorialWatched();
             
-            // Continue to the target video
+            // Continue to the target video - show video link page (not directly to reflection)
             const targetVideoId = document.getElementById('page-tutorial').dataset.targetVideoId;
             if (targetVideoId) {
-                const videoNum = getVideoPageNumber(targetVideoId);
-                continueToReflectionTask(videoNum);
+                startVideoTaskAfterTutorial(targetVideoId);
             }
         });
     }
@@ -2123,10 +2122,11 @@ async function startVideoTask(videoId) {
     console.log(`Found video:`, video);
     
     // Tutorial check removed for Gamma (Control Group has no tutorial)
+    // Tutorial check removed for Gamma (Control Group has no tutorial)
     // if (video.hasTutorial && !currentParticipantProgress?.tutorial_watched) {
     //     showTutorialPage(videoId);
     //     return;
-    // }
+    // }    }
     
     const videoNum = getVideoPageNumber(videoId);
     
@@ -2426,15 +2426,23 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                 
                 if (reflection.feedback_extended && feedbackExtended) {
                     console.log(`[loadPreviousReflection] Loading extended feedback (length: ${reflection.feedback_extended.length})`);
-                    // Gamma uses simple feedback, no analysisResult formatting
-                    feedbackExtended.innerHTML = reflection.feedback_extended;
+                    const analysisResult = reflection.analysis_percentages ? {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    } : null;
+                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
                     console.log(`[loadPreviousReflection] Extended feedback loaded successfully`);
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
                     console.log(`[loadPreviousReflection] Loading short feedback (length: ${reflection.feedback_short.length})`);
-                    // Gamma uses simple feedback, no analysisResult formatting
-                    feedbackShort.innerHTML = reflection.feedback_short;
+                    const analysisResult = reflection.analysis_percentages ? {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    } : null;
+                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
                     console.log(`[loadPreviousReflection] Short feedback loaded successfully`);
                 }
                 
@@ -2469,7 +2477,15 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                     if (clearBtn) clearBtn.disabled = true;
                 }
                 
-                // Gamma doesn't display analysis distribution (simple feedback only)
+                // Display analysis distribution if available
+                if (reflection.analysis_percentages) {
+                    const analysisResult = {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    };
+                    displayAnalysisDistributionForVideo(analysisResult, videoNum);
+                }
                 
                 // Update task state
                 currentTaskState = {
@@ -2543,13 +2559,21 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                 const submitBtn = document.getElementById(ids.submitBtn);
                 
                 if (reflection.feedback_extended && feedbackExtended) {
-                    // Gamma uses simple feedback, no analysisResult formatting
-                    feedbackExtended.innerHTML = reflection.feedback_extended;
+                    const analysisResult = reflection.analysis_percentages ? {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    } : null;
+                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
-                    // Gamma uses simple feedback, no analysisResult formatting
-                    feedbackShort.innerHTML = reflection.feedback_short;
+                    const analysisResult = reflection.analysis_percentages ? {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    } : null;
+                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
                 }
                 
                 // Show feedback tabs and buttons
@@ -2557,7 +2581,15 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                 if (reviseBtn) reviseBtn.style.display = 'inline-block';
                 if (submitBtn) submitBtn.style.display = 'block';
                 
-                // Gamma doesn't display analysis distribution (simple feedback only)
+                // Display analysis distribution if available
+                if (reflection.analysis_percentages) {
+                    const analysisResult = {
+                        percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
+                        percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
+                        weakest_component: reflection.weakest_component || 'Prediction'
+                    };
+                    displayAnalysisDistribution(analysisResult);
+                }
                 
                 // Update task state
                 currentTaskState = {
@@ -2934,18 +2966,42 @@ async function generateFeedbackForVideo(reflection, videoNum) {
         const wordCount = reflection.split(/\s+/).length;
         const isVeryShort = wordCount < 20;
         
-        // Step 1: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
-        if (isVeryShort) {
-            let warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand it to at least 50 words."
-                : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie sie auf mindestens 50 Wörter.";
+        // Step 1: Analyze reflection (binary classification at window level, then aggregated)
+        const analysisResult = await analyzeReflectionDistribution(reflection, currentLanguage);
+        
+        // Store binary classification results (window-level D/E/P scores)
+        await storeBinaryClassificationResults(analysisResult);
+        
+        // Step 2: Check for non-meaningful input (short OR non-relevant)
+        const isNonRelevant = analysisResult.percentages_priority.professional_vision < 10;
+        
+        if (isVeryShort || isNonRelevant) {
+            displayAnalysisDistributionForVideo(analysisResult, videoNum);
             
-            logEvent('short_reflection_detected', {
+            let warningMessage = '';
+            if (isVeryShort && isNonRelevant) {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection is very short and does not relate to the teaching video. Please write a longer reflection (at least 50 words) about what you observed in the video."
+                    : "⚠️ Ihre Reflexion ist sehr kurz und bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine längere Reflexion (mindestens 50 Wörter) über das, was Sie im Video beobachtet haben.";
+            } else if (isVeryShort) {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand it to at least 50 words."
+                    : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie sie auf mindestens 50 Wörter.";
+            } else {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection does not relate to the teaching video. Please write a reflection about what you observed in the video."
+                    : "⚠️ Ihre Reflexion bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine Reflexion über das, was Sie im Video beobachtet haben.";
+            }
+            
+            logEvent('non_relevant_reflection_detected', {
                 participant_name: currentParticipant,
                 video_id: currentVideoId,
                 language: currentLanguage,
                 reflection_length: reflection.length,
-                word_count: wordCount
+                word_count: wordCount,
+                professional_vision_percentage: analysisResult.percentages_priority.professional_vision,
+                is_very_short: isVeryShort,
+                is_non_relevant: isNonRelevant
             });
             
             const feedbackExtended = document.getElementById(ids.feedbackExtended);
@@ -2962,30 +3018,63 @@ async function generateFeedbackForVideo(reflection, videoNum) {
             return;
         }
         
-        // Step 2: Generate simple general feedback (Gamma uses simple prompt, not chain prompt)
+        // Step 3: Display analysis distribution
+        displayAnalysisDistributionForVideo(analysisResult, videoNum);
+        
+        // Step 4: Generate both feedback styles
         const [extendedFeedback, shortFeedback] = await Promise.all([
-            generateSimpleFeedback(reflection, currentLanguage, 'academic'),
-            generateSimpleFeedback(reflection, currentLanguage, 'user-friendly')
+            generateWeightedFeedback(reflection, currentLanguage, 'academic', analysisResult),
+            generateWeightedFeedback(reflection, currentLanguage, 'user-friendly', analysisResult)
         ]);
         
-        // Step 3: Save to database (no analysisResult for Gamma)
+        // Step 5: Add revision suggestion if needed (for non-relevant content)
+        let finalShortFeedback = shortFeedback;
+        let finalExtendedFeedback = extendedFeedback;
+        
+        // Add warning if significant non-relevant content
+        if (analysisResult && analysisResult.percentages_priority.other > 50) {
+            const revisionNote = currentLanguage === 'en' 
+                ? "\n\n**⚠️ Important Note:** Your reflection contains a significant amount of content that doesn't follow professional lesson analysis steps. Please revise your reflection to focus more on describing what you observed, explaining why it happened using educational theories, and predicting the effects on student learning."
+                : "\n\n**⚠️ Wichtiger Hinweis:** Ihre Reflexion enthält einen erheblichen Anteil an Inhalten, die nicht den Schritten einer professionellen Stundenanalyse folgen. Bitte überarbeiten Sie Ihre Reflexion, um sich mehr auf die Beschreibung Ihrer Beobachtungen, die Erklärung mit Hilfe pädagogischer Theorien und die Vorhersage der Auswirkungen auf das Lernen der Schüler zu konzentrieren.";
+            finalShortFeedback += revisionNote;
+            finalExtendedFeedback += revisionNote;
+            
+            logEvent('non_relevant_content_warning', {
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                language: currentLanguage,
+                other_percentage: analysisResult.percentages_priority.other,
+                professional_vision_percentage: analysisResult.percentages_priority.professional_vision
+            });
+        }
+        
+        // Add warning if professional vision is low but above threshold
+        if (analysisResult && analysisResult.percentages_priority.professional_vision < 30 && analysisResult.percentages_priority.professional_vision >= 10) {
+            const lowPVNote = currentLanguage === 'en'
+                ? "\n\n**Note:** Your reflection shows limited connection to professional vision concepts. Try to include more descriptions of observable teaching events, explanations linking events to educational theories, and predictions about effects on student learning."
+                : "\n\n**Hinweis:** Ihre Reflexion zeigt eine begrenzte Verbindung zu Professional-Vision-Konzepten. Versuchen Sie, mehr Beschreibungen beobachtbarer Unterrichtsereignisse, Erklärungen, die Ereignisse mit pädagogischen Theorien verknüpfen, und Vorhersagen über Auswirkungen auf das Lernen der Schüler einzubeziehen.";
+            finalShortFeedback += lowPVNote;
+            finalExtendedFeedback += lowPVNote;
+        }
+        
+        // Step 6: Save to database
         await saveFeedbackToDatabase({
             participantCode: currentParticipant,
             videoSelected: currentVideoId,
             reflectionText: reflection,
-            analysisResult: null, // Gamma doesn't use chain analysis
-            extendedFeedback: extendedFeedback,
-            shortFeedback: shortFeedback
+            analysisResult,
+            extendedFeedback: finalExtendedFeedback,
+            shortFeedback: finalShortFeedback
         });
         
-        // Step 4: Store reflection for duplicate detection
+        // Step 7: Store reflection for duplicate detection
         sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
         
-        // Step 5: Display feedback (no analysisResult formatting for Gamma)
+        // Step 8: Display feedback
         const feedbackExtended = document.getElementById(ids.feedbackExtended);
         const feedbackShort = document.getElementById(ids.feedbackShort);
-        if (feedbackExtended) feedbackExtended.innerHTML = extendedFeedback;
-        if (feedbackShort) feedbackShort.innerHTML = shortFeedback;
+        if (feedbackExtended) feedbackExtended.innerHTML = formatStructuredFeedback(finalExtendedFeedback, analysisResult);
+        if (feedbackShort) feedbackShort.innerHTML = formatStructuredFeedback(finalShortFeedback, analysisResult);
         
         // Step 9: Show tabs
         const feedbackTabs = document.getElementById(ids.feedbackTabs);
@@ -4346,57 +4435,6 @@ function calculatePercentages(classificationResults) {
 // Feedback Generation (Same as original)
 // ============================================================================
 
-// Gamma group uses simple general prompt (not chain prompt)
-async function generateSimpleFeedback(reflection, language, style) {
-    const languageInstruction = language === 'en' 
-        ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
-        : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
-    
-    // Simple general prompt for Gamma (Control Group) - simple and direct
-    const simplePrompt = language === 'en'
-        ? `I am writing a teaching reflection. Please give me 8-10 sentences of feedback.`
-        : `Ich schreibe eine Unterrichtsreflexion. Bitte geben Sie mir 8-10 Sätze Feedback.`;
-    
-    const requestData = {
-        model: model,
-        messages: [
-            { role: "user", content: `${simplePrompt}\n\n${reflection}` }
-        ],
-        temperature: 0.3,
-        max_tokens: 300  // Limit to approximately 8-10 sentences
-    };
-    
-    try {
-        const response = await fetch(OPENAI_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(requestData)
-        });
-        
-        if (!response.ok) {
-            const errorText = await response.text().catch(() => 'Unknown error');
-            let errorData = {};
-            try {
-                errorData = JSON.parse(errorText);
-            } catch (e) {
-                errorData = { error: { message: errorText } };
-            }
-            console.error(`Feedback generation failed: HTTP ${response.status}`, errorData);
-            console.error(`API URL: ${OPENAI_API_URL}`);
-            throw new Error(errorData.error?.message || `HTTP ${response.status}: ${errorText}`);
-        }
-        
-        const result = await response.json();
-        let feedback = result.choices[0].message.content;
-        
-        return feedback;
-    } catch (error) {
-        console.error('Error in generateSimpleFeedback:', error);
-        throw error;
-    }
-}
-
-// Keep generateWeightedFeedback for backward compatibility (not used in Gamma)
 async function generateWeightedFeedback(reflection, language, style, analysisResult) {
     const promptType = `${style} ${language === 'en' ? 'English' : 'German'}`;
     const systemPrompt = getFeedbackPrompt(promptType, analysisResult);
