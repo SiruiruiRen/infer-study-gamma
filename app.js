@@ -3779,6 +3779,29 @@ function handleFinalSubmissionForVideo(videoNum) {
                 }
             }
             
+            // Ensure page is visible - remove any modal backdrop that might be stuck
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            
+            // Ensure body is not in modal-open state
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            // Ensure current video page is visible
+            const videoNum = storedVideoNum ? parseInt(storedVideoNum) : null;
+            if (videoNum) {
+                const ids = getVideoElementIds(videoNum);
+                const videoPage = document.getElementById(`page-video-${videoNum}`);
+                if (videoPage) {
+                    videoPage.classList.remove('d-none');
+                    // Ensure page is shown
+                    showPage(`video-${videoNum}`);
+                }
+            }
+            
             // Clean up
             modal.removeEventListener('hidden.bs.modal', resetButtonOnClose);
             delete modal.dataset.originalSubmitHtml;
