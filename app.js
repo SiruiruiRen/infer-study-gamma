@@ -4726,12 +4726,12 @@ async function generateSimpleFeedback(reflection, language, style) {
     
     // Strong language instruction as system message
     const languageInstruction = language === 'en'
-        ? "You are a feedback assistant. CRITICAL RULE: You MUST respond ONLY in English. Do NOT use German, French, Spanish, or any other language. Every single word of your feedback MUST be in English. Even if the reflection text is in German, you MUST still respond in English. This is a mandatory requirement that cannot be violated."
-        : "Sie sind ein Feedback-Assistent. KRITISCHE REGEL: Sie MÜSSEN ausschließlich auf Deutsch antworten. Verwenden Sie KEIN Englisch, Französisch, Spanisch oder eine andere Sprache. Jedes einzelne Wort Ihres Feedbacks MUSS auf Deutsch sein. Auch wenn der Reflexionstext auf Englisch ist, MÜSSEN Sie trotzdem auf Deutsch antworten. Dies ist eine obligatorische Anforderung, die nicht verletzt werden darf.";
+        ? "You are a feedback assistant. CRITICAL RULE: You MUST respond ONLY in English. Do NOT use German, French, Spanish, or any other language. Every single word of your feedback MUST be in English. Even if the reflection text is in German, you MUST still respond in English. This is a mandatory requirement that cannot be violated.\n\nIMPORTANT: If the reflection is NOT about teaching or classroom observation (e.g., random text, unrelated content), respond with ONLY ONE SHORT WARNING SENTENCE telling the user to write about the teaching video. Do NOT provide detailed feedback for irrelevant content."
+        : "Sie sind ein Feedback-Assistent. KRITISCHE REGEL: Sie MÜSSEN ausschließlich auf Deutsch antworten. Verwenden Sie KEIN Englisch, Französisch, Spanisch oder eine andere Sprache. Jedes einzelne Wort Ihres Feedbacks MUSS auf Deutsch sein. Auch wenn der Reflexionstext auf Englisch ist, MÜSSEN Sie trotzdem auf Deutsch antworten. Dies ist eine obligatorische Anforderung, die nicht verletzt werden darf.\n\nWICHTIG: Wenn die Reflexion NICHT über Unterricht oder Klassenraumbeobachtung handelt (z.B. zufälliger Text, irrelevanter Inhalt), antworten Sie nur mit EINEM KURZEN WARNSATZ, der den Benutzer auffordert, über das Unterrichtsvideo zu schreiben. Geben Sie KEIN detailliertes Feedback für irrelevante Inhalte.";
     
     const simplePrompt = language === 'en'
-        ? `I am writing a teaching reflection. Please give me ${lengthInstruction} of feedback in English. IMPORTANT: Your entire response MUST be in English only. Do not use any other language.`
-        : `Ich schreibe eine Unterrichtsreflexion. Bitte geben Sie mir ${lengthInstruction} Feedback auf Deutsch. WICHTIG: Ihre gesamte Antwort MUSS ausschließlich auf Deutsch sein. Verwenden Sie keine andere Sprache.`;
+        ? `I am writing a teaching reflection. Please give me ${lengthInstruction} of feedback in English. IMPORTANT: Your entire response MUST be in English only. Do not use any other language. If the reflection is not about teaching, give only one warning sentence.`
+        : `Ich schreibe eine Unterrichtsreflexion. Bitte geben Sie mir ${lengthInstruction} Feedback auf Deutsch. WICHTIG: Ihre gesamte Antwort MUSS ausschließlich auf Deutsch sein. Verwenden Sie keine andere Sprache. Wenn die Reflexion nicht über Unterricht handelt, geben Sie nur einen Warnsatz.`;
     
     const requestData = {
         model: model,
