@@ -500,11 +500,13 @@ async function directLoginFromAssignment(studentId, anonymousId) {
                 `Error: You are registered in a different study group (${existingTreatmentGroup}). Please use the correct link for your assigned group. Access blocked.`,
                 'danger'
             );
-            logEvent('wrong_site_access_attempt', {
-                participant_name: participantCode,
-                assigned_group: existingTreatmentGroup,
-                attempted_site: STUDY_CONDITION
-            });
+            if (typeof logEvent === 'function') {
+                logEvent('wrong_site_access_attempt', {
+                    participant_name: participantCode,
+                    assigned_group: existingTreatmentGroup,
+                    attempted_site: STUDY_CONDITION
+                });
+            }
             return;
         } else if (!existingTreatmentGroup) {
             // If treatment_group is missing, set it based on current site
