@@ -36,18 +36,18 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Video Configuration - UPDATE WITH YOUR 4 VIDEOS
 // Control Group (Gamma): Video 2 has Tutorial + INFER, Video 3 has INFER, Videos 1 & 4 are reflection-only
 const VIDEOS = [
-    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: false, hasINFER: false },
-    { id: 'video2', name: 'Video 2: [Name]', link: 'VIDEO_LINK_2', password: 'PASSWORD_2', hasINFER: true, hasINFER: true },
-    { id: 'video3', name: 'Video 3: [Name]', link: 'VIDEO_LINK_3', password: 'PASSWORD_3', hasINFER: true, hasINFER: false },
-    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: false, hasINFER: false }
+    { id: 'video1', name: 'Video 1: [Name]', link: 'VIDEO_LINK_1', password: 'PASSWORD_1', hasINFER: false, hasTutorial: false },
+    { id: 'video2', name: 'Video 2: [Name]', link: 'VIDEO_LINK_2', password: 'PASSWORD_2', hasINFER: true, hasTutorial: true },
+    { id: 'video3', name: 'Video 3: [Name]', link: 'VIDEO_LINK_3', password: 'PASSWORD_3', hasINFER: true, hasTutorial: false },
+    { id: 'video4', name: 'Video 4: [Name]', link: 'VIDEO_LINK_4', password: 'PASSWORD_4', hasINFER: false, hasTutorial: false }
 ];
 
 // Tutorial Video Configuration (shown before Video 2 for Control Group (Gamma))
-// Tutorial Video Configuration - NOT USED IN GAMMA
-// const TUTORIAL_VIDEO = {
-//     link: 'tutorial_german.mp4',
-//     password: ''
-// };
+const TUTORIAL_VIDEO = {
+    link: 'tutorial_german.mp4', // Local file in root
+    password: '' // No password for local file
+};
+
 // Qualtrics Survey Links
 const QUALTRICS_SURVEYS = {
     pre: 'https://unc.az1.qualtrics.com/jfe/form/SV_9XLC3Bd1eQfu2p0',
@@ -2096,11 +2096,10 @@ async function startVideoTask(videoId) {
     console.log(`Found video:`, video);
     
     // Check if tutorial should be shown (Alpha/Control Group (Gamma): Video 2 has tutorial)
-    // Tutorial check removed for Gamma (Control Group has no tutorial)
-    // if (video.hasTutorial && !currentParticipantProgress?.tutorial_watched) {
-    //     showTutorialPage(videoId);
-    //     return;
-    // }    }
+    if (video.hasTutorial && !currentParticipantProgress?.tutorial_watched) {
+        showTutorialPage(videoId);
+        return;
+    }
     
     const videoNum = getVideoPageNumber(videoId);
     
@@ -2208,6 +2207,7 @@ async function continueToReflectionTask(videoNum) {
 
 // Configure UI for INFER vs reflection-only mode
 function configureVideoTaskUI(videoNum, hasINFER) {
+    const videoId = `video${videoNum}`;
     const ids = getVideoElementIds(videoNum);
     const t = translations[currentLanguage];
     
@@ -2218,6 +2218,13 @@ function configureVideoTaskUI(videoNum, hasINFER) {
     const reviseBtn = document.getElementById(ids.reviseBtn);
     const copyBtn = document.getElementById(ids.copyBtn);
     const conceptsSection = document.getElementById(`video-${videoNum}-concepts-section`);
+    
+    // Check if video is completed - if so, we need to preserve feedback visibility
+    const isVideoCompleted = currentParticipantProgress?.videos_completed?.includes(videoId) || false;
+    const feedbackExtended = document.getElementById(ids.feedbackExtended);
+    const feedbackShort = document.getElementById(ids.feedbackShort);
+    const hasExistingFeedback = (feedbackExtended && feedbackExtended.innerHTML && feedbackExtended.innerHTML.trim() !== '' && !feedbackExtended.innerHTML.includes('Feedback will appear here')) ||
+                                (feedbackShort && feedbackShort.innerHTML && feedbackShort.innerHTML.trim() !== '' && !feedbackShort.innerHTML.includes('Feedback will appear here'));
     
     // Hide or show language toggle (Feedback Language selector) based on hasINFER
     const languageToggle = document.querySelector(`#page-video-${videoNum} .language-toggle`);
@@ -2239,8 +2246,17 @@ function configureVideoTaskUI(videoNum, hasINFER) {
             submitBtn.classList.remove('d-none');
             submitBtn.disabled = false;
         }
-        if (feedbackSection) feedbackSection.classList.remove('d-none');
+        // Always show feedback section for INFER videos (especially if completed with existing feedback)
+        if (feedbackSection) {
+            feedbackSection.classList.remove('d-none');
+        }
         if (conceptsSection) conceptsSection.classList.remove('d-none');
+        
+        // If video is completed and has existing feedback, ensure feedback tabs are visible
+        if (isVideoCompleted && hasExistingFeedback) {
+            if (feedbackTabs) feedbackTabs.classList.remove('d-none');
+            console.log(`[configureVideoTaskUI] Video completed with feedback - ensuring feedback is visible`);
+        }
     } else {
         // Reflection-only mode: Hide generate button, show submit directly
         if (generateBtn) {
@@ -2251,7 +2267,7 @@ function configureVideoTaskUI(videoNum, hasINFER) {
             submitBtn.textContent = t.submit_reflection_only || 'Submit Reflection';
             submitBtn.disabled = false;
         }
-        // Hide feedback-related elements
+        // Hide feedback-related elements for reflection-only videos
         if (feedbackTabs) feedbackTabs.classList.add('d-none');
         if (feedbackSection) feedbackSection.classList.add('d-none');
         if (reviseBtn) reviseBtn.classList.add('d-none');
@@ -2359,36 +2375,62 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
             }
             
             // Load previous feedback if available
+            console.log(`[loadPreviousReflection] Checking for feedback:`, { 
+                hasFeedbackExtended: !!reflection.feedback_extended, 
+                hasFeedbackShort: !!reflection.feedback_short,
+                feedbackExtendedLength: reflection.feedback_extended?.length || 0,
+                feedbackShortLength: reflection.feedback_short?.length || 0
+            });
+            
             if (reflection.feedback_extended || reflection.feedback_short) {
                 const feedbackExtended = document.getElementById(ids.feedbackExtended);
                 const feedbackShort = document.getElementById(ids.feedbackShort);
                 const feedbackTabs = document.getElementById(ids.feedbackTabs);
+                const feedbackSection = document.getElementById(`video-${videoNum}-feedback-section`);
                 const reviseBtn = document.getElementById(ids.reviseBtn);
                 const submitBtn = document.getElementById(ids.submitBtn);
                 
+                console.log(`[loadPreviousReflection] Feedback elements:`, {
+                    feedbackExtended: !!feedbackExtended,
+                    feedbackShort: !!feedbackShort,
+                    feedbackTabs: !!feedbackTabs,
+                    feedbackSection: !!feedbackSection
+                });
+                
                 if (reflection.feedback_extended && feedbackExtended) {
+                    console.log(`[loadPreviousReflection] Loading extended feedback (length: ${reflection.feedback_extended.length})`);
                     const analysisResult = reflection.analysis_percentages ? {
                         percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
                     feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
+                    console.log(`[loadPreviousReflection] Extended feedback loaded successfully`);
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
+                    console.log(`[loadPreviousReflection] Loading short feedback (length: ${reflection.feedback_short.length})`);
                     const analysisResult = reflection.analysis_percentages ? {
                         percentages_raw: reflection.analysis_percentages.raw || reflection.analysis_percentages,
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
                     feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
+                    console.log(`[loadPreviousReflection] Short feedback loaded successfully`);
                 }
                 
                 // Check if video is already completed (submitted)
                 const isVideoCompleted = currentParticipantProgress?.videos_completed?.includes(videoId) || false;
                 
-                // Show feedback tabs
-                if (feedbackTabs) feedbackTabs.classList.remove('d-none');
+                // Show feedback section and tabs
+                if (feedbackSection) {
+                    feedbackSection.classList.remove('d-none');
+                    console.log(`[loadPreviousReflection] Feedback section shown`);
+                }
+                if (feedbackTabs) {
+                    feedbackTabs.classList.remove('d-none');
+                    console.log(`[loadPreviousReflection] Feedback tabs shown`);
+                }
                 
                 // Only show revise/submit buttons if not completed
                 if (!isVideoCompleted) {
@@ -2432,8 +2474,9 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                 // Store reflection for duplicate detection
                 sessionStorage.setItem(`reflection-${videoId}`, reflection.reflection_text);
             } else {
-                // No feedback yet, reset state
-                resetTaskStateForVideo(videoNum);
+                // No feedback yet, but reflection exists - still show reflection
+                console.log(`[loadPreviousReflection] No feedback found, but reflection exists. Reflection text should be visible.`);
+                // Don't reset state if reflection exists - just don't show feedback
             }
         } else {
             // No previous reflection, start fresh
