@@ -559,13 +559,15 @@ async function directLoginFromAssignment(studentId, anonymousId) {
             video_surveys: {}
         };
         
-        logEvent('participant_registered', {
-            participant_name: participantCode,
-            assigned_condition: condition,
-            treatment_group: STUDY_CONDITION,
-            student_id: studentId,
-            anonymous_id: participantCode
-        });
+        if (typeof logEvent === 'function') {
+            logEvent('participant_registered', {
+                participant_name: participantCode,
+                assigned_condition: condition,
+                treatment_group: STUDY_CONDITION,
+                student_id: studentId,
+                anonymous_id: participantCode
+            });
+        }
         
         // Go directly to dashboard
         showPage('dashboard');
@@ -581,22 +583,33 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
     if (typeof renderLanguageSwitcherInNav === 'function') {
         renderLanguageSwitcherInNav();
     }
-    applyTranslations();
+    // Only call applyTranslations if it exists (it's defined later in the file)
+    if (typeof applyTranslations === 'function') {
+        applyTranslations();
+    }
     
     // Set default language to German
-    switchLanguage('de');
+    if (typeof switchLanguage === 'function') {
+        switchLanguage('de');
+    }
     
     // Check if coming from assignment site (with URL params) - directly login and go to dashboard
     if (comingFromAssignment && studentId && anonymousId) {
         // Coming from assignment site - completely skip login/consent pages, go directly to dashboard
         console.log('Coming from assignment site, skipping login/consent, going directly to dashboard...', { studentId, anonymousId });
         
-        // Wait for Supabase to be ready, then login directly
+        // Wait for all required functions to be ready, then login directly
         const attemptDirectLogin = async () => {
-            if (typeof loadParticipantProgress === 'function' && typeof createParticipantProgress === 'function') {
+            if (typeof loadParticipantProgress === 'function' && 
+                typeof createParticipantProgress === 'function' &&
+                typeof directLoginFromAssignment === 'function') {
                 await directLoginFromAssignment(studentId, anonymousId);
             } else {
-                console.log('Login functions not ready yet, retrying...');
+                console.log('Login functions not ready yet, retrying...', {
+                    loadParticipantProgress: typeof loadParticipantProgress,
+                    createParticipantProgress: typeof createParticipantProgress,
+                    directLoginFromAssignment: typeof directLoginFromAssignment
+                });
                 setTimeout(attemptDirectLogin, 200);
             }
         };
@@ -608,14 +621,16 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
         showPage('login');
     }
     
-    // Log session start
-    logEvent('session_start', {
-        entry_page: comingFromAssignment ? 'assignment_redirect' : 'direct',
-        language: currentLanguage,
-        user_agent: navigator.userAgent,
-        screen_width: window.screen.width,
-        screen_height: window.screen.height
-    });
+    // Log session start (only if logEvent is available)
+    if (typeof logEvent === 'function') {
+        logEvent('session_start', {
+            entry_page: comingFromAssignment ? 'assignment_redirect' : 'direct',
+            language: currentLanguage,
+            user_agent: navigator.userAgent,
+            screen_width: window.screen.width,
+            screen_height: window.screen.height
+        });
+    }
 }
 
 // Setup event listeners
