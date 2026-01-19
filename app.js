@@ -431,7 +431,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }, 100);
     
-    // Fallback: if Supabase doesn't load after 5 seconds, initialize anyway
+    // Fallback: if Supabase doesn't load after 2 seconds, initialize anyway
     fallbackTimeout = setTimeout(() => {
         if (waitInterval) clearInterval(waitInterval);
         if (appInitialized) return;
@@ -451,7 +451,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         } else {
             console.warn('initSupabase function not yet available, will retry...');
-            // Retry after another second
+            // Retry after another 500ms
             setTimeout(() => {
                 if (typeof initSupabase === 'function') {
                     try {
@@ -468,14 +468,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     appInitialized = true;
                     initializeApp(comingFromAssignment, studentId, anonymousId);
                 }
-            }, 1000);
+            }, 500);
             return;
         }
         if (!appInitialized) {
             appInitialized = true;
             initializeApp(comingFromAssignment, studentId, anonymousId);
         }
-    }, 5000);
+    }, 2000); // Reduced from 5000ms to 2000ms
 });
 
 // Direct login function - bypasses form, directly uses provided IDs
@@ -617,12 +617,12 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
                     createParticipantProgress: typeof createParticipantProgress,
                     directLoginFromAssignment: typeof directLoginFromAssignment
                 });
-                setTimeout(attemptDirectLogin, 200);
+                setTimeout(attemptDirectLogin, 50); // Reduced retry delay
             }
         };
         
-        // Start direct login after a short delay
-        setTimeout(attemptDirectLogin, 300);
+        // Start direct login immediately
+        attemptDirectLogin();
     } else {
         // Direct visitor - NOT ALLOWED: redirect to assignment site
         console.warn('Direct access not allowed. Redirecting to assignment site...');
