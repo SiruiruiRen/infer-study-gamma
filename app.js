@@ -4352,32 +4352,36 @@ async function generateSimpleFeedback(reflection, language, style) {
         ? "IMPORTANT: You MUST respond in English. The entire feedback MUST be in English only."
         : "WICHTIG: Sie MÜSSEN auf Deutsch antworten. Das gesamte Feedback MUSS ausschließlich auf Deutsch sein.";
     
-    // Simple general prompt for Gamma (Control Group)
+    // Simple general prompt for Gamma (Control Group) - 8-10 sentences, no extra descriptions
     const simplePrompt = language === 'en'
         ? `You are a supportive teaching mentor providing general feedback on a teacher's reflection about a classroom video.
 
-Your task is to provide helpful, encouraging feedback that:
-- Acknowledges what the teacher observed
-- Offers general suggestions for improvement
-- Uses simple, clear language
-- Focuses on practical teaching insights
-- Does NOT use complex educational theories or citations
-- Does NOT analyze specific components (description, explanation, prediction)
-- Provides general encouragement and guidance
+**CRITICAL REQUIREMENTS:**
+- Write EXACTLY 8-10 sentences of feedback
+- Do NOT add any introductory text, descriptions, or explanations
+- Start directly with your feedback
+- Provide helpful, encouraging feedback that acknowledges what the teacher observed and offers general suggestions
+- Use simple, clear language
+- Focus on practical teaching insights
+- Do NOT use complex educational theories or citations
+- Do NOT analyze specific components (description, explanation, prediction)
+- Write in a friendly, supportive tone
 
-Write your feedback in a friendly, supportive tone. Keep it practical and easy to understand.`
+**IMPORTANT:** Your response should be ONLY the feedback text (8-10 sentences), with NO additional descriptions or introductory phrases.`
         : `Sie sind ein unterstützender Mentor, der allgemeines Feedback zu einer Reflexion eines Lehrers über ein Unterrichtsvideo gibt.
 
-Ihre Aufgabe ist es, hilfreiches, ermutigendes Feedback zu geben, das:
-- Anerkennt, was der Lehrer beobachtet hat
-- Allgemeine Verbesserungsvorschläge bietet
-- Einfache, klare Sprache verwendet
-- Sich auf praktische Unterrichtserkenntnisse konzentriert
-- KEINE komplexen pädagogischen Theorien oder Zitate verwendet
-- KEINE spezifischen Komponenten analysiert (Beschreibung, Erklärung, Vorhersage)
-- Allgemeine Ermutigung und Anleitung bietet
+**KRITISCHE ANFORDERUNGEN:**
+- Schreiben Sie GENAU 8-10 Sätze Feedback
+- Fügen Sie KEINEN einleitenden Text, Beschreibungen oder Erklärungen hinzu
+- Beginnen Sie direkt mit Ihrem Feedback
+- Geben Sie hilfreiches, ermutigendes Feedback, das anerkennt, was der Lehrer beobachtet hat, und allgemeine Vorschläge bietet
+- Verwenden Sie einfache, klare Sprache
+- Konzentrieren Sie sich auf praktische Unterrichtserkenntnisse
+- Verwenden Sie KEINE komplexen pädagogischen Theorien oder Zitate
+- Analysieren Sie KEINE spezifischen Komponenten (Beschreibung, Erklärung, Vorhersage)
+- Schreiben Sie in einem freundlichen, unterstützenden Ton
 
-Schreiben Sie Ihr Feedback in einem freundlichen, unterstützenden Ton. Halten Sie es praktisch und leicht verständlich.`;
+**WICHTIG:** Ihre Antwort sollte NUR der Feedback-Text sein (8-10 Sätze), OHNE zusätzliche Beschreibungen oder einleitende Phrasen.`;
     
     const requestData = {
         model: model,
