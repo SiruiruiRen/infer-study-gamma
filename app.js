@@ -409,15 +409,19 @@ document.addEventListener('DOMContentLoaded', function() {
     let fallbackTimeout = null;
     
     waitInterval = setInterval(() => {
-        if (typeof window.supabase !== 'undefined') {
+        if (typeof window.supabase !== 'undefined' && typeof initSupabase === 'function') {
             clearInterval(waitInterval);
             if (fallbackTimeout) clearTimeout(fallbackTimeout);
             
             // Initialize Supabase
-            supabase = initSupabase();
-            if (supabase) {
-                verifySupabaseConnection(supabase);
-                currentSessionId = getOrCreateSessionId();
+            try {
+                supabase = initSupabase();
+                if (supabase) {
+                    verifySupabaseConnection(supabase);
+                    currentSessionId = getOrCreateSessionId();
+                }
+            } catch (error) {
+                console.error('Error initializing Supabase:', error);
             }
             
             if (!appInitialized) {
@@ -435,10 +439,37 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.supabase === 'undefined') {
             console.warn('Supabase library not loaded, initializing without it');
         }
-        supabase = initSupabase();
-        if (supabase) {
-            verifySupabaseConnection(supabase);
-            currentSessionId = getOrCreateSessionId();
+        if (typeof initSupabase === 'function') {
+            try {
+                supabase = initSupabase();
+                if (supabase) {
+                    verifySupabaseConnection(supabase);
+                    currentSessionId = getOrCreateSessionId();
+                }
+            } catch (error) {
+                console.error('Error initializing Supabase:', error);
+            }
+        } else {
+            console.warn('initSupabase function not yet available, will retry...');
+            // Retry after another second
+            setTimeout(() => {
+                if (typeof initSupabase === 'function') {
+                    try {
+                        supabase = initSupabase();
+                        if (supabase) {
+                            verifySupabaseConnection(supabase);
+                            currentSessionId = getOrCreateSessionId();
+                        }
+                    } catch (error) {
+                        console.error('Error initializing Supabase on retry:', error);
+                    }
+                }
+                if (!appInitialized) {
+                    appInitialized = true;
+                    initializeApp(comingFromAssignment, studentId, anonymousId);
+                }
+            }, 1000);
+            return;
         }
         if (!appInitialized) {
             appInitialized = true;
