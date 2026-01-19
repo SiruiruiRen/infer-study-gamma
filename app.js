@@ -2431,8 +2431,7 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
-                    // Gamma uses simple feedback, no analysisResult formatting
-                    feedbackExtended.innerHTML = reflection.feedback_extended;
+                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
                     console.log(`[loadPreviousReflection] Extended feedback loaded successfully`);
                 }
                 
@@ -2443,8 +2442,7 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
-                    // Gamma uses simple feedback, no analysisResult formatting
-                    feedbackShort.innerHTML = reflection.feedback_short;
+                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
                     console.log(`[loadPreviousReflection] Short feedback loaded successfully`);
                 }
                 
@@ -2486,7 +2484,7 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     };
-                    // Gamma doesn't display analysis distribution (simple feedback only)
+                    displayAnalysisDistributionForVideo(analysisResult, videoNum);
                 }
                 
                 // Update task state
@@ -2566,8 +2564,7 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
-                    // Gamma uses simple feedback, no analysisResult formatting
-                    feedbackExtended.innerHTML = reflection.feedback_extended;
+                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
@@ -2576,8 +2573,7 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
-                    // Gamma uses simple feedback, no analysisResult formatting
-                    feedbackShort.innerHTML = reflection.feedback_short;
+                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
                 }
                 
                 // Show feedback tabs and buttons
@@ -2592,7 +2588,7 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     };
-                    // Gamma doesn't display analysis distribution (simple feedback only)
+                    displayAnalysisDistribution(analysisResult);
                 }
                 
                 // Update task state
@@ -2966,22 +2962,46 @@ async function generateFeedbackForVideo(reflection, videoNum) {
             return;
         }
         
-        // Step 0.5: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
+        // Step 0.5: Check for very short or non-relevant reflection
         const wordCount = reflection.split(/\s+/).length;
         const isVeryShort = wordCount < 20;
         
-        // Step 1: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
-        if (isVeryShort) {
-            let warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand it to at least 50 words."
-                : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie sie auf mindestens 50 Wörter.";
+        // Step 1: Analyze reflection (binary classification at window level, then aggregated)
+        const analysisResult = await analyzeReflectionDistribution(reflection, currentLanguage);
+        
+        // Store binary classification results (window-level D/E/P scores)
+        await storeBinaryClassificationResults(analysisResult);
+        
+        // Step 2: Check for non-meaningful input (short OR non-relevant)
+        const isNonRelevant = analysisResult.percentages_priority.professional_vision < 10;
+        
+        if (isVeryShort || isNonRelevant) {
+            displayAnalysisDistributionForVideo(analysisResult, videoNum);
             
-            logEvent('short_reflection_detected', {
+            let warningMessage = '';
+            if (isVeryShort && isNonRelevant) {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection is very short and does not relate to the teaching video. Please write a longer reflection (at least 50 words) about what you observed in the video."
+                    : "⚠️ Ihre Reflexion ist sehr kurz und bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine längere Reflexion (mindestens 50 Wörter) über das, was Sie im Video beobachtet haben.";
+            } else if (isVeryShort) {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand it to at least 50 words."
+                    : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie sie auf mindestens 50 Wörter.";
+            } else {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection does not relate to the teaching video. Please write a reflection about what you observed in the video."
+                    : "⚠️ Ihre Reflexion bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine Reflexion über das, was Sie im Video beobachtet haben.";
+            }
+            
+            logEvent('non_relevant_reflection_detected', {
                 participant_name: currentParticipant,
                 video_id: currentVideoId,
                 language: currentLanguage,
                 reflection_length: reflection.length,
-                word_count: wordCount
+                word_count: wordCount,
+                professional_vision_percentage: analysisResult.percentages_priority.professional_vision,
+                is_very_short: isVeryShort,
+                is_non_relevant: isNonRelevant
             });
             
             const feedbackExtended = document.getElementById(ids.feedbackExtended);
@@ -2998,30 +3018,63 @@ async function generateFeedbackForVideo(reflection, videoNum) {
             return;
         }
         
-        // Step 2: Generate simple general feedback (Gamma uses simple prompt, not chain prompt)
+        // Step 3: Display analysis distribution
+        displayAnalysisDistributionForVideo(analysisResult, videoNum);
+        
+        // Step 4: Generate both feedback styles
         const [extendedFeedback, shortFeedback] = await Promise.all([
-            generateSimpleFeedback(reflection, currentLanguage, 'academic'),
-            generateSimpleFeedback(reflection, currentLanguage, 'user-friendly')
+            generateWeightedFeedback(reflection, currentLanguage, 'academic', analysisResult),
+            generateWeightedFeedback(reflection, currentLanguage, 'user-friendly', analysisResult)
         ]);
         
-        // Step 3: Save to database (no analysisResult for Gamma)
+        // Step 5: Add revision suggestion if needed (for non-relevant content)
+        let finalShortFeedback = shortFeedback;
+        let finalExtendedFeedback = extendedFeedback;
+        
+        // Add warning if significant non-relevant content
+        if (analysisResult && analysisResult.percentages_priority.other > 50) {
+            const revisionNote = currentLanguage === 'en' 
+                ? "\n\n**⚠️ Important Note:** Your reflection contains a significant amount of content that doesn't follow professional lesson analysis steps. Please revise your reflection to focus more on describing what you observed, explaining why it happened using educational theories, and predicting the effects on student learning."
+                : "\n\n**⚠️ Wichtiger Hinweis:** Ihre Reflexion enthält einen erheblichen Anteil an Inhalten, die nicht den Schritten einer professionellen Stundenanalyse folgen. Bitte überarbeiten Sie Ihre Reflexion, um sich mehr auf die Beschreibung Ihrer Beobachtungen, die Erklärung mit Hilfe pädagogischer Theorien und die Vorhersage der Auswirkungen auf das Lernen der Schüler zu konzentrieren.";
+            finalShortFeedback += revisionNote;
+            finalExtendedFeedback += revisionNote;
+            
+            logEvent('non_relevant_content_warning', {
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                language: currentLanguage,
+                other_percentage: analysisResult.percentages_priority.other,
+                professional_vision_percentage: analysisResult.percentages_priority.professional_vision
+            });
+        }
+        
+        // Add warning if professional vision is low but above threshold
+        if (analysisResult && analysisResult.percentages_priority.professional_vision < 30 && analysisResult.percentages_priority.professional_vision >= 10) {
+            const lowPVNote = currentLanguage === 'en'
+                ? "\n\n**Note:** Your reflection shows limited connection to professional vision concepts. Try to include more descriptions of observable teaching events, explanations linking events to educational theories, and predictions about effects on student learning."
+                : "\n\n**Hinweis:** Ihre Reflexion zeigt eine begrenzte Verbindung zu Professional-Vision-Konzepten. Versuchen Sie, mehr Beschreibungen beobachtbarer Unterrichtsereignisse, Erklärungen, die Ereignisse mit pädagogischen Theorien verknüpfen, und Vorhersagen über Auswirkungen auf das Lernen der Schüler einzubeziehen.";
+            finalShortFeedback += lowPVNote;
+            finalExtendedFeedback += lowPVNote;
+        }
+        
+        // Step 6: Save to database
         await saveFeedbackToDatabase({
             participantCode: currentParticipant,
             videoSelected: currentVideoId,
             reflectionText: reflection,
-            analysisResult: null, // Gamma doesn't use chain analysis
-            extendedFeedback: extendedFeedback,
-            shortFeedback: shortFeedback
+            analysisResult,
+            extendedFeedback: finalExtendedFeedback,
+            shortFeedback: finalShortFeedback
         });
         
-        // Step 4: Store reflection for duplicate detection
+        // Step 7: Store reflection for duplicate detection
         sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
         
-        // Step 5: Display feedback (no analysisResult formatting for Gamma)
+        // Step 8: Display feedback
         const feedbackExtended = document.getElementById(ids.feedbackExtended);
         const feedbackShort = document.getElementById(ids.feedbackShort);
-        if (feedbackExtended) feedbackExtended.innerHTML = extendedFeedback;
-        if (feedbackShort) feedbackShort.innerHTML = shortFeedback;
+        if (feedbackExtended) feedbackExtended.innerHTML = formatStructuredFeedback(finalExtendedFeedback, analysisResult);
+        if (feedbackShort) feedbackShort.innerHTML = formatStructuredFeedback(finalShortFeedback, analysisResult);
         
         // Step 9: Show tabs
         const feedbackTabs = document.getElementById(ids.feedbackTabs);
@@ -3071,43 +3124,207 @@ async function generateFeedbackForVideo(reflection, videoNum) {
     }
 }
 
-// Generate feedback (legacy function - Gamma uses simple prompt, not chain prompt)
+// Generate feedback (core logic - same as original)
 async function generateFeedback(reflection) {
-    // This is a legacy function - redirect to video-specific function
-    // Try to detect current video page
-    const currentVideoPage = document.querySelector('.video-task-page:not(.d-none)');
-    if (currentVideoPage) {
-        const videoId = currentVideoPage.dataset.videoId;
-        const videoNum = getVideoPageNumber(videoId);
-        await generateFeedbackForVideo(reflection, videoNum);
-    } else {
-        // Fallback: use simple feedback generation for Gamma
-        const wordCount = reflection.split(/\s+/).length;
-        if (wordCount < 20) {
-            showAlert(currentLanguage === 'en' 
-                ? "⚠️ Your reflection is very short. Please expand it to at least 50 words."
-                : "⚠️ Ihre Reflexion ist sehr kurz. Bitte erweitern Sie sie auf mindestens 50 Wörter.", 'warning');
+    const loadingSpinner = document.getElementById('task-loading-spinner');
+    const generateBtn = document.getElementById('task-generate-btn');
+    
+    // Show loading
+    if (loadingSpinner) loadingSpinner.style.display = 'flex';
+    if (generateBtn) generateBtn.disabled = true;
+    
+    // Rotate loading messages
+    const loadingText = document.getElementById('task-loading-text');
+    let loadingMessageIndex = 0;
+    const loadingInterval = setInterval(() => {
+        loadingMessageIndex = (loadingMessageIndex + 1) % translations[currentLanguage].loading_messages.length;
+        if (loadingText) {
+            loadingText.textContent = translations[currentLanguage].loading_messages[loadingMessageIndex];
+        }
+    }, 8000);
+    
+    try {
+        // Step 0: Check for duplicate reflection
+        const previousReflection = sessionStorage.getItem(`reflection-${currentVideoId}`);
+        if (previousReflection && previousReflection.trim() === reflection.trim()) {
+            const duplicateMessage = currentLanguage === 'en'
+                ? "⚠️ You submitted the same reflection as before. Please revise your reflection to improve it based on the previous feedback, then generate new feedback."
+                : "⚠️ Sie haben dieselbe Reflexion wie zuvor eingereicht. Bitte überarbeiten Sie Ihre Reflexion, um sie basierend auf dem vorherigen Feedback zu verbessern, und generieren Sie dann neues Feedback.";
+            
+            logEvent('duplicate_reflection_detected', {
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                language: currentLanguage,
+                reflection_length: reflection.length,
+                revision_count: currentTaskState.revisionCount || 0
+            });
+            
+            clearInterval(loadingInterval);
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (generateBtn) generateBtn.disabled = false;
+            
+            showAlert(duplicateMessage, 'warning');
             return;
         }
         
+        // Step 0.5: Check for very short or non-relevant reflection
+        const wordCount = reflection.split(/\s+/).length;
+        const isVeryShort = wordCount < 20;
+        
+        // Step 1: Analyze reflection (binary classification at window level, then aggregated)
+        const analysisResult = await analyzeReflectionDistribution(reflection, currentLanguage);
+        
+        // Store binary classification results (window-level D/E/P scores)
+        await storeBinaryClassificationResults(analysisResult);
+        
+        // Step 2: Check for non-meaningful input (short OR non-relevant)
+        const isNonRelevant = analysisResult.percentages_priority.professional_vision < 10;
+        
+        if (isVeryShort || isNonRelevant) {
+            displayAnalysisDistribution(analysisResult);
+            
+            let warningMessage = '';
+            if (isVeryShort && isNonRelevant) {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection is very short and does not relate to the teaching video. Please write a longer reflection (at least 50 words) that describes what you observed, explains why it happened using educational theories, and predicts the effects on student learning."
+                    : "⚠️ Ihre Reflexion ist sehr kurz und bezieht sich nicht auf das Unterrichtsvideo. Bitte schreiben Sie eine längere Reflexion (mindestens 50 Wörter), die beschreibt, was Sie beobachtet haben, erklärt, warum es passiert ist (unter Verwendung pädagogischer Theorien), und die Auswirkungen auf das Lernen der Schüler vorhersagt.";
+            } else if (isVeryShort) {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand your reflection to at least 50 words, providing more detail about what you observed, why it happened, and its effects on student learning."
+                    : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie Ihre Reflexion auf mindestens 50 Wörter und geben Sie mehr Details zu dem, was Sie beobachtet haben, warum es passiert ist und welche Auswirkungen es auf das Lernen der Schüler hat.";
+            } else {
+                warningMessage = currentLanguage === 'en'
+                    ? "⚠️ Your reflection does not relate to the teaching video you watched. Please revise your reflection to focus on describing what you observed, explaining why it happened using educational theories, and predicting the effects on student learning."
+                    : "⚠️ Ihre Reflexion bezieht sich nicht auf das Unterrichtsvideo, das Sie sich angeschaut haben. Bitte überarbeiten Sie Ihre Reflexion, um sich auf die Beschreibung Ihrer Beobachtungen, die Erklärung mit Hilfe pädagogischer Theorien und die Vorhersage der Auswirkungen auf das Lernen der Schüler zu konzentrieren.";
+            }
+            
+            logEvent('non_relevant_reflection_detected', {
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                language: currentLanguage,
+                reflection_length: reflection.length,
+                word_count: wordCount,
+                professional_vision_percentage: analysisResult.percentages_priority.professional_vision,
+                is_very_short: isVeryShort,
+                is_non_relevant: isNonRelevant
+            });
+            
+            const ids = getVideoElementIds(videoNum);
+            const feedbackExtended = document.getElementById(ids.feedbackExtended);
+            const feedbackShort = document.getElementById(ids.feedbackShort);
+            if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
+            if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
+            
+            const feedbackTabs = document.getElementById(ids.feedbackTabs);
+            if (feedbackTabs) feedbackTabs.classList.remove('d-none');
+            
+            clearInterval(loadingInterval);
+            if (loadingSpinner) loadingSpinner.style.display = 'none';
+            if (generateBtn) generateBtn.disabled = false;
+            return;
+        }
+        
+        // Step 3: Display analysis distribution (using video-specific function)
+        displayAnalysisDistributionForVideo(analysisResult, videoNum);
+        
+        // Step 4: Generate both feedback styles
         const [extendedFeedback, shortFeedback] = await Promise.all([
-            generateSimpleFeedback(reflection, currentLanguage, 'academic'),
-            generateSimpleFeedback(reflection, currentLanguage, 'user-friendly')
+            generateWeightedFeedback(reflection, currentLanguage, 'academic', analysisResult),
+            generateWeightedFeedback(reflection, currentLanguage, 'user-friendly', analysisResult)
         ]);
         
+        // Step 5: Add revision suggestion if needed (for non-relevant content)
+        let finalShortFeedback = shortFeedback;
+        let finalExtendedFeedback = extendedFeedback;
+        
+        // Add warning if significant non-relevant content
+        if (analysisResult && analysisResult.percentages_priority.other > 50) {
+            const revisionNote = currentLanguage === 'en' 
+                ? "\n\n**⚠️ Important Note:** Your reflection contains a significant amount of content that doesn't follow professional lesson analysis steps. Please revise your reflection to focus more on describing what you observed, explaining why it happened using educational theories, and predicting the effects on student learning."
+                : "\n\n**⚠️ Wichtiger Hinweis:** Ihre Reflexion enthält einen erheblichen Anteil an Inhalten, die nicht den Schritten einer professionellen Stundenanalyse folgen. Bitte überarbeiten Sie Ihre Reflexion, um sich mehr auf die Beschreibung Ihrer Beobachtungen, die Erklärung mit Hilfe pädagogischer Theorien und die Vorhersage der Auswirkungen auf das Lernen der Schüler zu konzentrieren.";
+            finalShortFeedback += revisionNote;
+            finalExtendedFeedback += revisionNote;
+            
+            logEvent('non_relevant_content_warning', {
+                participant_name: currentParticipant,
+                video_id: currentVideoId,
+                language: currentLanguage,
+                other_percentage: analysisResult.percentages_priority.other,
+                professional_vision_percentage: analysisResult.percentages_priority.professional_vision
+            });
+        }
+        
+        // Add warning if professional vision is low but above threshold
+        if (analysisResult && analysisResult.percentages_priority.professional_vision < 30 && analysisResult.percentages_priority.professional_vision >= 10) {
+            const lowPVNote = currentLanguage === 'en'
+                ? "\n\n**Note:** Your reflection shows limited connection to professional vision concepts. Try to include more descriptions of observable teaching events, explanations linking events to educational theories, and predictions about effects on student learning."
+                : "\n\n**Hinweis:** Ihre Reflexion zeigt eine begrenzte Verbindung zu Professional-Vision-Konzepten. Versuchen Sie, mehr Beschreibungen beobachtbarer Unterrichtsereignisse, Erklärungen, die Ereignisse mit pädagogischen Theorien verknüpfen, und Vorhersagen über Auswirkungen auf das Lernen der Schüler einzubeziehen.";
+            finalShortFeedback += lowPVNote;
+            finalExtendedFeedback += lowPVNote;
+        }
+        
+        // Step 6: Save to database
         await saveFeedbackToDatabase({
             participantCode: currentParticipant,
             videoSelected: currentVideoId,
             reflectionText: reflection,
-            analysisResult: null,
-            extendedFeedback: extendedFeedback,
-            shortFeedback: shortFeedback
+            analysisResult,
+            extendedFeedback: finalExtendedFeedback,
+            shortFeedback: finalShortFeedback
         });
         
-        const feedbackExtended = document.getElementById('task-feedback-extended');
-        const feedbackShort = document.getElementById('task-feedback-short');
-        if (feedbackExtended) feedbackExtended.innerHTML = extendedFeedback;
-        if (feedbackShort) feedbackShort.innerHTML = shortFeedback;
+        // Step 7: Store reflection for duplicate detection
+        sessionStorage.setItem(`reflection-${currentVideoId}`, reflection.trim());
+        
+        // Step 8: Display feedback (using video-specific IDs)
+        const ids = getVideoElementIds(videoNum);
+        const feedbackExtended = document.getElementById(ids.feedbackExtended);
+        const feedbackShort = document.getElementById(ids.feedbackShort);
+        if (feedbackExtended) feedbackExtended.innerHTML = formatStructuredFeedback(finalExtendedFeedback, analysisResult);
+        if (feedbackShort) feedbackShort.innerHTML = formatStructuredFeedback(finalShortFeedback, analysisResult);
+        
+        // Step 9: Show tabs (using video-specific IDs)
+        const feedbackTabs = document.getElementById(ids.feedbackTabs);
+        if (feedbackTabs) feedbackTabs.classList.remove('d-none');
+        
+        if (userPreferredFeedbackStyle === 'short') {
+            document.getElementById(ids.shortTab)?.click();
+        } else {
+            document.getElementById(ids.extendedTab)?.click();
+        }
+        
+        // Start feedback viewing tracking
+        startFeedbackViewing(userPreferredFeedbackStyle, currentLanguage);
+        
+        // Step 10: Show revise and submit buttons (using correct video-specific IDs)
+        const reviseBtn = document.getElementById(ids.reviseBtn);
+        const submitBtn = document.getElementById(ids.submitBtn);
+        if (reviseBtn) reviseBtn.classList.remove('d-none');
+        if (submitBtn) submitBtn.classList.remove('d-none');
+        
+        currentTaskState.feedbackGenerated = true;
+        
+        // Log successful feedback generation
+        logEvent('feedback_generated_successfully', {
+            participant_name: currentParticipant,
+            video_id: currentVideoId,
+            language: currentLanguage,
+            reflection_length: reflection.length,
+            word_count: wordCount,
+            professional_vision_percentage: analysisResult.percentages_priority.professional_vision,
+            other_percentage: analysisResult.percentages_priority.other,
+            revision_count: currentTaskState.revisionCount || 0
+        });
+        
+        showAlert('✅ Feedback generated successfully!', 'success');
+        
+    } catch (error) {
+        console.error('Error generating feedback:', error);
+        showAlert(`⚠️ ${error.message}`, 'danger');
+    } finally {
+        clearInterval(loadingInterval);
+        if (loadingSpinner) loadingSpinner.style.display = 'none';
+        if (generateBtn) generateBtn.disabled = false;
     }
 }
 
@@ -4572,19 +4789,45 @@ async function saveFeedbackToDatabase(data) {
             feedback_short: data.shortFeedback,
             // feedback_raw: data.rawFeedback || null,  // Store raw LLM response (column not in schema)
             revision_number: revisionNumber,
-            parent_reflection_id: parentReflectionId,
-            revision_time_seconds: revisionTimeSeconds,
-            created_at: new Date().toISOString()
+            parent_reflection_id: parentReflectionId
+            // revision_time_seconds: removed - column doesn't exist in schema
         };
 
+        // Use upsert to update existing reflection or insert new one
+        // This ensures reflection is saved even if user generates feedback multiple times
         const { data: result, error } = await supabase
             .from('reflections')
-            .insert([reflectionData])
+            .upsert([reflectionData], {
+                onConflict: 'id',
+                ignoreDuplicates: false
+            })
             .select()
             .single();
 
         if (error) {
-            console.error('Database insert error:', error);
+            console.error('Database insert/update error:', error);
+            // Try insert without upsert as fallback
+            const { data: result2, error: error2 } = await supabase
+                .from('reflections')
+                .insert([reflectionData])
+                .select()
+                .single();
+            
+            if (error2) {
+                console.error('Database insert fallback also failed:', error2);
+                return;
+            }
+            
+            // Use result2 if upsert failed but insert succeeded
+            if (result2) {
+                currentTaskState.currentReflectionId = result2.id;
+                currentTaskState.lastRevisionTime = Date.now();
+                if (revisionNumber === 1) {
+                    currentTaskState.parentReflectionId = result2.id;
+                }
+                console.log(`✅ Reflection saved to database (fallback insert):`, result2.id);
+                return;
+            }
             return;
         }
 
@@ -4596,9 +4839,6 @@ async function saveFeedbackToDatabase(data) {
         }
         
         console.log(`✅ Reflection saved to database:`, result.id);
-        if (revisionTimeSeconds !== null) {
-            console.log(`   Revision time: ${revisionTimeSeconds.toFixed(2)} seconds`);
-        }
         
         logEvent('submit_reflection', {
             video_id: data.videoSelected,
@@ -4606,9 +4846,9 @@ async function saveFeedbackToDatabase(data) {
             language: currentLanguage,
             reflection_id: result.id,
             reflection_length: data.reflectionText.length,
-            analysis_percentages_raw: data.analysisResult?.percentages_raw || null,
-            analysis_percentages_priority: data.analysisResult?.percentages_priority || null,
-            weakest_component: data.analysisResult?.weakest_component || null
+            analysis_percentages_raw: data.analysisResult.percentages_raw,
+            analysis_percentages_priority: data.analysisResult.percentages_priority,
+            weakest_component: data.analysisResult.weakest_component
         });
         
     } catch (error) {
