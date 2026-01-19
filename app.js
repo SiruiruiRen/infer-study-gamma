@@ -3877,7 +3877,9 @@ function switchLanguage(lang) {
     if (typeof renderLanguageSwitcherInNav === 'function') {
         renderLanguageSwitcherInNav();
     }
-    applyTranslations();
+    if (typeof applyTranslations === 'function') {
+        applyTranslations();
+    }
     
     // Update all language radio buttons (including video pages and general language switchers)
     document.querySelectorAll('input[type="radio"][name^="video-"], input[type="radio"][name="language-task1"]').forEach(radio => {
