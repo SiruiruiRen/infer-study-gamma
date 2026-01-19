@@ -617,8 +617,13 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
         // Start direct login after a short delay
         setTimeout(attemptDirectLogin, 300);
     } else {
-        // Direct visitor - show login page (welcome page stays hidden)
-        showPage('login');
+        // Direct visitor - NOT ALLOWED: redirect to assignment site
+        console.warn('Direct access not allowed. Redirecting to assignment site...');
+        const assignmentUrl = 'https://infer-study-assignment.onrender.com';
+        showAlert('Direct access is not allowed. Please access this site through the assignment page.', 'warning');
+        setTimeout(() => {
+            window.location.href = assignmentUrl;
+        }, 3000);
     }
     
     // Log session start (only if logEvent is available)
