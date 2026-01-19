@@ -750,8 +750,16 @@ function setupEventListeners() {
     
     // Final submission modal
     document.getElementById('confirm-final-submission')?.addEventListener('click', () => {
-        const modal = bootstrap.Modal.getInstance(document.getElementById('final-submission-modal'));
-        const videoNum = document.getElementById('final-submission-modal')?.dataset.videoNum;
+        const modalElement = document.getElementById('final-submission-modal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        const videoNum = modalElement?.dataset.videoNum;
+        
+        // Clear the stored button state since we're confirming
+        if (modalElement) {
+            delete modalElement.dataset.originalSubmitHtml;
+            delete modalElement.dataset.submitBtnId;
+        }
+        
         modal?.hide();
         if (videoNum) {
             confirmFinalSubmissionForVideo(parseInt(videoNum));
@@ -3443,6 +3451,32 @@ function handleCopy() {
     }
 }
 
+// Handle copy for specific video page
+function handleCopyForVideo(videoNum) {
+    const ids = getVideoElementIds(videoNum);
+    const activeTab = document.querySelector(`#${ids.feedbackTabs} .nav-link.active`);
+    const feedbackType = activeTab?.id.includes('extended') ? 'extended' : 'short';
+    const feedbackContent = feedbackType === 'extended'
+        ? document.getElementById(ids.feedbackExtended)?.textContent
+        : document.getElementById(ids.feedbackShort)?.textContent;
+    
+    if (feedbackContent) {
+        navigator.clipboard.writeText(feedbackContent).then(() => {
+            showAlert('✅ Feedback copied to clipboard!', 'success');
+            logEvent('copy_feedback', {
+                video_id: `video${videoNum}`,
+                feedback_type: feedbackType,
+                reflection_id: currentTaskState.currentReflectionId
+            });
+        }).catch(err => {
+            console.error('Error copying feedback:', err);
+            showAlert('❌ Failed to copy feedback', 'danger');
+        });
+    } else {
+        showAlert('⚠️ No feedback available to copy', 'warning');
+    }
+}
+
 function handleRevise() {
     if (currentTaskState.currentFeedbackType && currentTaskState.currentFeedbackStartTime) {
         endFeedbackViewing(currentTaskState.currentFeedbackType, currentLanguage);
@@ -3455,6 +3489,48 @@ function handleRevise() {
     
     logEvent('click_revise', {
         video_id: currentVideoId,
+        reflection_id: currentTaskState.currentReflectionId,
+        revision_number: currentTaskState.revisionCount
+    });
+}
+
+// Handle revise for specific video page
+function handleReviseForVideo(videoNum) {
+    const ids = getVideoElementIds(videoNum);
+    
+    // End any active feedback viewing session
+    if (currentTaskState.currentFeedbackType && currentTaskState.currentFeedbackStartTime) {
+        endFeedbackViewing(currentTaskState.currentFeedbackType, currentLanguage);
+    }
+    
+    // Enable reflection text editing
+    const reflectionText = document.getElementById(ids.reflectionText);
+    if (reflectionText) {
+        reflectionText.readOnly = false;
+        reflectionText.style.backgroundColor = '#ffffff';
+        reflectionText.style.cursor = 'text';
+        reflectionText.focus();
+    }
+    
+    // Re-enable generate button
+    const generateBtn = document.getElementById(ids.generateBtn);
+    if (generateBtn) {
+        generateBtn.disabled = false;
+    }
+    
+    // Re-enable clear button
+    const clearBtn = document.getElementById(ids.clearBtn);
+    if (clearBtn) {
+        clearBtn.disabled = false;
+    }
+    
+    // Increment revision count
+    currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
+    
+    showAlert('You can now revise your reflection and generate new feedback.', 'info');
+    
+    logEvent('click_revise', {
+        video_id: `video${videoNum}`,
         reflection_id: currentTaskState.currentReflectionId,
         revision_number: currentTaskState.revisionCount
     });
@@ -3555,6 +3631,32 @@ function handleFinalSubmissionForVideo(videoNum) {
     if (modal) {
         modal.dataset.videoNum = videoNum;
         const bootstrapModal = new bootstrap.Modal(modal);
+        
+        // Store original button state for restoration
+        modal.dataset.originalSubmitHtml = originalSubmitHtml;
+        modal.dataset.submitBtnId = ids.submitBtn;
+        
+        // Reset button state when modal is closed without confirmation
+        modal.addEventListener('hidden.bs.modal', function resetButtonOnClose() {
+            const storedVideoNum = modal.dataset.videoNum;
+            const storedSubmitBtnId = modal.dataset.submitBtnId;
+            const storedOriginalHtml = modal.dataset.originalSubmitHtml;
+            
+            // Only reset if modal was closed without confirmation (not via confirm button)
+            if (storedVideoNum && storedSubmitBtnId && storedOriginalHtml) {
+                const btnToReset = document.getElementById(storedSubmitBtnId);
+                if (btnToReset && btnToReset.innerHTML.includes('Submitting')) {
+                    btnToReset.disabled = false;
+                    btnToReset.innerHTML = storedOriginalHtml;
+                }
+            }
+            
+            // Clean up
+            modal.removeEventListener('hidden.bs.modal', resetButtonOnClose);
+            delete modal.dataset.originalSubmitHtml;
+            delete modal.dataset.submitBtnId;
+        }, { once: true });
+        
         bootstrapModal.show();
     } else {
         // If modal doesn't exist, directly confirm
