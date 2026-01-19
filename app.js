@@ -704,7 +704,7 @@ function setupEventListeners() {
         document.getElementById(`video-${i}-lang-de`)?.addEventListener('change', () => switchLanguage('de'));
     }
     
-    // Tutorial button removed for Beta (no tutorial in Treatment Group 2)
+    // Tutorial button removed for Beta (no tutorial in Control Group (Gamma))
     
     // Language switchers (for all pages via language-switcher-container)
     document.addEventListener('click', (e) => {
@@ -2076,7 +2076,7 @@ async function startVideoTask(videoId) {
     
     console.log(`Found video:`, video);
     
-    // Tutorial check removed for Beta (Treatment Group 2 has no tutorial)
+    // Tutorial check removed for Beta (Control Group (Gamma) has no tutorial)
     // if (video.hasTutorial && !currentParticipantProgress?.tutorial_watched) {
     //     showTutorialPage(videoId);
     //     return;
@@ -2238,7 +2238,10 @@ function configureVideoTaskUI(videoNum, hasINFER) {
 
 // Load previous reflection and feedback for a specific video page
 async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
+    console.log(`[loadPreviousReflection] Starting for videoId: ${videoId}, videoNum: ${videoNum}, participant: ${currentParticipant}`);
+    
     if (!supabase || !currentParticipant) {
+        console.warn('[loadPreviousReflection] No supabase or currentParticipant, starting fresh');
         // No database, start fresh
         resetTaskStateForVideo(videoNum);
         return;
@@ -2246,6 +2249,7 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
     
     try {
         // Get the most recent reflection for this video and participant
+        console.log(`[loadPreviousReflection] Querying database for participant: ${currentParticipant}, video: ${videoId}`);
         const { data: reflection, error } = await supabase
             .from('reflections')
             .select('*')
@@ -2256,22 +2260,29 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
             .maybeSingle(); // Use maybeSingle() instead of single() to handle empty results gracefully
         
         if (error) {
-            console.error('Error loading previous reflection:', error);
+            console.error('[loadPreviousReflection] Error loading previous reflection:', error);
             resetTaskStateForVideo(videoNum);
             return;
         }
+        
+        console.log(`[loadPreviousReflection] Database query result:`, { reflection: reflection ? 'found' : 'not found', hasReflectionText: reflection?.reflection_text ? 'yes' : 'no', reflectionTextLength: reflection?.reflection_text?.length || 0 });
         
         const ids = getVideoElementIds(videoNum);
         
         if (reflection) {
             // Check if video is already completed (submitted)
             const isVideoCompleted = currentParticipantProgress?.videos_completed?.includes(videoId) || false;
+            console.log(`[loadPreviousReflection] Video completed status: ${isVideoCompleted}`);
             
             // Load previous reflection text
             const reflectionText = document.getElementById(ids.reflectionText);
+            console.log(`[loadPreviousReflection] Textarea element:`, { found: !!reflectionText, id: ids.reflectionText, hasReflectionText: !!reflection.reflection_text });
+            
             if (reflectionText && reflection.reflection_text) {
+                console.log(`[loadPreviousReflection] Setting reflection text (length: ${reflection.reflection_text.length})`);
                 reflectionText.value = reflection.reflection_text;
                 updateWordCountForVideo(videoNum);
+                console.log(`[loadPreviousReflection] Reflection text set successfully, current value length: ${reflectionText.value.length}`);
                 
                 // Make read-only and disable all edit buttons if video is completed
                 if (isVideoCompleted) {
@@ -2315,6 +2326,12 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                         console.warn('Could not add completed notice, but reflection text is loaded:', e);
                     }
                 }
+            } else {
+                console.warn(`[loadPreviousReflection] Cannot load reflection text:`, { 
+                    reflectionTextElement: !!reflectionText, 
+                    hasReflectionText: !!reflection.reflection_text,
+                    elementId: ids.reflectionText
+                });
             }
             
             // Load previous feedback if available
@@ -2396,10 +2413,11 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
             }
         } else {
             // No previous reflection, start fresh
+            console.log(`[loadPreviousReflection] No previous reflection found, starting fresh`);
             resetTaskStateForVideo(videoNum);
         }
     } catch (error) {
-        console.error('Error in loadPreviousReflectionAndFeedbackForVideo:', error);
+        console.error('[loadPreviousReflection] Error in loadPreviousReflectionAndFeedbackForVideo:', error);
         resetTaskStateForVideo(videoNum);
     }
 }
