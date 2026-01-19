@@ -202,6 +202,8 @@ const translations = {
         final_submission_note: "You can continue revising your reflection until you're satisfied, then click this button when you're ready to move on.",
         continue_editing: "Continue Editing",
         confirm_submit: "Yes, Submit Final",
+        reflection_too_short: "Your reflection is too short. Please write at least 20 words before submitting.",
+        reflection_short_warning: "Your reflection is less than 50 words. We recommend writing at least 50 words for a more comprehensive reflection. Do you still want to submit?",
         ai_usage_title: "Tab Switch Detected",
         ai_usage_message: "We noticed you switched to another tab. Did you use another AI system (such as ChatGPT) for your work on this task?",
         ai_usage_yes: "Yes, I used AI",
@@ -360,6 +362,8 @@ const translations = {
         final_submission_note: "Sie können Ihre Reflexion weiterhin überarbeiten, bis Sie zufrieden sind. Klicken Sie dann auf diese Schaltfläche, wenn Sie bereit sind, fortzufahren.",
         continue_editing: "Weiter bearbeiten",
         confirm_submit: "Ja, endgültig einreichen",
+        reflection_too_short: "Ihre Reflexion ist zu kurz. Bitte schreiben Sie mindestens 20 Wörter, bevor Sie einreichen.",
+        reflection_short_warning: "Ihre Reflexion hat weniger als 50 Wörter. Wir empfehlen, mindestens 50 Wörter zu schreiben, um eine umfassendere Reflexion zu erhalten. Möchten Sie trotzdem einreichen?",
         ai_usage_title: "Tab-Wechsel erkannt",
         ai_usage_message: "Wir haben bemerkt, dass Sie zu einem anderen Tab gewechselt haben. Haben Sie ein anderes KI-System (wie ChatGPT) für Ihre Arbeit an dieser Aufgabe verwendet?",
         ai_usage_yes: "Ja, ich habe KI verwendet",
@@ -2040,7 +2044,6 @@ function getVideoElementIds(videoNum) {
         generateBtn: `video-${videoNum}-generate-btn`,
         saveBtn: `video-${videoNum}-save-btn`,
         submitBtn: `video-${videoNum}-submit-btn`,
-        clearBtn: `video-${videoNum}-clear-btn`,
         copyBtn: `video-${videoNum}-copy-btn`,
         reviseBtn: `video-${videoNum}-revise-btn`,
         loadingSpinner: `video-${videoNum}-loading-spinner`,
@@ -2082,11 +2085,6 @@ function setupVideoPageElements(videoNum) {
     const generateBtn = document.getElementById(ids.generateBtn);
     if (generateBtn) {
         generateBtn.addEventListener('click', () => handleGenerateFeedbackForVideo(videoNum));
-    }
-    
-    const clearBtn = document.getElementById(ids.clearBtn);
-    if (clearBtn) {
-        clearBtn.addEventListener('click', () => handleClearForVideo(videoNum));
     }
     
     const copyBtn = document.getElementById(ids.copyBtn);
@@ -2482,13 +2480,11 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                     
                     // Disable all edit buttons
                     const saveBtn = document.getElementById(ids.saveBtn);
-                    const clearBtn = document.getElementById(ids.clearBtn);
                     const generateBtn = document.getElementById(ids.generateBtn);
                     const reviseBtn = document.getElementById(ids.reviseBtn);
                     const submitBtn = document.getElementById(ids.submitBtn);
                     
                     if (saveBtn) saveBtn.disabled = true;
-                    if (clearBtn) clearBtn.disabled = true;
                     if (generateBtn) generateBtn.disabled = true;
                     if (reviseBtn) reviseBtn.disabled = true;
                     if (submitBtn) submitBtn.disabled = true;
@@ -2587,9 +2583,6 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                     const generateBtn = document.getElementById(ids.generateBtn);
                     if (generateBtn) generateBtn.disabled = true;
                     
-                    // Disable clear button
-                    const clearBtn = document.getElementById(ids.clearBtn);
-                    if (clearBtn) clearBtn.disabled = true;
                 }
                 
                 // Gamma group does not display analysis distribution (no chain prompt)
@@ -3049,6 +3042,17 @@ async function generateFeedbackForVideo(reflection, videoNum) {
             if (loadingSpinner) loadingSpinner.style.display = 'none';
             if (generateBtn) generateBtn.disabled = false;
             
+            // Clean up any modal backdrop that might be stuck
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            
+            // Ensure body is not in modal-open state
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
             showAlert(duplicateMessage, 'warning');
             return;
         }
@@ -3195,6 +3199,17 @@ async function generateFeedback(reflection) {
             if (loadingSpinner) loadingSpinner.style.display = 'none';
             if (generateBtn) generateBtn.disabled = false;
             
+            // Clean up any modal backdrop that might be stuck
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) {
+                backdrop.remove();
+            }
+            
+            // Ensure body is not in modal-open state
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
             showAlert(duplicateMessage, 'warning');
             return;
         }
@@ -3240,6 +3255,9 @@ async function generateFeedback(reflection) {
         }
         
         // Step 2: Generate simple general feedback (Gamma uses simple prompt, not chain prompt)
+        // Debug: Log current language before generating feedback
+        console.log(`[Gamma] Legacy generateFeedback - currentLanguage: ${currentLanguage}, reflection length: ${reflection.length}`);
+        
         const [extendedFeedback, shortFeedback] = await Promise.all([
             generateSimpleFeedback(reflection, currentLanguage, 'academic'),
             generateSimpleFeedback(reflection, currentLanguage, 'user-friendly')
@@ -3514,11 +3532,6 @@ function handleReviseForVideo(videoNum) {
     }
     
     // Re-enable clear button
-    const clearBtn = document.getElementById(ids.clearBtn);
-    if (clearBtn) {
-        clearBtn.disabled = false;
-    }
-    
     // Increment revision count
     currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
     
@@ -3602,6 +3615,24 @@ function handleFinalSubmissionForVideo(videoNum) {
     const ids = getVideoElementIds(videoNum);
     const submitBtn = document.getElementById(ids.submitBtn);
     const originalSubmitHtml = submitBtn ? submitBtn.innerHTML : null;
+    const reflectionText = document.getElementById(ids.reflectionText)?.value?.trim();
+    
+    // Check word count before showing modal or submitting
+    if (!reflectionText || reflectionText.trim().length === 0) {
+        const t = translations[currentLanguage];
+        showAlert(t.reflection_too_short || 'Please write a reflection before submitting.', 'warning');
+        return;
+    }
+    
+    const wordCount = reflectionText.trim().split(/\s+/).filter(word => word.length > 0).length;
+    
+    // Require at least 20 words
+    if (wordCount < 20) {
+        const t = translations[currentLanguage];
+        showAlert(t.reflection_too_short || 'Your reflection is too short. Please write at least 20 words before submitting.', 'warning');
+        return;
+    }
+    
     if (submitBtn) {
         submitBtn.disabled = true;
         submitBtn.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>${submitBtn.dataset.loadingLabel || 'Submitting...'}`;
@@ -3700,10 +3731,41 @@ async function submitReflectionOnly(videoNum) {
     const videoId = `video${videoNum}`;
     const reflectionText = document.getElementById(ids.reflectionText)?.value?.trim();
     
-    if (!reflectionText || reflectionText.length < 10) {
+    // Check word count before submission
+    if (!reflectionText || reflectionText.trim().length === 0) {
         const t = translations[currentLanguage];
-        showAlert(currentLanguage === 'en' ? 'Please write a reflection before submitting.' : 'Bitte schreiben Sie eine Reflexion, bevor Sie einreichen.', 'warning');
+        showAlert(t.reflection_too_short || 'Please write a reflection before submitting.', 'warning');
+        if (submitBtn && originalSubmitHtml !== null) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalSubmitHtml;
+        }
         return;
+    }
+    
+    const wordCount = reflectionText.trim().split(/\s+/).filter(word => word.length > 0).length;
+    
+    // Require at least 20 words
+    if (wordCount < 20) {
+        const t = translations[currentLanguage];
+        showAlert(t.reflection_too_short || 'Your reflection is too short. Please write at least 20 words before submitting.', 'warning');
+        if (submitBtn && originalSubmitHtml !== null) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalSubmitHtml;
+        }
+        return;
+    }
+    
+    // Warn if less than 50 words (but still allow submission)
+    if (wordCount < 50) {
+        const t = translations[currentLanguage];
+        const confirmed = confirm(t.reflection_short_warning || 'Your reflection is less than 50 words. We recommend writing at least 50 words for a more comprehensive reflection. Do you still want to submit?');
+        if (!confirmed) {
+            if (submitBtn && originalSubmitHtml !== null) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalSubmitHtml;
+            }
+            return;
+        }
     }
     
     // Make reflection read-only after final submission
@@ -3717,9 +3779,6 @@ async function submitReflectionOnly(videoNum) {
     // Disable/hide edit buttons
     const saveBtn = document.getElementById(ids.saveBtn);
     if (saveBtn) saveBtn.disabled = true;
-    
-    const clearBtn = document.getElementById(ids.clearBtn);
-    if (clearBtn) clearBtn.disabled = true;
     
     const generateBtn = document.getElementById(ids.generateBtn);
     if (generateBtn) generateBtn.disabled = true;
@@ -3794,6 +3853,87 @@ async function confirmFinalSubmissionForVideo(videoNum) {
     const ids = getVideoElementIds(videoNum);
     const reflectionText = document.getElementById(ids.reflectionText)?.value?.trim();
     
+    // Check word count before final submission
+    if (!reflectionText || reflectionText.trim().length === 0) {
+        const t = translations[currentLanguage];
+        showAlert(t.reflection_too_short || 'Please write a reflection before submitting.', 'warning');
+        
+        // Restore button state
+        const submitBtn = document.getElementById(ids.submitBtn);
+        const modal = document.getElementById('final-submission-modal');
+        if (modal) {
+            const storedOriginalHtml = modal.dataset.originalSubmitHtml;
+            if (submitBtn && storedOriginalHtml) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = storedOriginalHtml;
+            }
+        }
+        
+        // Clean up modal backdrop
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.remove();
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        
+        return;
+    }
+    
+    const wordCount = reflectionText.trim().split(/\s+/).filter(word => word.length > 0).length;
+    
+    // Require at least 20 words
+    if (wordCount < 20) {
+        const t = translations[currentLanguage];
+        showAlert(t.reflection_too_short || 'Your reflection is too short. Please write at least 20 words before submitting.', 'warning');
+        
+        // Restore button state
+        const submitBtn = document.getElementById(ids.submitBtn);
+        const modal = document.getElementById('final-submission-modal');
+        if (modal) {
+            const storedOriginalHtml = modal.dataset.originalSubmitHtml;
+            if (submitBtn && storedOriginalHtml) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = storedOriginalHtml;
+            }
+        }
+        
+        // Clean up modal backdrop
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.remove();
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+        
+        return;
+    }
+    
+    // Warn if less than 50 words (but still allow submission)
+    if (wordCount < 50) {
+        const t = translations[currentLanguage];
+        const confirmed = confirm(t.reflection_short_warning || 'Your reflection is less than 50 words. We recommend writing at least 50 words for a more comprehensive reflection. Do you still want to submit?');
+        if (!confirmed) {
+            // Restore button state
+            const submitBtn = document.getElementById(ids.submitBtn);
+            const modal = document.getElementById('final-submission-modal');
+            if (modal) {
+                const storedOriginalHtml = modal.dataset.originalSubmitHtml;
+                if (submitBtn && storedOriginalHtml) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = storedOriginalHtml;
+                }
+            }
+            
+            // Clean up modal backdrop
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+            
+            return;
+        }
+    }
+    
     // Ensure reflection is saved to database before final submission
     // This handles the case where user clicks "Submit Final" without clicking "Save Reflection" first
     if (supabase && currentParticipant && reflectionText) {
@@ -3850,9 +3990,6 @@ async function confirmFinalSubmissionForVideo(videoNum) {
     
     const submitBtn = document.getElementById(ids.submitBtn);
     if (submitBtn) submitBtn.disabled = true;
-    
-    const clearBtn = document.getElementById(ids.clearBtn);
-    if (clearBtn) clearBtn.disabled = true;
     
     const generateBtn = document.getElementById(ids.generateBtn);
     if (generateBtn) generateBtn.disabled = true;
@@ -4557,18 +4694,39 @@ function calculatePercentages(classificationResults) {
 
 // Generate simple feedback for Gamma group (no chain prompt, no analysis)
 async function generateSimpleFeedback(reflection, language, style) {
+    // Debug: Log language parameter
+    console.log(`[generateSimpleFeedback] Called with language: ${language}, style: ${style}`);
+    
+    // Determine feedback length based on style
+    const isExtended = style === 'academic' || style === 'extended';
+    const lengthInstruction = isExtended 
+        ? (language === 'en' ? '10-12 sentences' : '10-12 Sätze')
+        : (language === 'en' ? '6-8 sentences' : '6-8 Sätze');
+    
+    // Strong language instruction as system message
+    const languageInstruction = language === 'en'
+        ? "You are a feedback assistant. CRITICAL RULE: You MUST respond ONLY in English. Do NOT use German, French, Spanish, or any other language. Every single word of your feedback MUST be in English. Even if the reflection text is in German, you MUST still respond in English. This is a mandatory requirement that cannot be violated."
+        : "Sie sind ein Feedback-Assistent. KRITISCHE REGEL: Sie MÜSSEN ausschließlich auf Deutsch antworten. Verwenden Sie KEIN Englisch, Französisch, Spanisch oder eine andere Sprache. Jedes einzelne Wort Ihres Feedbacks MUSS auf Deutsch sein. Auch wenn der Reflexionstext auf Englisch ist, MÜSSEN Sie trotzdem auf Deutsch antworten. Dies ist eine obligatorische Anforderung, die nicht verletzt werden darf.";
+    
     const simplePrompt = language === 'en'
-        ? `I am writing a teaching reflection. Please give me 8-10 sentences of feedback.`
-        : `Ich schreibe eine Unterrichtsreflexion. Bitte geben Sie mir 8-10 Sätze Feedback.`;
+        ? `I am writing a teaching reflection. Please give me ${lengthInstruction} of feedback in English. IMPORTANT: Your entire response MUST be in English only. Do not use any other language.`
+        : `Ich schreibe eine Unterrichtsreflexion. Bitte geben Sie mir ${lengthInstruction} Feedback auf Deutsch. WICHTIG: Ihre gesamte Antwort MUSS ausschließlich auf Deutsch sein. Verwenden Sie keine andere Sprache.`;
     
     const requestData = {
         model: model,
         messages: [
-            { role: "user", content: `${simplePrompt}\n\n${reflection}` }
+            { role: "system", content: languageInstruction },
+            { role: "user", content: `${simplePrompt}\n\nReflection:\n${reflection}\n\nCRITICAL REMINDER: Your feedback MUST be written entirely in ${language === 'en' ? 'English' : 'German'}. Do NOT match the language of the reflection text. Always use ${language === 'en' ? 'English' : 'German'} for your response, regardless of what language the reflection is written in.` }
         ],
-        temperature: 0.3,
-        max_tokens: 300 // Limit to approximately 8-10 sentences
+        temperature: 0.1, // Lower temperature for more consistent language adherence
+        max_tokens: isExtended ? 400 : 250 // Extended feedback can be longer
     };
+    
+    // Debug: Log request data (without reflection text for privacy)
+    console.log(`[generateSimpleFeedback] Request language: ${language}, style: ${style}`);
+    console.log(`[generateSimpleFeedback] System message: ${languageInstruction.substring(0, 100)}...`);
+    console.log(`[generateSimpleFeedback] User prompt: ${simplePrompt.substring(0, 100)}...`);
+    console.log(`[generateSimpleFeedback] Reflection preview (first 100 chars): ${reflection.substring(0, 100)}...`);
     
     try {
         const response = await fetch(OPENAI_API_URL, {
@@ -4591,6 +4749,21 @@ async function generateSimpleFeedback(reflection, language, style) {
         
         const result = await response.json();
         let feedback = result.choices[0].message.content;
+        
+        // Debug: Log first 100 characters of feedback to check language
+        console.log(`[generateSimpleFeedback] Generated feedback (first 200 chars): ${feedback.substring(0, 200)}...`);
+        
+        // Check if feedback is in wrong language (basic detection)
+        const isGerman = /^(Die|Der|Das|Ein|Eine|Sie|Er|Es|Als|Wenn|Dass|Diese|Dieser|Dieses|Ihre|Ihr|Ihren|Ihrem|Ihres)/i.test(feedback.trim());
+        const isEnglish = /^(The|A|An|This|That|These|Those|Your|You|He|She|It|As|When|That|If|Your|His|Her|Its)/i.test(feedback.trim());
+        
+        if (language === 'en' && isGerman && !isEnglish) {
+            console.warn(`[generateSimpleFeedback] WARNING: Requested English but feedback appears to be in German!`);
+            console.warn(`[generateSimpleFeedback] Feedback starts with: ${feedback.substring(0, 50)}`);
+        } else if (language === 'de' && isEnglish && !isGerman) {
+            console.warn(`[generateSimpleFeedback] WARNING: Requested German but feedback appears to be in English!`);
+            console.warn(`[generateSimpleFeedback] Feedback starts with: ${feedback.substring(0, 50)}`);
+        }
         
         return feedback;
     } catch (error) {

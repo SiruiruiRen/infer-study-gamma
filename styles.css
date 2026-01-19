@@ -837,15 +837,6 @@ textarea {
   color: #166534;
 }
 
-.alert-success::before {
-  content: '✓';
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.4rem;
-  font-weight: bold;
-}
 
 .alert-success .btn-close {
   color: #2e7d32;
@@ -856,30 +847,12 @@ textarea {
   color: #92400e;
 }
 
-.alert-warning::before {
-  content: '!';
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.4rem;
-  font-weight: bold;
-}
 
 .alert-danger {
   background: linear-gradient(135deg, #fee2e2, #fecaca);
   color: #991b1b;
 }
 
-.alert-danger::before {
-  content: '✕';
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.4rem;
-  font-weight: bold;
-}
 
 .alert-info {
   background-color: rgba(33, 150, 243, 0.07);
@@ -887,15 +860,6 @@ textarea {
   color: #0277bd;
 }
 
-.alert-info::before {
-  content: 'ℹ';
-  position: absolute;
-  left: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.4rem;
-  font-weight: bold;
-}
 
 .alert-dismissible {
   padding-right: 3rem;
@@ -1392,10 +1356,37 @@ textarea {
 }
 
 .definition-icon {
-  font-size: 1.8rem;
-  margin-bottom: 0.5rem;
-  display: inline-block;
-  animation: none;
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.definition-card:hover .definition-icon {
+  transform: scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.description-card .definition-icon {
+  color: var(--description-color);
+  background: linear-gradient(135deg, rgba(0, 172, 193, 0.1) 0%, rgba(0, 188, 212, 0.1) 100%);
+}
+
+.explanation-card .definition-icon {
+  color: var(--explanation-color);
+  background: linear-gradient(135deg, rgba(123, 31, 162, 0.1) 0%, rgba(142, 36, 170, 0.1) 100%);
+}
+
+.prediction-card .definition-icon {
+  color: var(--prediction-color);
+  background: linear-gradient(135deg, rgba(56, 142, 60, 0.1) 0%, rgba(67, 160, 71, 0.1) 100%);
 }
 
 .definition-card h6 {
