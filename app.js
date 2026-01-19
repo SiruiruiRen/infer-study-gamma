@@ -3141,8 +3141,6 @@ async function generateFeedbackForVideo(reflection, videoNum) {
             language: currentLanguage,
             reflection_length: reflection.length,
             word_count: wordCount,
-            professional_vision_percentage: analysisResult.percentages_priority.professional_vision,
-            other_percentage: analysisResult.percentages_priority.other,
             revision_count: currentTaskState.revisionCount || 0
         });
         
@@ -5018,9 +5016,9 @@ async function saveFeedbackToDatabase(data) {
             language: currentLanguage,
             reflection_id: result.id,
             reflection_length: data.reflectionText.length,
-            analysis_percentages_raw: data.analysisResult.percentages_raw,
-            analysis_percentages_priority: data.analysisResult.percentages_priority,
-            weakest_component: data.analysisResult.weakest_component
+            analysis_percentages_raw: data.analysisResult?.percentages_raw || null,
+            analysis_percentages_priority: data.analysisResult?.percentages_priority || null,
+            weakest_component: data.analysisResult?.weakest_component || null
         });
         
     } catch (error) {
