@@ -543,12 +543,9 @@ async function directLoginFromAssignment(studentId, anonymousId) {
         
         console.log('Restored progress for', participantCode, ':', currentParticipantProgress);
         
-        // Go directly to dashboard
+        // Go directly to dashboard (renderDashboard will be called by showPage)
         if (typeof showPage === 'function') {
             showPage('dashboard');
-        }
-        if (typeof renderDashboard === 'function') {
-            renderDashboard();
         }
     } else {
         // New participant - create progress record
@@ -577,12 +574,9 @@ async function directLoginFromAssignment(studentId, anonymousId) {
             });
         }
         
-        // Go directly to dashboard
+        // Go directly to dashboard (renderDashboard will be called by showPage)
         if (typeof showPage === 'function') {
             showPage('dashboard');
-        }
-        if (typeof renderDashboard === 'function') {
-            renderDashboard();
         }
     }
 }
@@ -975,28 +969,20 @@ function showPage(pageId) {
         }
         */
         
-        // Render dashboard if showing dashboard page (only if not already rendering)
+        // Render dashboard if showing dashboard page
         if (pageId === 'dashboard') {
-            // Use a flag to prevent multiple simultaneous renders
-            if (!window.dashboardRendering) {
-                window.dashboardRendering = true;
-                if (currentParticipantProgress) {
-                    setTimeout(() => {
-                        if (typeof renderDashboard === 'function') {
-                            renderDashboard();
-                        }
-                        window.dashboardRendering = false;
-                    }, 100);
-                } else {
-                    window.dashboardRendering = false;
+            // Render language switcher in dashboard header immediately
+            if (typeof renderLanguageSwitcherInNav === 'function') {
+                renderLanguageSwitcherInNav();
+            }
+            
+            // Reset dashboard rendering flag and render
+            window.dashboardRendering = false;
+            if (currentParticipantProgress) {
+                if (typeof renderDashboard === 'function') {
+                    renderDashboard();
                 }
             }
-            // Render language switcher in dashboard header
-            setTimeout(() => {
-                if (typeof renderLanguageSwitcherInNav === 'function') {
-                    renderLanguageSwitcherInNav();
-                }
-            }, 50);
         }
         
         // Setup video page if it's a video page
