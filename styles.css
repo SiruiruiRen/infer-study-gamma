@@ -1356,14 +1356,14 @@ textarea {
 }
 
 .definition-icon {
-  font-size: 2.5rem;
+  font-size: 1.8rem;
   margin-bottom: 0.75rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.8);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;

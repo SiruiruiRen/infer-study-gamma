@@ -3063,9 +3063,10 @@ async function generateFeedbackForVideo(reflection, videoNum) {
         
         // Step 1: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
         if (isVeryShort) {
+            // Simple one-sentence warning for Gamma
             let warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your reflection is very short (only " + wordCount + " words). Please expand it to at least 50 words."
-                : "⚠️ Ihre Reflexion ist sehr kurz (nur " + wordCount + " Wörter). Bitte erweitern Sie sie auf mindestens 50 Wörter.";
+                ? "Your reflection is too short. Please write at least 50 words about the teaching video."
+                : "Ihre Reflexion ist zu kurz. Bitte schreiben Sie mindestens 50 Wörter über das Unterrichtsvideo.";
             
             logEvent('short_reflection_detected', {
                 participant_name: currentParticipant,
@@ -3077,8 +3078,8 @@ async function generateFeedbackForVideo(reflection, videoNum) {
             
             const feedbackExtended = document.getElementById(ids.feedbackExtended);
             const feedbackShort = document.getElementById(ids.feedbackShort);
-            if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
-            if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning"><i class="bi bi-exclamation-triangle me-2"></i>${warningMessage}</div>`;
+            if (feedbackExtended) feedbackExtended.innerHTML = `<div class="alert alert-warning">${warningMessage}</div>`;
+            if (feedbackShort) feedbackShort.innerHTML = `<div class="alert alert-warning">${warningMessage}</div>`;
             
             const feedbackTabs = document.getElementById(ids.feedbackTabs);
             if (feedbackTabs) feedbackTabs.classList.remove('d-none');
