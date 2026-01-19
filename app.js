@@ -4846,9 +4846,9 @@ async function saveFeedbackToDatabase(data) {
             language: currentLanguage,
             reflection_id: result.id,
             reflection_length: data.reflectionText.length,
-            analysis_percentages_raw: data.analysisResult.percentages_raw,
-            analysis_percentages_priority: data.analysisResult.percentages_priority,
-            weakest_component: data.analysisResult.weakest_component
+            analysis_percentages_raw: data.analysisResult?.percentages_raw || null,
+            analysis_percentages_priority: data.analysisResult?.percentages_priority || null,
+            weakest_component: data.analysisResult?.weakest_component || null
         });
         
     } catch (error) {
