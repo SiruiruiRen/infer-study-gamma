@@ -777,12 +777,16 @@ function showPage(pageId) {
                 mainNav.classList.add('d-none');
             } else {
                 mainNav.classList.remove('d-none');
-                // Update participant name in nav
+                // Update participant name in nav - prefer student_id over anonymous_id
                 const navParticipantName = document.getElementById('nav-participant-name');
-                if (navParticipantName && currentParticipant) {
-                    navParticipantName.textContent = currentLanguage === 'en' 
-                        ? `Participant: ${currentParticipant}`
-                        : `Teilnehmer: ${currentParticipant}`;
+                if (navParticipantName) {
+                    // Prefer student_id if available, otherwise use participant code (anonymous_id)
+                    const displayId = currentParticipantProgress?.student_id || currentParticipant || '';
+                    if (displayId) {
+                        navParticipantName.textContent = currentLanguage === 'en' 
+                            ? `Student ID: ${displayId}`
+                            : `Studenten-ID: ${displayId}`;
+                    }
                 }
                 
                 // Update dashboard button text based on current page
@@ -1181,7 +1185,7 @@ function renderDashboard() {
     
     window.dashboardRendering = true;
     
-    // Update welcome message with participant name
+    // Update welcome message with participant name - prefer student_id
     const welcomeText = document.getElementById('dashboard-welcome-text');
     const nameEl = document.getElementById('dashboard-participant-name');
     if (welcomeText && nameEl) {
@@ -1193,15 +1197,18 @@ function renderDashboard() {
             (currentParticipantProgress.video_surveys && Object.keys(currentParticipantProgress.video_surveys).length > 0)
         );
         
-        if (currentParticipant) {
+        // Prefer student_id over anonymous_id for display
+        const displayId = currentParticipantProgress?.student_id || currentParticipant || '';
+        
+        if (displayId) {
             if (isReturningUser) {
                 // Returning user - show "Welcome back"
                 welcomeText.textContent = translations[currentLanguage].dashboard_welcome;
-                nameEl.textContent = ` ${currentParticipant}`;
+                nameEl.textContent = ` ${displayId}`;
             } else {
                 // New user - just show "Welcome"
                 welcomeText.textContent = translations[currentLanguage].dashboard_welcome_new || 'Welcome';
-                nameEl.textContent = ` ${currentParticipant}`;
+                nameEl.textContent = ` ${displayId}`;
             }
             nameEl.style.fontWeight = '600';
         } else {
@@ -1220,23 +1227,40 @@ function renderDashboard() {
     const container = document.getElementById('video-cards-container');
     if (!container) {
         console.error('video-cards-container not found');
+        // Try to find it after a short delay (might not be rendered yet)
+        setTimeout(() => {
+            const retryContainer = document.getElementById('video-cards-container');
+            if (retryContainer && VIDEOS && VIDEOS.length > 0) {
+                retryContainer.innerHTML = '';
+                VIDEOS.forEach((video, index) => {
+                    const isCompleted = currentParticipantProgress.videos_completed?.includes(video.id) || false;
+                    const videoSurveyCompleted = currentParticipantProgress.video_surveys?.[video.id] || false;
+                    const card = createVideoCard(video, index + 1, isCompleted, videoSurveyCompleted);
+                    retryContainer.appendChild(card);
+                });
+            }
+        }, 200);
         return;
     }
     
     container.innerHTML = '';
     
     if (!VIDEOS || VIDEOS.length === 0) {
-        console.error('VIDEOS array is empty or undefined');
+        console.error('VIDEOS array is empty or undefined. VIDEOS =', VIDEOS);
         container.innerHTML = '<div class="col-12"><div class="alert alert-warning">No videos configured. Please check VIDEOS array in app.js</div></div>';
         return;
     }
     
+    console.log(`Rendering ${VIDEOS.length} video cards...`);
     VIDEOS.forEach((video, index) => {
         const isCompleted = currentParticipantProgress.videos_completed?.includes(video.id) || false;
         const videoSurveyCompleted = currentParticipantProgress.video_surveys?.[video.id] || false;
         const card = createVideoCard(video, index + 1, isCompleted, videoSurveyCompleted);
         container.appendChild(card);
+        console.log(`Video card ${index + 1} rendered for ${video.id}`);
     });
+    
+    console.log(`Successfully rendered ${VIDEOS.length} video cards`);
     
     // Update post-survey status
     updatePostSurveyStatus();
