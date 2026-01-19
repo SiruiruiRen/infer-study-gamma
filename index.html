@@ -9,6 +9,20 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Simple CSS Loading Indicator (shown until JS loads) -->
+    <div id="initial-loading" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: white; z-index: 10000; display: flex; align-items: center; justify-content: center;">
+        <div style="text-align: center;">
+            <div style="width: 50px; height: 50px; border: 5px solid #f3f3f3; border-top: 5px solid #3f51b5; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px;"></div>
+            <p style="color: #666; font-size: 16px;">Lädt...</p>
+        </div>
+    </div>
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    
     <div id="alert-container"></div>
     
     <!-- Persistent Navigation Bar (visible on all pages except welcome/login/thankyou) -->
