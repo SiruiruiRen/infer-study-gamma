@@ -2661,25 +2661,38 @@ function updatePreSurveyPage() {
 
 // Mark pre-survey complete
 async function markPreSurveyComplete() {
-    if (!supabase || !currentParticipant) return;
+    console.log('markPreSurveyComplete called', { currentParticipant, currentParticipantProgress });
+    
+    if (!supabase || !currentParticipant) {
+        console.warn('Cannot mark pre-survey complete:', { supabase: !!supabase, currentParticipant });
+        return;
+    }
     
     try {
-        const { error } = await supabase
+        const { data, error } = await supabase
             .from('participant_progress')
             .update({ 
                 pre_survey_completed: true,
                 last_active_at: new Date().toISOString()
             })
-            .eq('participant_name', currentParticipant);
+            .eq('participant_name', currentParticipant)
+            .select()
+            .single();
         
-        if (error) console.error('Error marking pre-survey complete:', error);
-        else {
+        if (error) {
+            console.error('Error marking pre-survey complete:', error);
+        } else {
+            console.log('Pre-survey marked complete in DB:', data);
             currentParticipantProgress.pre_survey_completed = true;
             updatePreSurveyStatus(); // Update dashboard status
-            logEvent('pre_survey_completed', { 
-                participant_name: currentParticipant,
-                language: currentLanguage
-            });
+            console.log('Updated pre-survey status, currentParticipantProgress:', currentParticipantProgress);
+            
+            if (typeof logEvent === 'function') {
+                logEvent('pre_survey_completed', { 
+                    participant_name: currentParticipant,
+                    language: currentLanguage
+                });
+            }
         }
     } catch (error) {
         console.error('Error in markPreSurveyComplete:', error);
