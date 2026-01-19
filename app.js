@@ -2431,7 +2431,8 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
-                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
+                    // Gamma uses simple feedback, no analysisResult formatting
+                    feedbackExtended.innerHTML = reflection.feedback_extended;
                     console.log(`[loadPreviousReflection] Extended feedback loaded successfully`);
                 }
                 
@@ -2442,7 +2443,8 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
-                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
+                    // Gamma uses simple feedback, no analysisResult formatting
+                    feedbackShort.innerHTML = reflection.feedback_short;
                     console.log(`[loadPreviousReflection] Short feedback loaded successfully`);
                 }
                 
@@ -2484,7 +2486,7 @@ async function loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     };
-                    displayAnalysisDistributionForVideo(analysisResult, videoNum);
+                    // Gamma doesn't display analysis distribution (simple feedback only)
                 }
                 
                 // Update task state
@@ -2564,7 +2566,8 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
-                    feedbackExtended.innerHTML = formatStructuredFeedback(reflection.feedback_extended, analysisResult);
+                    // Gamma uses simple feedback, no analysisResult formatting
+                    feedbackExtended.innerHTML = reflection.feedback_extended;
                 }
                 
                 if (reflection.feedback_short && feedbackShort) {
@@ -2573,7 +2576,8 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     } : null;
-                    feedbackShort.innerHTML = formatStructuredFeedback(reflection.feedback_short, analysisResult);
+                    // Gamma uses simple feedback, no analysisResult formatting
+                    feedbackShort.innerHTML = reflection.feedback_short;
                 }
                 
                 // Show feedback tabs and buttons
@@ -2588,7 +2592,7 @@ async function loadPreviousReflectionAndFeedback(videoId) {
                         percentages_priority: reflection.analysis_percentages.priority || reflection.analysis_percentages,
                         weakest_component: reflection.weakest_component || 'Prediction'
                     };
-                    displayAnalysisDistribution(analysisResult);
+                    // Gamma doesn't display analysis distribution (simple feedback only)
                 }
                 
                 // Update task state
