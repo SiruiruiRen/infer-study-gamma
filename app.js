@@ -457,31 +457,53 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
     // Set default language to German
     switchLanguage('de');
     
-    // Check if coming from assignment site (with URL params) - directly login, skip login page
+    // Check if coming from assignment site (with URL params) - auto-fill and login
     if (comingFromAssignment && studentId && anonymousId) {
-        // Coming from assignment site - directly login without showing login page
-        console.log('Coming from assignment site, auto-logging in...');
+        // Coming from assignment site - show login page briefly, auto-fill, then auto-login
+        console.log('Coming from assignment site, auto-filling and logging in...', { studentId, anonymousId });
         
-        // Directly call handleLogin with the provided IDs
-        const directLogin = async () => {
-            // Set the values in the form (even though hidden) for handleLogin to work
+        // Show login page first to ensure form elements are available
+        showPage('login');
+        
+        // Auto-fill form and trigger login
+        const autoFillAndLogin = async () => {
             const codeInput = document.getElementById('participant-code-input');
             const studentIdInput = document.getElementById('student-id-input');
             
-            if (codeInput) codeInput.value = anonymousId;
-            if (studentIdInput) studentIdInput.value = studentId;
-            
-            // Call handleLogin directly
-            if (typeof handleLogin === 'function') {
-                await handleLogin();
-            } else {
-                // Wait for handleLogin to be available
-                setTimeout(directLogin, 200);
+            // Wait for form elements to be available
+            if (!codeInput || !studentIdInput) {
+                console.log('Form elements not ready, retrying...');
+                setTimeout(autoFillAndLogin, 100);
+                return;
             }
+            
+            // Fill the form fields
+            codeInput.value = anonymousId;
+            studentIdInput.value = studentId;
+            
+            // Dispatch input events to trigger any listeners
+            codeInput.dispatchEvent(new Event('input', { bubbles: true }));
+            studentIdInput.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            console.log('Form fields filled:', { 
+                anonymousId: codeInput.value, 
+                studentId: studentIdInput.value 
+            });
+            
+            // Wait a moment for form to update, then call handleLogin
+            setTimeout(async () => {
+                if (typeof handleLogin === 'function') {
+                    console.log('Calling handleLogin...');
+                    await handleLogin();
+                } else {
+                    console.log('handleLogin not available yet, retrying...');
+                    setTimeout(autoFillAndLogin, 200);
+                }
+            }, 200);
         };
         
-        // Start login process
-        setTimeout(directLogin, 300);
+        // Start auto-fill and login process after a short delay to ensure page is shown
+        setTimeout(autoFillAndLogin, 300);
     } else {
         // Direct visitor - show login page (welcome page stays hidden)
         showPage('login');
