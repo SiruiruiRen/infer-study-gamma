@@ -3597,10 +3597,53 @@ function confirmFinalSubmission() {
     }
 }
 
-function confirmFinalSubmissionForVideo(videoNum) {
+async function confirmFinalSubmissionForVideo(videoNum) {
     const videoId = `video${videoNum}`;
     const video = VIDEOS.find(v => v.id === videoId);
     const ids = getVideoElementIds(videoNum);
+    const reflectionText = document.getElementById(ids.reflectionText)?.value?.trim();
+    
+    // Ensure reflection is saved to database before final submission
+    // This handles the case where user clicks "Submit Final" without clicking "Save Reflection" first
+    if (supabase && currentParticipant && reflectionText) {
+        // Check if reflection is already saved
+        if (!currentTaskState.currentReflectionId) {
+            console.log('[confirmFinalSubmission] Saving reflection before final submission...');
+            try {
+                // Save reflection to database (without feedback if no feedback was generated)
+                const reflectionData = {
+                    session_id: currentSessionId,
+                    participant_name: currentParticipant,
+                    video_id: videoId,
+                    task_id: videoId,
+                    language: currentLanguage,
+                    reflection_text: reflectionText,
+                    revision_number: 1,
+                    feedback_extended: null,
+                    feedback_short: null,
+                    analysis_percentages: null,
+                    weakest_component: null
+                };
+                
+                const { data, error } = await supabase
+                    .from('reflections')
+                    .insert([reflectionData])
+                    .select()
+                    .single();
+                
+                if (error) {
+                    console.error('[confirmFinalSubmission] Error saving reflection:', error);
+                } else {
+                    currentTaskState.currentReflectionId = data?.id;
+                    currentTaskState.parentReflectionId = data?.id;
+                    currentTaskState.revisionCount = 1;
+                    console.log('[confirmFinalSubmission] Reflection saved successfully:', data?.id);
+                }
+            } catch (error) {
+                console.error('[confirmFinalSubmission] Error in save reflection:', error);
+            }
+        }
+    }
     
     // Make reflection read-only after final submission
     const reflectionTextArea = document.getElementById(ids.reflectionText);
@@ -3633,7 +3676,7 @@ function confirmFinalSubmissionForVideo(videoNum) {
         language: currentLanguage,
         reflection_id: currentTaskState.currentReflectionId,
         total_revisions: currentTaskState.revisionCount || 1,
-        final_reflection_length: document.getElementById(ids.reflectionText)?.value.length || 0,
+        final_reflection_length: reflectionText?.length || 0,
         has_infer: video?.hasINFER || false
     });
     
