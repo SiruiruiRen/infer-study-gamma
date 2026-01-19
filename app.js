@@ -992,6 +992,9 @@ function showPage(pageId) {
         // Setup video page if it's a video page
         if (pageId.startsWith('video-')) {
             const videoNum = parseInt(pageId.replace('video-', ''));
+            const videoId = `video${videoNum}`;
+            const video = VIDEOS.find(v => v.id === videoId);
+            
             if (typeof setupVideoPageElements === 'function') {
                 setupVideoPageElements(videoNum);
             }
@@ -1003,8 +1006,6 @@ function showPage(pageId) {
             }, 100);
             
             // Update video page titles/subtitles
-            const videoId = `video${videoNum}`;
-            const video = VIDEOS.find(v => v.id === videoId);
             if (video) {
                 const ids = getVideoElementIds(videoNum);
                 const titleEl = document.getElementById(ids.title);
@@ -1024,6 +1025,16 @@ function showPage(pageId) {
                         subtitleEl.textContent = translations[currentLanguage].reflection_only_mode || 'Write your reflection about the video. After submission, you will proceed to a short questionnaire.';
                     }
                 }
+            }
+            
+            // Load previous reflection and feedback when directly navigating to video page (e.g., from dashboard)
+            // This ensures reflection is loaded even if user skips the video link page
+            if (video && typeof loadPreviousReflectionAndFeedbackForVideo === 'function') {
+                console.log(`[showPage] Loading previous reflection for video ${videoId} (direct navigation)`);
+                // Use setTimeout to ensure DOM is ready
+                setTimeout(async () => {
+                    await loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum);
+                }, 50);
             }
         }
         
