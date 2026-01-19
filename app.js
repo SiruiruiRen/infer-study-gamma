@@ -1029,12 +1029,20 @@ function showPage(pageId) {
             
             // Load previous reflection and feedback when directly navigating to video page (e.g., from dashboard)
             // This ensures reflection is loaded even if user skips the video link page
+            // Only load if not already loading from continueToReflectionTask
             if (video && typeof loadPreviousReflectionAndFeedbackForVideo === 'function') {
-                console.log(`[showPage] Loading previous reflection for video ${videoId} (direct navigation)`);
-                // Use setTimeout to ensure DOM is ready
-                setTimeout(async () => {
-                    await loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum);
-                }, 50);
+                // Check if we're coming from continueToReflectionTask by checking if currentVideoId is set
+                // If not, this is a direct navigation and we need to load reflection
+                const isDirectNavigation = !currentVideoId || currentVideoId !== videoId;
+                if (isDirectNavigation) {
+                    console.log(`[showPage] Loading previous reflection for video ${videoId} (direct navigation)`);
+                    // Use setTimeout to ensure DOM is ready
+                    setTimeout(async () => {
+                        await loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum);
+                    }, 100);
+                } else {
+                    console.log(`[showPage] Skipping reflection load for video ${videoId} (already loading from continueToReflectionTask)`);
+                }
             }
         }
         
@@ -2168,8 +2176,11 @@ async function continueToReflectionTask(videoNum) {
     // Configure UI based on whether video has INFER feedback
     configureVideoTaskUI(videoNum, video.hasINFER);
     
-    // Load previous reflection and feedback for this video
-    await loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum);
+    // Show task page for this video (use page-video-X format) FIRST
+    // This ensures DOM is ready before loading reflection
+    const videoPageId = `video-${videoNum}`;
+    console.log(`Navigating to video page: ${videoPageId} for video ${videoId} (hasINFER: ${video.hasINFER})`);
+    showPage(videoPageId);
     
     // Show percentage explanation only for INFER videos
     const explanationEl = document.getElementById(ids.percentageExplanation);
@@ -2181,10 +2192,11 @@ async function continueToReflectionTask(videoNum) {
         }
     }
     
-    // Show task page for this video (use page-video-X format)
-    const videoPageId = `video-${videoNum}`;
-    console.log(`Navigating to video page: ${videoPageId} for video ${videoId} (hasINFER: ${video.hasINFER})`);
-    showPage(videoPageId);
+    // Load previous reflection and feedback for this video AFTER page is shown
+    // Use a small delay to ensure DOM is fully ready
+    setTimeout(async () => {
+        await loadPreviousReflectionAndFeedbackForVideo(videoId, videoNum);
+    }, 100);
     
     logEvent('video_task_started', {
         video_id: videoId,
