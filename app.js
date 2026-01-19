@@ -590,6 +590,12 @@ async function directLoginFromAssignment(studentId, anonymousId) {
 // Initialize app
 function initializeApp(comingFromAssignment = false, studentId = null, anonymousId = null) {
     setupEventListeners();
+    
+    // Set default language to German FIRST
+    if (typeof switchLanguage === 'function') {
+        switchLanguage('de');
+    }
+    
     renderLanguageSwitchers();
     // Only call renderLanguageSwitcherInNav if it exists (it's defined later in the file)
     if (typeof renderLanguageSwitcherInNav === 'function') {
@@ -598,11 +604,6 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
     // Only call applyTranslations if it exists (it's defined later in the file)
     if (typeof applyTranslations === 'function') {
         applyTranslations();
-    }
-    
-    // Set default language to German
-    if (typeof switchLanguage === 'function') {
-        switchLanguage('de');
     }
     
     // Check if coming from assignment site (with URL params) - directly login and go to dashboard
@@ -3929,7 +3930,9 @@ function switchLanguage(lang) {
     
     // Re-render dashboard if on dashboard page (to update video cards with new language)
     if (currentPage === 'dashboard' && currentParticipantProgress) {
-        renderDashboard();
+        if (typeof renderDashboard === 'function') {
+            renderDashboard();
+        }
     }
     
     // Update video page titles/subtitles if on a video page
@@ -4003,15 +4006,13 @@ function renderLanguageSwitchers() {
 function renderLanguageSwitcherInNav() {
     const navContainer = document.querySelector('.language-switcher-container-inline');
     const t = translations[currentLanguage];
-    const tooltipText = t.language_tooltip || (currentLanguage === 'en' 
-        ? "Select the language for feedback generation. Feedback will be generated in the selected language (English or German). Switch before generating, or regenerate to change the feedback language."
-        : "Wählen Sie die Sprache für die Feedback-Generierung. Das Feedback wird in der ausgewählten Sprache (Englisch oder Deutsch) generiert. Vor der Generierung wechseln oder neu generieren, um die Feedback-Sprache zu ändern.");
     
+    // Don't show tooltip in nav (it's only relevant for video tasks)
     if (navContainer) {
         navContainer.innerHTML = `
             <div class="btn-group" role="group">
-                <button type="button" class="btn btn-sm ${currentLanguage === 'en' ? 'btn-primary' : 'btn-outline-primary'}" id="nav-lang-switch-en" title="${tooltipText}">English</button>
-                <button type="button" class="btn btn-sm ${currentLanguage === 'de' ? 'btn-primary' : 'btn-outline-primary'}" id="nav-lang-switch-de" title="${tooltipText}">Deutsch</button>
+                <button type="button" class="btn btn-sm ${currentLanguage === 'en' ? 'btn-primary' : 'btn-outline-primary'}" id="nav-lang-switch-en">English</button>
+                <button type="button" class="btn btn-sm ${currentLanguage === 'de' ? 'btn-primary' : 'btn-outline-primary'}" id="nav-lang-switch-de">Deutsch</button>
             </div>
         `;
         
@@ -4029,10 +4030,11 @@ function renderLanguageSwitcherInNav() {
     // Also render language switcher in dashboard header
     const dashboardHeaderSwitcher = document.querySelector('.language-switcher-container-inline-header');
     if (dashboardHeaderSwitcher) {
+        // No tooltip in dashboard header (it's only relevant for video tasks)
         dashboardHeaderSwitcher.innerHTML = `
             <div class="btn-group" role="group">
-                <button type="button" class="btn ${currentLanguage === 'en' ? 'btn-primary' : 'btn-outline-primary'}" id="header-lang-switch-en" title="${tooltipText}">English</button>
-                <button type="button" class="btn ${currentLanguage === 'de' ? 'btn-primary' : 'btn-outline-primary'}" id="header-lang-switch-de" title="${tooltipText}">Deutsch</button>
+                <button type="button" class="btn ${currentLanguage === 'en' ? 'btn-primary' : 'btn-outline-primary'}" id="header-lang-switch-en">English</button>
+                <button type="button" class="btn ${currentLanguage === 'de' ? 'btn-primary' : 'btn-outline-primary'}" id="header-lang-switch-de">Deutsch</button>
             </div>
         `;
         
