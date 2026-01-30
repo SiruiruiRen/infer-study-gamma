@@ -918,8 +918,21 @@ function setupEventListeners() {
             });
             
             markVideoSurveyComplete();
-            showPage('dashboard');
-            renderDashboard();
+            
+            // Check if this was video 4 (all videos now complete)
+            const videosCompleted = currentParticipantProgress?.videos_completed?.length || 0;
+            if (i === 4 || videosCompleted >= 4) {
+                // All videos complete - go directly to thank you page
+                logEvent('study_completed', {
+                    participant_name: currentParticipant,
+                    total_videos_completed: 4,
+                    language: currentLanguage
+                });
+                showPage('thankyou');
+            } else {
+                showPage('dashboard');
+                renderDashboard();
+            }
         });
         
         // Clear error when user starts typing
@@ -1477,6 +1490,14 @@ function renderDashboard() {
         return;
     }
     
+    // Check if all 4 videos are completed - if so, redirect to thank you page
+    const videosCompleted = currentParticipantProgress?.videos_completed?.length || 0;
+    if (videosCompleted >= 4) {
+        console.log('All videos completed, redirecting to thank you page');
+        showPage('thankyou');
+        return;
+    }
+    
     window.dashboardRendering = true;
     
     // Update welcome message with participant name - prefer student_id
@@ -1601,33 +1622,13 @@ function updatePreSurveyStatus() {
 }
 
 // Update post-survey status on dashboard
+// Update post-survey status on dashboard
+// Note: Post-survey has been removed - users complete study after video 4
 function updatePostSurveyStatus() {
-    const videosDone = currentParticipantProgress?.videos_completed?.length || 0;
-    const allVideosDone = videosDone >= 4;
-    const isCompleted = currentParticipantProgress?.post_survey_completed || false;
-    
-    const badge = document.getElementById('postsurvey-status-badge');
-    const startBtn = document.getElementById('start-post-survey');
-    
-    if (badge) {
-        if (isCompleted) {
-            badge.className = 'badge bg-success';
-            badge.textContent = currentLanguage === 'en' ? 'Completed' : 'Abgeschlossen';
-        } else if (allVideosDone) {
-            badge.className = 'badge bg-primary';
-            badge.textContent = currentLanguage === 'en' ? 'Available' : 'Verfügbar';
-        } else {
-            badge.className = 'badge bg-secondary';
-            badge.textContent = currentLanguage === 'en' ? 'Not Available' : 'Nicht verfügbar';
-        }
-    }
-    
-    if (startBtn) {
-        if (allVideosDone && !isCompleted) {
-            startBtn.classList.remove('d-none');
-        } else {
-            startBtn.classList.add('d-none');
-        }
+    // Hide the post-survey card entirely since we no longer use it
+    const postSurveyCard = document.getElementById('dashboard-postsurvey-card');
+    if (postSurveyCard) {
+        postSurveyCard.style.display = 'none';
     }
 }
 
