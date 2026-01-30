@@ -51,11 +51,19 @@ const VIDEOS = [
 // Qualtrics Survey Links
 const QUALTRICS_SURVEYS = {
     pre: 'https://unc.az1.qualtrics.com/jfe/form/SV_9XLC3Bd1eQfu2p0',
-    post_video_1: 'https://unc.az1.qualtrics.com/jfe/form/SV_aWTs9RvswqAWyVg',
-    post_video_2: 'https://unc.az1.qualtrics.com/jfe/form/SV_aWTs9RvswqAWyVg',
-    post_video_3: 'https://unc.az1.qualtrics.com/jfe/form/SV_aWTs9RvswqAWyVg',
-    post_video_4: 'https://unc.az1.qualtrics.com/jfe/form/SV_aWTs9RvswqAWyVg',
+    post_video_1: 'https://unc.az1.qualtrics.com/jfe/form/SV_e9XDXrrsoszNeOq',
+    post_video_2: 'https://unc.az1.qualtrics.com/jfe/form/SV_9zcj8XlalPt9Y58',
+    post_video_3: 'https://unc.az1.qualtrics.com/jfe/form/SV_6zXyiJeJlQ6Sf5Q',
+    post_video_4: 'https://unc.az1.qualtrics.com/jfe/form/SV_cDezQARnoAUMOMK',
     post: 'https://unc.az1.qualtrics.com/jfe/form/SV_eretEVKsvHFFBXg'
+};
+
+// Post-Video Survey Verification Codes
+const POST_VIDEO_CODES = {
+    1: '839417',
+    2: '250683',
+    3: '471592',
+    4: '628034'
 };
 
 // Global state
@@ -163,11 +171,15 @@ const translations = {
         prediction: "Prediction",
         prediction_def: "Anticipating future outcomes and effects on student learning based on observed teaching practices and their interpretations.",
         post_video_survey_title: "Post-Video Survey",
-        post_video_survey_subtitle: "Please share your thoughts about this video",
+        post_video_survey_subtitle: "Please complete this survey to finish the video task",
         post_video_questionnaire: "Post-Video Questionnaire",
-        post_video_questionnaire_description: "Please complete the questionnaire below. This takes about 3-5 minutes. This questionnaire is a key part of the task and must be completed.",
-        post_video_instructions: "Complete the questionnaire above, then click \"Return to Dashboard\" below.",
+        post_video_questionnaire_description: "Please complete the questionnaire below to finish the video task (approx. 3-5 minutes). At the end, you will receive a confirmation code that you must enter to continue.",
+        post_video_instructions: "Complete the questionnaire above, then enter the confirmation code below.",
         return_to_dashboard: "Return to Dashboard",
+        verification_code_label: "Enter Confirmation Code:",
+        verification_code_placeholder: "Enter the 6-digit code from the survey",
+        verification_code_invalid: "Invalid code. Please check the code from the survey and try again.",
+        verification_code_required: "Please enter the confirmation code to continue.",
         final_post_survey_title: "Final Post-Survey",
         final_post_survey_subtitle: "Thank you for completing all videos!",
         final_post_survey_description: "Please complete the final survey below. This takes about 10-15 minutes. This final survey is a key part of the study and must be completed.",
@@ -309,12 +321,16 @@ const translations = {
         explanation_def: "Interpretation von beobachteten Ereignissen mittels pädagogischer Theorie, Forschung und pädagogischem Wissen - Verstehen, warum Dinge passiert sind.",
         prediction: "Vorhersage",
         prediction_def: "Antizipation zukünftiger Ergebnisse und Auswirkungen auf das Lernen der Schüler basierend auf beobachteten Unterrichtspraktiken und deren Interpretationen.",
-        post_video_survey_title: "Nach-Video-Umfrage",
-        post_video_survey_subtitle: "Bitte teilen Sie Ihre Gedanken zu diesem Video mit",
+        post_video_survey_title: "Nach-Video-Fragebogen",
+        post_video_survey_subtitle: "Bitte füllen Sie diesen Fragebogen aus, um die Videoaufgabe abzuschließen",
         post_video_questionnaire: "Nach-Video-Fragebogen",
-        post_video_questionnaire_description: "Bitte vervollständigen Sie den Fragebogen unten. Dies dauert etwa 3-5 Minuten.",
-        post_video_instructions: "Vervollständigen Sie den Fragebogen oben und klicken Sie dann unten auf \"Zurück zum Dashboard\".",
+        post_video_questionnaire_description: "Bitte füllen Sie diesen Fragebogen aus, um die Videoaufgabe abzuschließen (ca. 3-5 Minuten). Am Ende erhalten Sie einen Bestätigungscode, den Sie eingeben müssen, um fortzufahren.",
+        post_video_instructions: "Vervollständigen Sie den Fragebogen oben und geben Sie dann den Bestätigungscode unten ein.",
         return_to_dashboard: "Zurück zum Dashboard",
+        verification_code_label: "Bestätigungscode eingeben:",
+        verification_code_placeholder: "Geben Sie den 6-stelligen Code aus dem Fragebogen ein",
+        verification_code_invalid: "Ungültiger Code. Bitte überprüfen Sie den Code aus dem Fragebogen und versuchen Sie es erneut.",
+        verification_code_required: "Bitte geben Sie den Bestätigungscode ein, um fortzufahren.",
         final_post_survey_title: "Abschließende Nach-Umfrage",
         final_post_survey_subtitle: "Vielen Dank, dass Sie alle Videos abgeschlossen haben!",
         final_post_survey_description: "Bitte vervollständigen Sie die abschließende Umfrage unten. Dies dauert etwa 10-15 Minuten.",
@@ -854,30 +870,63 @@ function setupEventListeners() {
         });
     }
     
-    // Post-video survey continue buttons (4 videos) - MANDATORY
+    // Post-video survey continue buttons (4 videos) - MANDATORY with verification code
     for (let i = 1; i <= 4; i++) {
         document.getElementById(`continue-after-post-video-survey-${i}`)?.addEventListener('click', () => {
-            // MANDATORY: Check if survey completion checkbox is checked
-            const checkbox = document.getElementById(`survey-completed-check-${i}`);
-            if (!checkbox || !checkbox.checked) {
-                const t = translations[currentLanguage];
-                showAlert(t.survey_checkbox_required || 'Please check the box to confirm you have completed the survey.', 'warning');
+            // MANDATORY: Check verification code
+            const codeInput = document.getElementById(`verification-code-${i}`);
+            const errorDiv = document.getElementById(`verification-code-error-${i}`);
+            const t = translations[currentLanguage];
+            
+            if (!codeInput || !codeInput.value.trim()) {
+                if (errorDiv) {
+                    errorDiv.textContent = t.verification_code_required || 'Please enter the confirmation code to continue.';
+                    errorDiv.classList.remove('d-none');
+                }
+                showAlert(t.verification_code_required || 'Please enter the confirmation code to continue.', 'warning');
                 return; // Block navigation
             }
+            
+            // Validate the code
+            const enteredCode = codeInput.value.trim();
+            const correctCode = POST_VIDEO_CODES[i];
+            
+            if (enteredCode !== correctCode) {
+                if (errorDiv) {
+                    errorDiv.textContent = t.verification_code_invalid || 'Invalid code. Please check the code from the survey and try again.';
+                    errorDiv.classList.remove('d-none');
+                }
+                showAlert(t.verification_code_invalid || 'Invalid code. Please check the code from the survey and try again.', 'danger');
+                
+                logEvent('verification_code_failed', {
+                    video_id: `video${i}`,
+                    participant_name: currentParticipant,
+                    entered_code: enteredCode
+                });
+                return; // Block navigation
+            }
+            
+            // Code is correct - hide error and proceed
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
+            }
+            
+            logEvent('verification_code_success', {
+                video_id: `video${i}`,
+                participant_name: currentParticipant,
+                survey_type: 'post_video'
+            });
+            
             markVideoSurveyComplete();
             showPage('dashboard');
             renderDashboard();
         });
         
-        // Track checkbox status (optional - just for logging)
-        document.getElementById(`survey-completed-check-${i}`)?.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                const videoId = `video${i}`;
-                logEvent('survey_completion_marked', {
-                    video_id: videoId,
-                    participant_name: currentParticipant,
-                    survey_type: 'post_video'
-                });
+        // Clear error when user starts typing
+        document.getElementById(`verification-code-${i}`)?.addEventListener('input', () => {
+            const errorDiv = document.getElementById(`verification-code-error-${i}`);
+            if (errorDiv) {
+                errorDiv.classList.add('d-none');
             }
         });
     }
@@ -2846,10 +2895,14 @@ function loadSurvey(surveyType) {
             iframe.src = surveyUrl;
         }
         
-        // Checkbox starts unchecked - user must manually check it
-        const checkbox = document.getElementById(`survey-completed-check-${videoNum}`);
-        if (checkbox) {
-            checkbox.checked = false;
+        // Clear verification code input
+        const codeInput = document.getElementById(`verification-code-${videoNum}`);
+        if (codeInput) {
+            codeInput.value = '';
+        }
+        const errorDiv = document.getElementById(`verification-code-error-${videoNum}`);
+        if (errorDiv) {
+            errorDiv.classList.add('d-none');
         }
     } else if (surveyType === 'post') {
         // Checkbox starts unchecked - user must manually check it
