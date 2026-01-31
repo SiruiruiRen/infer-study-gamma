@@ -58,6 +58,9 @@ const QUALTRICS_SURVEYS = {
     post: 'https://unc.az1.qualtrics.com/jfe/form/SV_eretEVKsvHFFBXg'
 };
 
+// Pre-Survey Verification Code
+const PRE_SURVEY_CODE = '471592';
+
 // Post-Video Survey Verification Codes
 const POST_VIDEO_CODES = {
     1: '839417',
@@ -107,9 +110,10 @@ const translations = {
         continue_button: "Continue",
         pre_survey_title: "Pre-Survey",
         pre_survey_subtitle: "Please complete the pre-survey before starting",
-        pre_survey_description: "Please complete the survey below. This takes about 5-10 minutes.",
+        pre_survey_description: "Please complete the survey below. This takes about 5-10 minutes. At the end, you will receive a confirmation code that you must enter to continue.",
         next_step: "Next Step:",
-        pre_survey_instructions: "Complete the survey above, then click \"Continue to Dashboard\" below.",
+        pre_survey_instructions: "Complete the survey above, then enter the confirmation code below.",
+        pre_survey_code_instruction: "Complete the survey above, then enter the confirmation code below.",
         continue_to_dashboard: "Continue to Dashboard",
         dashboard_title: "INFER Dashboard",
         dashboard_welcome: "Welcome back, ",
@@ -260,9 +264,10 @@ const translations = {
         continue_button: "Weiter",
         pre_survey_title: "Vor-Umfrage",
         pre_survey_subtitle: "Bitte vervollständigen Sie die Vor-Umfrage, bevor Sie beginnen",
-        pre_survey_description: "Bitte vervollständigen Sie die Umfrage unten. Dies dauert etwa 5-10 Minuten.",
+        pre_survey_description: "Bitte vervollständigen Sie die Umfrage unten. Dies dauert etwa 5-10 Minuten. Am Ende erhalten Sie einen Bestätigungscode, den Sie eingeben müssen, um fortzufahren.",
         next_step: "Nächster Schritt:",
-        pre_survey_instructions: "Vervollständigen Sie die Umfrage oben und klicken Sie dann unten auf \"Weiter zum Dashboard\".",
+        pre_survey_instructions: "Vervollständigen Sie die Umfrage oben und geben Sie dann den Bestätigungscode unten ein.",
+        pre_survey_code_instruction: "Vervollständigen Sie die Umfrage oben und geben Sie dann den Bestätigungscode unten ein.",
         continue_to_dashboard: "Weiter zum Dashboard",
         dashboard_title: "INFER Dashboard",
         dashboard_welcome: "Willkommen zurück, ",
@@ -693,17 +698,57 @@ function setupEventListeners() {
         if (e.key === 'Enter') handleLogin();
     });
     
-    // Pre-survey - MANDATORY: Must check checkbox to continue
+    // Pre-survey - MANDATORY: Must enter verification code to continue
     document.getElementById('continue-after-presurvey')?.addEventListener('click', () => {
-        const checkbox = document.getElementById('presurvey-completed-check');
-        if (!checkbox || !checkbox.checked) {
-            // Show alert that checkbox is required
-            const t = translations[currentLanguage];
-            showAlert(t.survey_checkbox_required || 'Please check the box to confirm you have completed the survey.', 'warning');
+        const codeInput = document.getElementById('presurvey-verification-code');
+        const errorDiv = document.getElementById('presurvey-verification-code-error');
+        const t = translations[currentLanguage];
+        
+        if (!codeInput || !codeInput.value.trim()) {
+            if (errorDiv) {
+                errorDiv.textContent = t.verification_code_required || 'Please enter the confirmation code to continue.';
+                errorDiv.classList.remove('d-none');
+            }
+            showAlert(t.verification_code_required || 'Please enter the confirmation code to continue.', 'warning');
             return; // Block navigation
         }
+        
+        // Validate the code
+        const enteredCode = codeInput.value.trim();
+        
+        if (enteredCode !== PRE_SURVEY_CODE) {
+            if (errorDiv) {
+                errorDiv.textContent = t.verification_code_invalid || 'Invalid code. Please check the code from the survey and try again.';
+                errorDiv.classList.remove('d-none');
+            }
+            showAlert(t.verification_code_invalid || 'Invalid code. Please check the code from the survey and try again.', 'danger');
+            
+            logEvent('presurvey_verification_code_failed', {
+                participant_name: currentParticipant,
+                entered_code: enteredCode
+            });
+            return; // Block navigation
+        }
+        
+        // Code is correct - hide error and proceed
+        if (errorDiv) {
+            errorDiv.classList.add('d-none');
+        }
+        
+        logEvent('presurvey_verification_code_success', {
+            participant_name: currentParticipant
+        });
+        
         markPreSurveyComplete();
         showPage('dashboard');
+    });
+    
+    // Clear error when user starts typing in pre-survey code
+    document.getElementById('presurvey-verification-code')?.addEventListener('input', () => {
+        const errorDiv = document.getElementById('presurvey-verification-code-error');
+        if (errorDiv) {
+            errorDiv.classList.add('d-none');
+        }
     });
     
     // Persistent navigation - Dashboard button
@@ -943,13 +988,6 @@ function setupEventListeners() {
             }
         });
     }
-    
-    // Pre-survey completion checkbox (optional)
-    document.getElementById('presurvey-completed-check')?.addEventListener('change', (e) => {
-        if (e.target.checked) {
-            markPreSurveyComplete();
-        }
-    });
     
     // Tab switching detection
     document.addEventListener('visibilitychange', handleTabSwitch);
@@ -2921,11 +2959,15 @@ function updatePreSurveyPage() {
     const description = document.getElementById('presurvey-description');
     const instructions = document.getElementById('presurvey-instructions');
     const continueBtn = document.getElementById('continue-after-presurvey');
-    const checkbox = document.getElementById('presurvey-completed-check');
+    const codeInput = document.getElementById('presurvey-verification-code');
+    const errorDiv = document.getElementById('presurvey-verification-code-error');
     
-    // Checkbox starts unchecked - user must manually check it
-    if (checkbox) {
-        checkbox.checked = false;
+    // Clear verification code input
+    if (codeInput) {
+        codeInput.value = '';
+    }
+    if (errorDiv) {
+        errorDiv.classList.add('d-none');
     }
     
     if (isCompleted) {

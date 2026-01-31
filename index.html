@@ -263,15 +263,13 @@
                             </div>
                             
                             <div class="mt-4">
-                                <div class="alert alert-warning mb-3">
-                                    <i class="bi bi-exclamation-triangle me-2"></i>
-                                    <span data-lang-key="survey_required_instruction">You must complete the survey above before checking this box.</span>
+                                <div class="alert alert-info mb-3">
+                                    <span data-lang-key="pre_survey_code_instruction">Complete the survey above, then enter the confirmation code below.</span>
                                 </div>
-                                <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="presurvey-completed-check" required>
-                                    <label class="form-check-label" for="presurvey-completed-check" data-lang-key="survey_completed_checkbox">
-                                        I have completed this survey
-                                    </label>
+                                <div class="mb-3">
+                                    <label for="presurvey-verification-code" class="form-label" data-lang-key="verification_code_label">Enter Confirmation Code:</label>
+                                    <input type="text" class="form-control" id="presurvey-verification-code" maxlength="6" placeholder="Enter the 6-digit code from the survey" data-lang-key-placeholder="verification_code_placeholder">
+                                    <div id="presurvey-verification-code-error" class="text-danger mt-2 d-none" data-lang-key="verification_code_invalid">Invalid code. Please check the code from the survey and try again.</div>
                                 </div>
                                 <div class="text-center">
                                     <button id="continue-after-presurvey" class="btn btn-success btn-lg" data-lang-key="continue_to_dashboard">Continue to Dashboard</button>
