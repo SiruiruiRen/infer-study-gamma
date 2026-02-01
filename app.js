@@ -199,8 +199,12 @@ const translations = {
         start_video: "Start Video",
         continue_video: "Continue",
         survey_completed: "Survey Done",
+        complete_survey: "Complete Survey",
+        reflection_done: "Reflection Done",
+        survey_pending: "Survey Pending",
         complete_presurvey_first: "Complete Pre-Survey First",
         complete_previous_video: "Complete Previous Video First",
+        complete_previous_survey: "Complete Previous Survey First",
         complete_previous_video_first: "You must complete the previous video before starting this one.",
         thank_you_title: "Thank You!",
         participation_complete: "Your participation is complete",
@@ -351,8 +355,12 @@ const translations = {
         start_video: "Video starten",
         continue_video: "Fortsetzen",
         survey_completed: "Umfrage erledigt",
+        complete_survey: "Umfrage abschließen",
+        reflection_done: "Reflexion erledigt",
+        survey_pending: "Umfrage ausstehend",
         complete_presurvey_first: "Zuerst Vor-Umfrage abschließen",
         complete_previous_video: "Zuerst vorheriges Video abschließen",
+        complete_previous_survey: "Zuerst vorherige Umfrage abschließen",
         complete_previous_video_first: "Sie müssen das vorherige Video abschließen, bevor Sie dieses starten können.",
         data_protection_header: "Datenschutzinformationen",
         data_protection_intro: "Bitte lesen Sie das unten stehende Datenschutzdokument.",
@@ -1684,14 +1692,17 @@ function canAccessVideo(videoIndex) {
         return true;
     }
     
-    // For subsequent videos, check if previous video is completed
+    // For subsequent videos, check if previous video is FULLY completed (reflection + survey)
     const previousVideo = VIDEOS[videoIndex - 1];
     if (!previousVideo) {
         return true; // Safety fallback
     }
     
-    const previousVideoCompleted = currentParticipantProgress.videos_completed?.includes(previousVideo.id) || false;
-    return previousVideoCompleted;
+    const previousVideoReflectionDone = currentParticipantProgress.videos_completed?.includes(previousVideo.id) || false;
+    const previousVideoSurveyDone = currentParticipantProgress.video_surveys?.[previousVideo.id] || false;
+    
+    // Both reflection AND survey must be completed for the previous video
+    return previousVideoReflectionDone && previousVideoSurveyDone;
 }
 
 function createVideoCard(video, number, isCompleted, surveyCompleted) {
@@ -1703,6 +1714,9 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
     const startText = t.start_video || (currentLanguage === 'en' ? 'Start Video' : 'Video starten');
     const continueText = t.continue_video || (currentLanguage === 'en' ? 'Continue' : 'Fortsetzen');
     const surveyText = t.survey_completed || (currentLanguage === 'en' ? 'Survey Done' : 'Umfrage erledigt');
+    const completeSurveyText = t.complete_survey || (currentLanguage === 'en' ? 'Complete Survey' : 'Umfrage abschließen');
+    const reflectionDoneText = t.reflection_done || (currentLanguage === 'en' ? 'Reflection Done' : 'Reflexion erledigt');
+    const surveyPendingText = t.survey_pending || (currentLanguage === 'en' ? 'Survey Pending' : 'Umfrage ausstehend');
     const preSurveyRequired = t.complete_presurvey_first || (currentLanguage === 'en' ? 'Complete Pre-Survey First' : 'Zuerst Vor-Umfrage abschließen');
     const completePreviousVideo = t.complete_previous_video || (currentLanguage === 'en' ? 'Complete Previous Video First' : 'Zuerst vorheriges Video abschließen');
     
@@ -1713,46 +1727,70 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
     const canAccess = canAccessVideo(videoIndex);
     const isLocked = !canAccess;
     
-    // Button texts based on language
-    const btnCompletedText = t.video_completed;
-    const btnStartText = t.start_video;
-    const btnContinueText = t.continue_video;
-    const btnSurveyText = t.survey_completed;
+    // Determine state: reflection done but survey not done
+    const reflectionDoneSurveyPending = isCompleted && !surveyCompleted;
+    const fullyCompleted = isCompleted && surveyCompleted;
     
     // Determine lock message
     let lockMessage = '';
     if (!currentParticipantProgress?.pre_survey_completed) {
         lockMessage = preSurveyRequired;
     } else if (videoIndex > 0) {
-        lockMessage = completePreviousVideo;
+        // Check if previous video's survey is pending
+        const previousVideo = VIDEOS[videoIndex - 1];
+        const prevReflectionDone = previousVideo && currentParticipantProgress.videos_completed?.includes(previousVideo.id);
+        const prevSurveyDone = previousVideo && currentParticipantProgress.video_surveys?.[previousVideo.id];
+        
+        if (prevReflectionDone && !prevSurveyDone) {
+            // Previous video reflection done but survey pending
+            const completePrevSurveyText = t.complete_previous_survey || (currentLanguage === 'en' ? 'Complete Previous Survey First' : 'Zuerst vorherige Umfrage abschließen');
+            lockMessage = completePrevSurveyText;
+        } else {
+            lockMessage = completePreviousVideo;
+        }
+    }
+    
+    // Build card content based on state
+    let cardContent = '';
+    if (isLocked) {
+        // Locked state
+        cardContent = `
+            <span class="badge bg-warning text-dark mb-2"><i class="bi bi-lock"></i> ${lockMessage}</span>
+            <button class="btn btn-secondary btn-sm mt-2 locked-video-btn" disabled>${startText}</button>
+        `;
+    } else if (fullyCompleted) {
+        // Fully completed: reflection + survey both done
+        cardContent = `
+            <span class="badge bg-success mb-2"><i class="bi bi-check-circle"></i> ${completedText}</span>
+            <div><small class="text-muted"><i class="bi bi-clipboard-check"></i> ${surveyText}</small></div>
+            <button class="btn btn-outline-secondary btn-sm mt-2 view-video-btn" data-video-id="${video.id}">${continueText}</button>
+        `;
+    } else if (reflectionDoneSurveyPending) {
+        // Reflection done, survey pending
+        cardContent = `
+            <span class="badge bg-info mb-2"><i class="bi bi-pencil-square"></i> ${reflectionDoneText}</span>
+            <div class="mb-2"><small class="text-warning"><i class="bi bi-exclamation-circle"></i> ${surveyPendingText}</small></div>
+            <button class="btn btn-warning btn-sm complete-survey-btn" data-video-id="${video.id}" data-video-num="${number}"><i class="bi bi-clipboard-data me-1"></i>${completeSurveyText}</button>
+        `;
+    } else {
+        // Not started
+        cardContent = `
+            <button class="btn btn-primary start-video-btn" data-video-id="${video.id}">${startText}</button>
+        `;
     }
     
     card.innerHTML = `
-        <div class="card h-100 video-card ${isCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''}" data-video-id="${video.id}">
+        <div class="card h-100 video-card ${fullyCompleted ? 'completed' : ''} ${isLocked ? 'locked' : ''} ${reflectionDoneSurveyPending ? 'survey-pending' : ''}" data-video-id="${video.id}">
             <div class="card-body text-center">
                 <h5>${currentLanguage === 'en' ? 'Video' : 'Video'} ${number}</h5>
                 <p class="text-muted small">${video.name}</p>
-                ${isLocked 
-                    ? `<div>
-                        <span class="badge bg-warning text-dark mb-2"><i class="bi bi-lock"></i> ${lockMessage}</span>
-                        <button class="btn btn-secondary btn-sm mt-2 locked-video-btn" disabled>${btnStartText}</button>
-                       </div>`
-                    : isCompleted 
-                        ? `<div>
-                            <span class="badge bg-success mb-2"><i class="bi bi-check-circle"></i> ${btnCompletedText}</span>
-                            ${surveyCompleted ? `<div><small class="text-muted"><i class="bi bi-clipboard-check"></i> ${btnSurveyText}</small></div>` : ''}
-                            <button class="btn btn-outline-primary btn-sm mt-2 view-video-btn" data-video-id="${video.id}">${btnContinueText}</button>
-                           </div>`
-                        : `<button class="btn btn-primary start-video-btn" data-video-id="${video.id}">${btnStartText}</button>`
-                }
+                <div>${cardContent}</div>
             </div>
         </div>
     `;
     
-    // Add click handler for start/continue button - only if pre-survey is completed
+    // Add click handler for start button
     const startBtn = card.querySelector('.start-video-btn');
-    const viewBtn = card.querySelector('.view-video-btn');
-    
     if (startBtn && canAccess) {
         startBtn.addEventListener('click', (e) => {
             e.preventDefault();
@@ -1763,14 +1801,29 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
         });
     }
     
+    // Add click handler for view/continue button (fully completed videos)
+    const viewBtn = card.querySelector('.view-video-btn');
     if (viewBtn && canAccess) {
         viewBtn.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
             console.log(`View video button clicked for ${video.id}`);
-            // For completed videos, go directly to task page (skip video link page)
             const videoNum = getVideoPageNumber(video.id);
             continueToReflectionTask(videoNum);
+            return false;
+        });
+    }
+    
+    // Add click handler for complete survey button (reflection done, survey pending)
+    const surveyBtn = card.querySelector('.complete-survey-btn');
+    if (surveyBtn) {
+        surveyBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const videoNum = parseInt(surveyBtn.dataset.videoNum);
+            console.log(`Complete survey button clicked for video ${videoNum}`);
+            showPage(`post-video-survey-${videoNum}`);
+            loadSurvey(`post_video_${videoNum}`);
             return false;
         });
     }
