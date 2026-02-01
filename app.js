@@ -1537,10 +1537,13 @@ function renderDashboard() {
         return;
     }
     
-    // Check if all 4 videos are completed - if so, redirect to thank you page
+    // Check if all 4 videos AND all 4 surveys are completed - if so, redirect to thank you page
     const videosCompleted = currentParticipantProgress?.videos_completed?.length || 0;
-    if (videosCompleted >= 4) {
-        console.log('All videos completed, redirecting to thank you page');
+    const videoSurveys = currentParticipantProgress?.video_surveys || {};
+    const surveysCompleted = Object.values(videoSurveys).filter(v => v === true).length;
+    
+    if (videosCompleted >= 4 && surveysCompleted >= 4) {
+        console.log('All videos and surveys completed, redirecting to thank you page');
         showPage('thankyou');
         return;
     }
