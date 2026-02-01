@@ -4439,6 +4439,14 @@ function applyTranslations() {
         }
     });
     
+    // Update elements with data-lang-key-placeholder attribute (separate from data-lang-key)
+    document.querySelectorAll('[data-lang-key-placeholder]').forEach(element => {
+        const key = element.getAttribute('data-lang-key-placeholder');
+        if (t[key]) {
+            element.placeholder = t[key];
+        }
+    });
+    
     // Update HTML lang attribute
     document.documentElement.lang = currentLanguage;
 }
