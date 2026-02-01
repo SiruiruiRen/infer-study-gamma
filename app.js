@@ -149,8 +149,8 @@ const translations = {
         back_to_dashboard: "Dashboard",
         reflection_input: "Student Teacher Reflection",
         paste_reflection: "Paste or write your reflection here...",
-        write_reflection_placeholder: "Please write at least 200 words...",
-        paste_reflection_placeholder: "Please write at least 200 words...",
+        write_reflection_placeholder: "Please write at least 400 words...",
+        paste_reflection_placeholder: "Please write at least 400 words...",
         clear: "Clear",
         words: "words",
         generate_feedback: "Generate Feedback",
@@ -224,8 +224,8 @@ const translations = {
         final_submission_note: "You can continue revising your reflection until you're satisfied, then click this button when you're ready to move on.",
         continue_editing: "Continue Editing",
         confirm_submit: "Yes, Submit Final",
-        reflection_too_short: "Your text is short. Please write at least 200 words.",
-        reflection_short_warning: "Your text is short. Please write at least 200 words.",
+        reflection_too_short: "Your text is short. Please write at least 400 words.",
+        reflection_short_warning: "Your text is short. Please write at least 400 words.",
         ai_usage_title: "Tab Switch Detected",
         ai_usage_message: "We noticed you switched to another tab. Did you use another AI system (such as ChatGPT) for your work on this task?",
         ai_usage_yes: "Yes, I used AI",
@@ -305,8 +305,8 @@ const translations = {
         back_to_dashboard: "Dashboard",
         reflection_input: "Reflexionstext",
         paste_reflection: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
-        write_reflection_placeholder: "Bitte schreiben Sie mindestens 200 Wörter...",
-        paste_reflection_placeholder: "Bitte schreiben Sie mindestens 200 Wörter...",
+        write_reflection_placeholder: "Bitte schreiben Sie mindestens 400 Wörter...",
+        paste_reflection_placeholder: "Bitte schreiben Sie mindestens 400 Wörter...",
         clear: "Löschen",
         words: "Wörter",
         generate_feedback: "Feedback generieren",
@@ -395,8 +395,8 @@ const translations = {
         final_submission_note: "Sie können Ihre Reflexion weiterhin überarbeiten, bis Sie zufrieden sind. Klicken Sie dann auf diese Schaltfläche, wenn Sie bereit sind, fortzufahren.",
         continue_editing: "Weiter bearbeiten",
         confirm_submit: "Ja, endgültig einreichen",
-        reflection_too_short: "Ihr Text ist zu kurz. Bitte schreiben Sie mindestens 200 Wörter.",
-        reflection_short_warning: "Ihr Text ist zu kurz. Bitte schreiben Sie mindestens 200 Wörter.",
+        reflection_too_short: "Ihr Text ist zu kurz. Bitte schreiben Sie mindestens 400 Wörter.",
+        reflection_short_warning: "Ihr Text ist zu kurz. Bitte schreiben Sie mindestens 400 Wörter.",
         ai_usage_title: "Tab-Wechsel erkannt",
         ai_usage_message: "Wir haben bemerkt, dass Sie zu einem anderen Tab gewechselt haben. Haben Sie ein anderes KI-System (wie ChatGPT) für Ihre Arbeit an dieser Aufgabe verwendet?",
         ai_usage_yes: "Ja, ich habe KI verwendet",
@@ -482,10 +482,10 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 console.error('Error initializing Supabase:', error);
             }
-        } else {
+                } else {
             console.warn('initSupabase function not yet available, will retry...');
             // Retry after another 500ms
-            setTimeout(() => {
+                    setTimeout(() => {
                 if (typeof initSupabase === 'function') {
                     try {
                         supabase = initSupabase();
@@ -633,16 +633,16 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
     renderLanguageSwitchers();
     // Only call renderLanguageSwitcherInNav if it exists (it's defined later in the file)
     if (typeof renderLanguageSwitcherInNav === 'function') {
-        renderLanguageSwitcherInNav();
+    renderLanguageSwitcherInNav();
     }
     // Only call applyTranslations if it exists (it's defined later in the file)
     if (typeof applyTranslations === 'function') {
-        applyTranslations();
+    applyTranslations();
     }
     
     // Set default language to German
     if (typeof switchLanguage === 'function') {
-        switchLanguage('de');
+    switchLanguage('de');
     }
     
     // Check if coming from assignment site (with URL params) - directly login and go to dashboard
@@ -680,13 +680,13 @@ function initializeApp(comingFromAssignment = false, studentId = null, anonymous
     
     // Log session start (only if logEvent is available)
     if (typeof logEvent === 'function') {
-        logEvent('session_start', {
+    logEvent('session_start', {
             entry_page: comingFromAssignment ? 'assignment_redirect' : 'direct',
-            language: currentLanguage,
-            user_agent: navigator.userAgent,
-            screen_width: window.screen.width,
-            screen_height: window.screen.height
-        });
+        language: currentLanguage,
+        user_agent: navigator.userAgent,
+        screen_width: window.screen.width,
+        screen_height: window.screen.height
+    });
     }
 }
 
@@ -710,7 +710,7 @@ function setupEventListeners() {
     document.getElementById('continue-after-presurvey')?.addEventListener('click', async () => {
         const codeInput = document.getElementById('presurvey-verification-code');
         const errorDiv = document.getElementById('presurvey-verification-code-error');
-        const t = translations[currentLanguage];
+            const t = translations[currentLanguage];
         
         if (!codeInput || !codeInput.value.trim()) {
             if (errorDiv) {
@@ -930,7 +930,7 @@ function setupEventListeners() {
             // MANDATORY: Check verification code
             const codeInput = document.getElementById(`verification-code-${i}`);
             const errorDiv = document.getElementById(`verification-code-error-${i}`);
-            const t = translations[currentLanguage];
+                const t = translations[currentLanguage];
             
             if (!codeInput || !codeInput.value.trim()) {
                 if (errorDiv) {
@@ -967,9 +967,9 @@ function setupEventListeners() {
             
             logEvent('verification_code_success', {
                 video_id: `video${i}`,
-                participant_name: currentParticipant,
-                survey_type: 'post_video'
-            });
+                    participant_name: currentParticipant,
+                    survey_type: 'post_video'
+                });
             
             markVideoSurveyComplete();
             
@@ -1008,27 +1008,27 @@ function handleTabSwitch() {
         lastHiddenTime = Date.now();
         tabSwitchCount++;
         if (typeof logEvent === 'function') {
-            logEvent('tab_hidden', {
-                tab_switch_count: tabSwitchCount,
-                current_page: currentPage,
-                video_id: currentVideoId,
-                participant_name: currentParticipant || null,
-                language: currentLanguage,
-                timestamp: new Date().toISOString()
-            });
+        logEvent('tab_hidden', {
+            tab_switch_count: tabSwitchCount,
+            current_page: currentPage,
+            video_id: currentVideoId,
+            participant_name: currentParticipant || null,
+            language: currentLanguage,
+            timestamp: new Date().toISOString()
+        });
         }
     } else {
         const timeAway = lastHiddenTime ? (Date.now() - lastHiddenTime) / 1000 : 0;
         if (typeof logEvent === 'function') {
-            logEvent('tab_visible', {
-                tab_switch_count: tabSwitchCount,
-                time_away_seconds: timeAway,
-                current_page: currentPage,
-                video_id: currentVideoId,
-                participant_name: currentParticipant || null,
-                language: currentLanguage,
-                timestamp: new Date().toISOString()
-            });
+        logEvent('tab_visible', {
+            tab_switch_count: tabSwitchCount,
+            time_away_seconds: timeAway,
+            current_page: currentPage,
+            video_id: currentVideoId,
+            participant_name: currentParticipant || null,
+            language: currentLanguage,
+            timestamp: new Date().toISOString()
+        });
         }
         
         // Check if on any video task page (video-1, video-2, video-3, video-4)
@@ -1073,7 +1073,7 @@ function showPage(pageId) {
                     // Prefer student_id if available, otherwise use participant code (anonymous_id)
                     const displayId = currentParticipantProgress?.student_id || currentParticipant || '';
                     if (displayId) {
-                        navParticipantName.textContent = currentLanguage === 'en' 
+                    navParticipantName.textContent = currentLanguage === 'en' 
                             ? `Student ID: ${displayId}`
                             : `Studenten-ID: ${displayId}`;
                     }
@@ -1123,7 +1123,7 @@ function showPage(pageId) {
             if (currentParticipantProgress) {
                 if (typeof renderDashboard === 'function') {
                     renderDashboard();
-                }
+            }
             }
         }
         
@@ -1134,7 +1134,7 @@ function showPage(pageId) {
             const video = VIDEOS.find(v => v.id === videoId);
             
             if (typeof setupVideoPageElements === 'function') {
-                setupVideoPageElements(videoNum);
+            setupVideoPageElements(videoNum);
             }
             // Ensure concept click handlers are set up after a short delay to allow DOM to be ready
             setTimeout(() => {
@@ -1157,7 +1157,7 @@ function showPage(pageId) {
                     // Show different subtitle based on whether video has INFER feedback
                     if (video.hasINFER) {
                         subtitleEl.setAttribute('data-lang-key', 'video_task_subtitle');
-                        subtitleEl.textContent = translations[currentLanguage].video_task_subtitle;
+                    subtitleEl.textContent = translations[currentLanguage].video_task_subtitle;
                     } else {
                         subtitleEl.setAttribute('data-lang-key', 'reflection_only_mode');
                         subtitleEl.textContent = translations[currentLanguage].reflection_only_mode || 'Write your reflection about the video. After submission, you will proceed to a short questionnaire.';
@@ -1186,25 +1186,25 @@ function showPage(pageId) {
         
         // Apply translations for new page (with type checks)
         if (typeof applyTranslations === 'function') {
-            applyTranslations();
+        applyTranslations();
         }
         if (typeof renderLanguageSwitchers === 'function') {
-            renderLanguageSwitchers();
+        renderLanguageSwitchers();
         }
         if (typeof renderLanguageSwitcherInNav === 'function') {
-            renderLanguageSwitcherInNav();
+        renderLanguageSwitcherInNav();
         }
         
         // Log page view with participant info
         if (typeof logEvent === 'function') {
-            logEvent('page_view', {
-                page: pageId,
-                from_page: previousPage,
-                video_id: currentVideoId,
-                participant_name: currentParticipant || null,
-                language: currentLanguage,
-                timestamp: new Date().toISOString()
-            });
+        logEvent('page_view', {
+            page: pageId,
+            from_page: previousPage,
+            video_id: currentVideoId,
+            participant_name: currentParticipant || null,
+            language: currentLanguage,
+            timestamp: new Date().toISOString()
+        });
         }
     }
 }
@@ -1314,7 +1314,7 @@ async function handleLogin() {
                 // Log event without exposing group names
                 if (typeof logEvent === 'function') {
                     logEvent('site_redirect', {
-                        participant_name: participantCode,
+                participant_name: participantCode,
                         redirect_reason: 'wrong_site'
                     });
                 }
@@ -1325,7 +1325,7 @@ async function handleLogin() {
                     redirectUrl = `${correctUrl}?student_id=${encodeURIComponent(studentId)}&anonymous_id=${encodeURIComponent(anonymousId)}`;
                 }
                 window.location.href = redirectUrl;
-                return; // Exit function - don't proceed
+            return; // Exit function - don't proceed
             }
         } else if (!existingTreatmentGroup) {
             // If treatment_group is missing, set it based on current site
@@ -1373,7 +1373,7 @@ async function handleLogin() {
         
         // Always show dashboard first - don't auto-navigate to pre-survey
         // Remove delay to make it smoother
-        showPage('dashboard');
+            showPage('dashboard');
         // renderDashboard will be called automatically by showPage
     } else {
         // New participant
@@ -1393,11 +1393,11 @@ async function handleLogin() {
         };
         
         if (typeof logEvent === 'function') {
-            logEvent('participant_registered', {
-                participant_name: participantCode,
+        logEvent('participant_registered', {
+            participant_name: participantCode,
                 study_version: STUDY_VERSION
                 // Don't log treatment_group or assigned_condition to avoid exposing group assignment
-            });
+        });
         }
         
         // Hide resume message for new users
@@ -1408,7 +1408,7 @@ async function handleLogin() {
         
         // Show dashboard first - don't auto-navigate to pre-survey
         // Remove delay to make it smoother
-        showPage('dashboard');
+            showPage('dashboard');
         // renderDashboard will be called automatically by showPage
     }
     
@@ -3086,10 +3086,10 @@ async function markPreSurveyComplete() {
             console.log('Updated pre-survey status, currentParticipantProgress:', currentParticipantProgress);
             
             if (typeof logEvent === 'function') {
-                logEvent('pre_survey_completed', { 
-                    participant_name: currentParticipant,
-                    language: currentLanguage
-                });
+            logEvent('pre_survey_completed', { 
+                participant_name: currentParticipant,
+                language: currentLanguage
+            });
             }
         }
     } catch (error) {
@@ -3265,14 +3265,14 @@ async function generateFeedbackForVideo(reflection, videoNum) {
         
         // Step 0.5: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
         const wordCount = reflection.split(/\s+/).length;
-        const isVeryShort = wordCount < 150;
+        const isVeryShort = wordCount < 200;
         
         // Step 1: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
         if (isVeryShort) {
             // Simple one-sentence warning for Gamma
             let warningMessage = currentLanguage === 'en'
-                ? "Your text is short (only " + wordCount + " words). Please write at least 200 words."
-                : "Ihr Text ist zu kurz (nur " + wordCount + " Wörter). Bitte schreiben Sie mindestens 200 Wörter.";
+                ? "Your text is short (only " + wordCount + " words). Please write at least 400 words."
+                : "Ihr Text ist zu kurz (nur " + wordCount + " Wörter). Bitte schreiben Sie mindestens 400 Wörter.";
             
             logEvent('short_reflection_detected', {
                 participant_name: currentParticipant,
@@ -3443,13 +3443,13 @@ async function generateFeedback(reflection) {
         
         // Step 0.5: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
         const wordCount = reflection.split(/\s+/).length;
-        const isVeryShort = wordCount < 150;
+        const isVeryShort = wordCount < 200;
         
         // Step 1: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
         if (isVeryShort) {
             let warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your text is short (only " + wordCount + " words). Please write at least 200 words."
-                : "⚠️ Ihr Text ist zu kurz (nur " + wordCount + " Wörter). Bitte schreiben Sie mindestens 200 Wörter.";
+                ? "⚠️ Your text is short (only " + wordCount + " words). Please write at least 400 words."
+                : "⚠️ Ihr Text ist zu kurz (nur " + wordCount + " Wörter). Bitte schreiben Sie mindestens 400 Wörter.";
             
             logEvent('short_reflection_detected', {
                 participant_name: currentParticipant,
@@ -3853,10 +3853,10 @@ function handleFinalSubmissionForVideo(videoNum) {
     
     const wordCount = reflectionText.trim().split(/\s+/).filter(word => word.length > 0).length;
     
-    // Require at least 150 words (recommend 200)
-    if (wordCount < 150) {
+    // Require at least 200 words (recommend 400)
+    if (wordCount < 200) {
         const t = translations[currentLanguage];
-        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 200 words.', 'warning');
+        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 400 words.', 'warning');
         return;
     }
     
@@ -3971,10 +3971,10 @@ async function submitReflectionOnly(videoNum) {
     
     const wordCount = reflectionText.trim().split(/\s+/).filter(word => word.length > 0).length;
     
-    // Require at least 150 words (recommend 200)
-    if (wordCount < 150) {
+    // Require at least 200 words (recommend 400)
+    if (wordCount < 200) {
         const t = translations[currentLanguage];
-        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 200 words.', 'warning');
+        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 400 words.', 'warning');
         if (submitBtn && originalSubmitHtml !== null) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalSubmitHtml;
@@ -4095,10 +4095,10 @@ async function confirmFinalSubmissionForVideo(videoNum) {
     
     const wordCount = reflectionText.trim().split(/\s+/).filter(word => word.length > 0).length;
     
-    // Require at least 150 words (recommend 200)
-    if (wordCount < 150) {
+    // Require at least 200 words (recommend 400)
+    if (wordCount < 200) {
         const t = translations[currentLanguage];
-        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 200 words.', 'warning');
+        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 400 words.', 'warning');
         
         // Restore button state
         const submitBtn = document.getElementById(ids.submitBtn);
@@ -4242,13 +4242,13 @@ async function markVideoCompleted() {
 function switchLanguage(lang) {
     currentLanguage = lang;
     if (typeof renderLanguageSwitchers === 'function') {
-        renderLanguageSwitchers();
+    renderLanguageSwitchers();
     }
     if (typeof renderLanguageSwitcherInNav === 'function') {
-        renderLanguageSwitcherInNav();
+    renderLanguageSwitcherInNav();
     }
     if (typeof applyTranslations === 'function') {
-        applyTranslations();
+    applyTranslations();
     }
     
     // Update all language radio buttons (including video pages and general language switchers)
@@ -4281,7 +4281,7 @@ function switchLanguage(lang) {
                 // Show different subtitle based on whether video has INFER feedback
                 if (video.hasINFER) {
                     subtitleEl.setAttribute('data-lang-key', 'video_task_subtitle');
-                    subtitleEl.textContent = translations[currentLanguage].video_task_subtitle;
+                subtitleEl.textContent = translations[currentLanguage].video_task_subtitle;
                 } else {
                     subtitleEl.setAttribute('data-lang-key', 'reflection_only_mode');
                     subtitleEl.textContent = translations[currentLanguage].reflection_only_mode || 'Write your reflection about the video. After submission, you will proceed to a short questionnaire.';
@@ -4292,12 +4292,12 @@ function switchLanguage(lang) {
     
     // Log language change with participant info (only if logEvent is available)
     if (typeof logEvent === 'function') {
-        logEvent('language_change', {
-            new_language: lang,
-            participant_name: currentParticipant || null,
-            page: currentPage,
-            video_id: currentVideoId
-        });
+    logEvent('language_change', {
+        new_language: lang,
+        participant_name: currentParticipant || null,
+        page: currentPage,
+        video_id: currentVideoId
+    });
     }
 }
 
@@ -4891,7 +4891,7 @@ async function generateSimpleFeedback(reflection, language, style) {
         : (language === 'en' ? '6-8 sentences' : '6-8 Sätze');
     
     // Strong language instruction as system message
-    const languageInstruction = language === 'en'
+    const languageInstruction = language === 'en' 
         ? "You are a feedback assistant. CRITICAL RULE: You MUST respond ONLY in English. Do NOT use German, French, Spanish, or any other language. Every single word of your feedback MUST be in English. Even if the reflection text is in German, you MUST still respond in English. This is a mandatory requirement that cannot be violated."
         : "Sie sind ein Feedback-Assistent. KRITISCHE REGEL: Sie MÜSSEN ausschließlich auf Deutsch antworten. Verwenden Sie KEIN Englisch, Französisch, Spanisch oder eine andere Sprache. Jedes einzelne Wort Ihres Feedbacks MUSS auf Deutsch sein. Auch wenn der Reflexionstext auf Englisch ist, MÜSSEN Sie trotzdem auf Deutsch antworten. Dies ist eine obligatorische Anforderung, die nicht verletzt werden darf.";
     
@@ -5326,16 +5326,16 @@ async function saveFeedbackToDatabase(data) {
         if (currentTaskState.currentReflectionId) {
             // Update existing reflection
             const { data: updateResult, error: updateError } = await supabase
-                .from('reflections')
+            .from('reflections')
                 .update(reflectionData)
                 .eq('id', currentTaskState.currentReflectionId)
-                .select()
-                .single();
-            
+            .select()
+            .single();
+
             result = updateResult;
             error = updateError;
             
-            if (error) {
+        if (error) {
                 console.error('Database update error:', error);
             }
         }
@@ -5393,12 +5393,12 @@ window.addEventListener('beforeunload', () => {
     }
     
     if (typeof logEvent === 'function') {
-        logEvent('session_end', {
-            session_duration: Date.now() - performance.timing.navigationStart,
-            language: currentLanguage,
-            final_page: currentPage,
-            video_id: currentVideoId,
-            participant_name: currentParticipant || null
-        });
+    logEvent('session_end', {
+        session_duration: Date.now() - performance.timing.navigationStart,
+        language: currentLanguage,
+        final_page: currentPage,
+        video_id: currentVideoId,
+        participant_name: currentParticipant || null
+    });
     }
 });
