@@ -1824,7 +1824,8 @@ function createVideoCard(video, number, isCompleted, surveyCompleted) {
             e.preventDefault();
             e.stopPropagation();
             const videoNum = parseInt(surveyBtn.dataset.videoNum);
-            console.log(`Complete survey button clicked for video ${videoNum}`);
+            currentVideoId = `video${videoNum}`;
+            console.log(`Complete survey button clicked for video ${videoNum}, currentVideoId set to ${currentVideoId}`);
             showPage(`post-video-survey-${videoNum}`);
             loadSurvey(`post_video_${videoNum}`);
             return false;
