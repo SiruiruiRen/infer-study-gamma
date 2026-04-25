@@ -149,8 +149,8 @@ const translations = {
         back_to_dashboard: "Dashboard",
         reflection_input: "Student Teacher Reflection",
         paste_reflection: "Paste or write your reflection here...",
-        write_reflection_placeholder: "Please write at least 400 words...",
-        paste_reflection_placeholder: "Please write at least 400 words...",
+        write_reflection_placeholder: "Please write at least 200 words (we recommend 400)...",
+        paste_reflection_placeholder: "Please write at least 200 words (we recommend 400)...",
         clear: "Clear",
         words: "words",
         generate_feedback: "Generate Feedback",
@@ -224,8 +224,8 @@ const translations = {
         final_submission_note: "You can continue revising your reflection until you're satisfied, then click this button when you're ready to move on.",
         continue_editing: "Continue Editing",
         confirm_submit: "Yes, Submit Final",
-        reflection_too_short: "Your text is short. Please write at least 400 words.",
-        reflection_short_warning: "Your text is short. Please write at least 400 words.",
+        reflection_too_short: "Your text is short. Please write at least 200 words (we recommend 400 for best feedback).",
+        reflection_short_warning: "Your text is short. Please write at least 200 words (we recommend 400 for best feedback).",
         ai_usage_title: "Tab Switch Detected",
         ai_usage_message: "We noticed you switched to another tab. Did you use another AI system (such as ChatGPT) for your work on this task?",
         ai_usage_yes: "Yes, I used AI",
@@ -305,8 +305,8 @@ const translations = {
         back_to_dashboard: "Dashboard",
         reflection_input: "Reflexionstext",
         paste_reflection: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
-        write_reflection_placeholder: "Bitte schreiben Sie mindestens 400 Wörter...",
-        paste_reflection_placeholder: "Bitte schreiben Sie mindestens 400 Wörter...",
+        write_reflection_placeholder: "Bitte schreiben Sie mindestens 200 Wörter (empfohlen: 400)...",
+        paste_reflection_placeholder: "Bitte schreiben Sie mindestens 200 Wörter (empfohlen: 400)...",
         clear: "Löschen",
         words: "Wörter",
         generate_feedback: "Feedback generieren",
@@ -395,8 +395,8 @@ const translations = {
         final_submission_note: "Sie können Ihre Reflexion weiterhin überarbeiten, bis Sie zufrieden sind. Klicken Sie dann auf diese Schaltfläche, wenn Sie bereit sind, fortzufahren.",
         continue_editing: "Weiter bearbeiten",
         confirm_submit: "Ja, endgültig einreichen",
-        reflection_too_short: "Ihr Text ist zu kurz. Bitte schreiben Sie mindestens 400 Wörter.",
-        reflection_short_warning: "Ihr Text ist zu kurz. Bitte schreiben Sie mindestens 400 Wörter.",
+        reflection_too_short: "Ihr Text ist zu kurz. Bitte schreiben Sie mindestens 200 Wörter (empfohlen: 400 für bestes Feedback).",
+        reflection_short_warning: "Ihr Text ist zu kurz. Bitte schreiben Sie mindestens 200 Wörter (empfohlen: 400 für bestes Feedback).",
         ai_usage_title: "Tab-Wechsel erkannt",
         ai_usage_message: "Wir haben bemerkt, dass Sie zu einem anderen Tab gewechselt haben. Haben Sie ein anderes KI-System (wie ChatGPT) für Ihre Arbeit an dieser Aufgabe verwendet?",
         ai_usage_yes: "Ja, ich habe KI verwendet",
@@ -3272,8 +3272,8 @@ async function generateFeedbackForVideo(reflection, videoNum) {
         if (isVeryShort) {
             // Simple one-sentence warning for Gamma
             let warningMessage = currentLanguage === 'en'
-                ? "Your text is short (only " + wordCount + " words). Please write at least 400 words."
-                : "Ihr Text ist zu kurz (nur " + wordCount + " Wörter). Bitte schreiben Sie mindestens 400 Wörter.";
+                ? "Your text is short (only " + wordCount + " words). Please write at least 200 words (we recommend 400 for best feedback)."
+                : "Ihr Text ist zu kurz (nur " + wordCount + " Wörter). Bitte schreiben Sie mindestens 200 Wörter (empfohlen: 400 für bestes Feedback).";
             
             logEvent('short_reflection_detected', {
                 participant_name: currentParticipant,
@@ -3449,8 +3449,8 @@ async function generateFeedback(reflection) {
         // Step 1: Check for very short reflection (Gamma uses simple prompt, no chain analysis)
         if (isVeryShort) {
             let warningMessage = currentLanguage === 'en'
-                ? "⚠️ Your text is short (only " + wordCount + " words). Please write at least 400 words."
-                : "⚠️ Ihr Text ist zu kurz (nur " + wordCount + " Wörter). Bitte schreiben Sie mindestens 400 Wörter.";
+                ? "⚠️ Your text is short (only " + wordCount + " words). Please write at least 200 words (we recommend 400 for best feedback)."
+                : "⚠️ Ihr Text ist zu kurz (nur " + wordCount + " Wörter). Bitte schreiben Sie mindestens 200 Wörter (empfohlen: 400 für bestes Feedback).";
             
             logEvent('short_reflection_detected', {
                 participant_name: currentParticipant,
@@ -3857,7 +3857,7 @@ function handleFinalSubmissionForVideo(videoNum) {
     // Require at least 200 words (recommend 400)
     if (wordCount < 200) {
         const t = translations[currentLanguage];
-        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 400 words.', 'warning');
+        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 200 words (we recommend 400 for best feedback).', 'warning');
         return;
     }
     
@@ -3975,7 +3975,7 @@ async function submitReflectionOnly(videoNum) {
     // Require at least 200 words (recommend 400)
     if (wordCount < 200) {
         const t = translations[currentLanguage];
-        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 400 words.', 'warning');
+        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 200 words (we recommend 400 for best feedback).', 'warning');
         if (submitBtn && originalSubmitHtml !== null) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalSubmitHtml;
@@ -4099,7 +4099,7 @@ async function confirmFinalSubmissionForVideo(videoNum) {
     // Require at least 200 words (recommend 400)
     if (wordCount < 200) {
         const t = translations[currentLanguage];
-        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 400 words.', 'warning');
+        showAlert(t.reflection_too_short || 'Your text is short. Please write at least 200 words (we recommend 400 for best feedback).', 'warning');
         
         // Restore button state
         const submitBtn = document.getElementById(ids.submitBtn);
