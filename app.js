@@ -237,6 +237,14 @@ const translations = {
         watch_tutorial: "Watch Tutorial",
         qualtrics_loading_hint: "The survey may take a few seconds to load. Please be patient.",
         feedback_required_before_submit: "Please generate AI feedback at least once before submitting your final reflection. Click \"Generate Feedback\" first.",
+        alert_feedback_generated: "✅ Feedback generated successfully!",
+        alert_feedback_copied: "✅ Feedback copied to clipboard!",
+        alert_feedback_copy_failed: "❌ Failed to copy feedback",
+        alert_no_feedback_to_copy: "⚠️ No feedback available to copy",
+        alert_can_revise: "You can now revise your reflection and generate new feedback.",
+        alert_watch_video_first: "Please watch the video until the end before continuing.",
+        loading: "Loading...",
+        alert_video_link_unavailable: "Video link not available yet.",
         tutorial_video_title: "INFER Tutorial",
         welcome_to_infer: "Welcome to INFER",
         welcome_message: "Thank you for participating in this study on AI-supported teaching reflection. The site is open from February 1 to March 31. We recommend that you complete one video each week, so that you have enough time for spaced practice. You will analyze 4 teaching videos using our INFER system.",
@@ -414,6 +422,14 @@ const translations = {
         watch_tutorial: "Tutorial ansehen",
         qualtrics_loading_hint: "Die Umfrage kann einige Sekunden zum Laden brauchen. Bitte haben Sie Geduld.",
         feedback_required_before_submit: "Bitte generieren Sie mindestens einmal das KI-Feedback, bevor Sie Ihre Reflexion endgültig einreichen. Klicken Sie zuerst auf \"Feedback generieren\".",
+        alert_feedback_generated: "✅ Feedback erfolgreich generiert!",
+        alert_feedback_copied: "✅ Feedback in die Zwischenablage kopiert!",
+        alert_feedback_copy_failed: "❌ Feedback konnte nicht kopiert werden",
+        alert_no_feedback_to_copy: "⚠️ Kein Feedback zum Kopieren verfügbar",
+        alert_can_revise: "Sie können nun Ihre Reflexion überarbeiten und neues Feedback generieren.",
+        alert_watch_video_first: "Bitte schauen Sie das Video bis zum Ende, bevor Sie fortfahren.",
+        loading: "Laden...",
+        alert_video_link_unavailable: "Video-Link ist noch nicht verfügbar.",
         tutorial_video_title: "INFER Tutorial",
         loading_messages: [
             "Bitte warten Sie, während die kleinen Elfen Ihr Feedback erstellen...",
@@ -931,7 +947,7 @@ function setupEventListeners() {
                 // Link will open in new tab via target="_blank"
             } else {
                 e.preventDefault();
-                showAlert('Video link not available yet.', 'warning');
+                showAlert(t.alert_video_link_unavailable || 'Video link not available yet.', 'warning');
             }
         });
     }
@@ -2130,7 +2146,7 @@ function createTutorialPage() {
             if (!tutorialWatched) {
                 if (warning) {
                     warning.classList.remove('d-none');
-                    warning.textContent = 'Please watch the video until the end before continuing.';
+                    warning.textContent = t.alert_watch_video_first || 'Please watch the video until the end before continuing.';
                 }
                 return;
             }
@@ -3377,7 +3393,7 @@ async function generateFeedbackForVideo(reflection, videoNum) {
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
         
-        showAlert('✅ Feedback generated successfully!', 'success');
+        showAlert(t.alert_feedback_generated || '✅ Feedback generated successfully!', 'success');
         
     } catch (error) {
         console.error('Error generating feedback:', error);
@@ -3564,7 +3580,7 @@ async function generateFeedback(reflection) {
             revision_count: currentTaskState.revisionCount || 0
         });
         
-        showAlert('✅ Feedback generated successfully!', 'success');
+        showAlert(t.alert_feedback_generated || '✅ Feedback generated successfully!', 'success');
         
     } catch (error) {
         console.error('Error generating feedback:', error);
@@ -3681,7 +3697,7 @@ function handleCopy() {
     
     if (feedbackContent) {
         navigator.clipboard.writeText(feedbackContent).then(() => {
-            showAlert('✅ Feedback copied to clipboard!', 'success');
+            showAlert(t.alert_feedback_copied || '✅ Feedback copied to clipboard!', 'success');
             logEvent('copy_feedback', {
                 video_id: currentVideoId,
                 feedback_type: feedbackType,
@@ -3702,7 +3718,7 @@ function handleCopyForVideo(videoNum) {
     
     if (feedbackContent) {
         navigator.clipboard.writeText(feedbackContent).then(() => {
-            showAlert('✅ Feedback copied to clipboard!', 'success');
+            showAlert(t.alert_feedback_copied || '✅ Feedback copied to clipboard!', 'success');
             logEvent('copy_feedback', {
                 video_id: `video${videoNum}`,
                 feedback_type: feedbackType,
@@ -3713,7 +3729,7 @@ function handleCopyForVideo(videoNum) {
             });
         }).catch(err => {
             console.error('Error copying feedback:', err);
-            showAlert('❌ Failed to copy feedback', 'danger');
+            showAlert(t.alert_feedback_copy_failed || '❌ Failed to copy feedback', 'danger');
             logEvent('copy_feedback_failed', {
                 video_id: `video${videoNum}`,
                 feedback_type: feedbackType,
@@ -3722,7 +3738,7 @@ function handleCopyForVideo(videoNum) {
             });
         });
     } else {
-        showAlert('⚠️ No feedback available to copy', 'warning');
+        showAlert(t.alert_no_feedback_to_copy || '⚠️ No feedback available to copy', 'warning');
         logEvent('copy_feedback_no_content', {
             video_id: `video${videoNum}`,
             participant_name: currentParticipant
@@ -3736,7 +3752,7 @@ function handleRevise() {
     }
     
     document.getElementById('task-reflection-text')?.focus();
-    showAlert('You can now revise your reflection and generate new feedback.', 'info');
+    showAlert(t.alert_can_revise || 'You can now revise your reflection and generate new feedback.', 'info');
     
     currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
     
@@ -3775,7 +3791,7 @@ function handleReviseForVideo(videoNum) {
     // Increment revision count
     currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
     
-    showAlert('You can now revise your reflection and generate new feedback.', 'info');
+    showAlert(t.alert_can_revise || 'You can now revise your reflection and generate new feedback.', 'info');
     
     logEvent('click_revise', {
         video_id: `video${videoNum}`,
