@@ -116,6 +116,10 @@ const translations = {
         pre_survey_code_instruction: "Complete the survey above, then enter the confirmation code below.",
         continue_to_dashboard: "Continue to Dashboard",
         dashboard_title: "INFER Dashboard",
+        status_not_started: "Not Started",
+        status_not_available: "Not Available",
+        feedback_tab_short: "Short",
+        feedback_tab_extended: "Extended",
         dashboard_welcome: "Welcome back, ",
         dashboard_welcome_new: "Welcome, ",
         your_progress: "Your Progress",
@@ -146,7 +150,7 @@ const translations = {
         settings: "Settings",
         video_label: "Video:",
         language: "Feedback Language:",
-        back_to_dashboard: "Dashboard",
+        back_to_dashboard: "Back to Dashboard",
         reflection_input: "Student Teacher Reflection",
         paste_reflection: "Paste or write your reflection here...",
         write_reflection_placeholder: "Please write at least 400 words...",
@@ -275,7 +279,11 @@ const translations = {
         pre_survey_instructions: "Vervollständigen Sie die Umfrage oben und geben Sie dann den Bestätigungscode unten ein.",
         pre_survey_code_instruction: "Vervollständigen Sie die Umfrage oben und geben Sie dann den Bestätigungscode unten ein.",
         continue_to_dashboard: "Weiter zum Dashboard",
-        dashboard_title: "INFER Dashboard",
+        dashboard_title: "INFER-Übersicht",
+        status_not_started: "Nicht begonnen",
+        status_not_available: "Nicht verfügbar",
+        feedback_tab_short: "Kurz",
+        feedback_tab_extended: "Ausführlich",
         dashboard_welcome: "Willkommen zurück, ",
         dashboard_welcome_new: "Willkommen, ",
         your_progress: "Ihr Fortschritt",
@@ -304,7 +312,7 @@ const translations = {
         settings: "Einstellungen",
         video_label: "Video:",
         language: "Feedback-Sprache:",
-        back_to_dashboard: "Dashboard",
+        back_to_dashboard: "Zurück zum Dashboard",
         reflection_input: "Reflexionstext",
         paste_reflection: "Fügen Sie hier Ihre Reflexion ein oder schreiben Sie sie hier...",
         write_reflection_placeholder: "Bitte schreiben Sie mindestens 400 Wörter...",
@@ -2935,8 +2943,8 @@ function resetTaskStateForVideo(videoNum) {
     const reviseBtn = document.getElementById(ids.reviseBtn);
     const submitBtn = document.getElementById(ids.submitBtn);
     
-    if (feedbackExtended) feedbackExtended.innerHTML = '<p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>';
-    if (feedbackShort) feedbackShort.innerHTML = '<p class="text-muted" data-lang-key="feedback_placeholder">Feedback will appear here after generation...</p>';
+    if (feedbackExtended) feedbackExtended.innerHTML = '<p class="text-muted" data-lang-key="feedback_placeholder">' + (translations[currentLanguage]?.feedback_placeholder || 'Feedback will appear here after generation...') + '</p>';
+    if (feedbackShort) feedbackShort.innerHTML = '<p class="text-muted" data-lang-key="feedback_placeholder">' + (translations[currentLanguage]?.feedback_placeholder || 'Feedback will appear here after generation...') + '</p>';
     if (feedbackTabs) feedbackTabs.classList.add('d-none');
     
     // Remove analysis distribution if exists
