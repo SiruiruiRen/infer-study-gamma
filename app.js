@@ -4985,7 +4985,7 @@ async function generateSimpleFeedback(reflection, language, style) {
             { role: "system", content: languageInstruction },
             { role: "user", content: `${simplePrompt}\n\nReflection:\n${reflection}\n\nCRITICAL REMINDER: Your feedback MUST be written entirely in ${language === 'en' ? 'English' : 'German'}. Do NOT match the language of the reflection text. Always use ${language === 'en' ? 'English' : 'German'} for your response, regardless of what language the reflection is written in.` }
         ],
-        temperature: 0.1, // Lower temperature for more consistent language adherence
+        temperature: 0.0, // Deterministic to match Alpha/Beta
         max_tokens: isExtended ? 400 : 250 // Extended feedback can be longer
     };
     
@@ -5055,7 +5055,7 @@ async function generateWeightedFeedback(reflection, language, style, analysisRes
             { role: "system", content: languageInstruction + "\n\n" + systemPrompt },
             { role: "user", content: `Based on the analysis showing ${pctPriority.description}% description, ${pctPriority.explanation}% explanation, ${pctPriority.prediction}% prediction (Professional Vision: ${pctPriority.professional_vision}%) + Other: ${pctPriority.other}% = 100%, provide feedback for this reflection:\n\n${reflection}` }
         ],
-        temperature: 0.3,
+        temperature: 0.0,
         max_tokens: 2000
     };
     
