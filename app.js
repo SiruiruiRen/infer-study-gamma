@@ -232,6 +232,7 @@ const translations = {
         ai_usage_no: "No, I did not use AI",
         watch_tutorial: "Watch Tutorial",
         qualtrics_loading_hint: "The survey may take a few seconds to load. Please be patient.",
+        feedback_required_before_submit: "Please generate AI feedback at least once before submitting your final reflection. Click \"Generate Feedback\" first.",
         tutorial_video_title: "INFER Tutorial",
         welcome_to_infer: "Welcome to INFER",
         welcome_message: "Thank you for participating in this study on AI-supported teaching reflection. The site is open from February 1 to March 31. We recommend that you complete one video each week, so that you have enough time for spaced practice. You will analyze 4 teaching videos using our INFER system.",
@@ -404,6 +405,7 @@ const translations = {
         ai_usage_no: "Nein, ich habe keine KI verwendet",
         watch_tutorial: "Tutorial ansehen",
         qualtrics_loading_hint: "Die Umfrage kann einige Sekunden zum Laden brauchen. Bitte haben Sie Geduld.",
+        feedback_required_before_submit: "Bitte generieren Sie mindestens einmal das KI-Feedback, bevor Sie Ihre Reflexion endgültig einreichen. Klicken Sie zuerst auf \"Feedback generieren\".",
         tutorial_video_title: "INFER Tutorial",
         loading_messages: [
             "Bitte warten Sie, während die kleinen Elfen Ihr Feedback erstellen...",
@@ -4120,10 +4122,53 @@ async function confirmFinalSubmissionForVideo(videoNum) {
         document.body.classList.remove('modal-open');
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
-        
+
         return;
     }
-    
+
+    // For feedback-revision videos (V2, V3): require participant to generate AI feedback at least once
+    if (video && video.hasINFER && supabase && currentParticipant) {
+        try {
+            const { data: existingFeedback, error: fbErr } = await supabase
+                .from('reflections')
+                .select('id')
+                .eq('participant_name', currentParticipant)
+                .eq('video_id', videoId)
+                .not('feedback_extended', 'is', null)
+                .limit(1)
+                .maybeSingle();
+
+            if (!fbErr && !existingFeedback) {
+                const t = translations[currentLanguage];
+                showAlert(t.feedback_required_before_submit || 'Please generate AI feedback at least once before submitting your final reflection. Click \"Generate Feedback\" first.', 'warning');
+
+                // Restore button state
+                const submitBtn = document.getElementById(ids.submitBtn);
+                const modal = document.getElementById('final-submission-modal');
+                if (modal) {
+                    const storedOriginalHtml = modal.dataset.originalSubmitHtml;
+                    if (submitBtn && storedOriginalHtml) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = storedOriginalHtml;
+                    }
+                }
+                const backdrop2 = document.querySelector('.modal-backdrop');
+                if (backdrop2) backdrop2.remove();
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+
+                logEvent('submit_blocked_no_feedback', {
+                    video_id: videoId,
+                    participant_name: currentParticipant
+                });
+                return;
+            }
+        } catch (e) {
+            console.error('Error checking feedback existence:', e);
+        }
+    }
+
     // Ensure reflection is saved to database before final submission
     // This handles the case where user clicks "Submit Final" without clicking "Save Reflection" first
     if (supabase && currentParticipant && reflectionText) {
