@@ -3393,7 +3393,7 @@ async function generateFeedbackForVideo(reflection, videoNum) {
         document.body.style.overflow = '';
         document.body.style.paddingRight = '';
         
-        showAlert(t.alert_feedback_generated || '✅ Feedback generated successfully!', 'success');
+        showAlert((translations[currentLanguage]?.alert_feedback_generated) || '✅ Feedback generated successfully!', 'success');
         
     } catch (error) {
         console.error('Error generating feedback:', error);
@@ -3580,7 +3580,7 @@ async function generateFeedback(reflection) {
             revision_count: currentTaskState.revisionCount || 0
         });
         
-        showAlert(t.alert_feedback_generated || '✅ Feedback generated successfully!', 'success');
+        showAlert((translations[currentLanguage]?.alert_feedback_generated) || '✅ Feedback generated successfully!', 'success');
         
     } catch (error) {
         console.error('Error generating feedback:', error);
@@ -3697,7 +3697,7 @@ function handleCopy() {
     
     if (feedbackContent) {
         navigator.clipboard.writeText(feedbackContent).then(() => {
-            showAlert(t.alert_feedback_copied || '✅ Feedback copied to clipboard!', 'success');
+            showAlert((translations[currentLanguage]?.alert_feedback_copied) || '✅ Feedback copied to clipboard!', 'success');
             logEvent('copy_feedback', {
                 video_id: currentVideoId,
                 feedback_type: feedbackType,
@@ -3718,7 +3718,7 @@ function handleCopyForVideo(videoNum) {
     
     if (feedbackContent) {
         navigator.clipboard.writeText(feedbackContent).then(() => {
-            showAlert(t.alert_feedback_copied || '✅ Feedback copied to clipboard!', 'success');
+            showAlert((translations[currentLanguage]?.alert_feedback_copied) || '✅ Feedback copied to clipboard!', 'success');
             logEvent('copy_feedback', {
                 video_id: `video${videoNum}`,
                 feedback_type: feedbackType,
@@ -3729,7 +3729,7 @@ function handleCopyForVideo(videoNum) {
             });
         }).catch(err => {
             console.error('Error copying feedback:', err);
-            showAlert(t.alert_feedback_copy_failed || '❌ Failed to copy feedback', 'danger');
+            showAlert((translations[currentLanguage]?.alert_feedback_copy_failed) || '❌ Failed to copy feedback', 'danger');
             logEvent('copy_feedback_failed', {
                 video_id: `video${videoNum}`,
                 feedback_type: feedbackType,
@@ -3738,7 +3738,7 @@ function handleCopyForVideo(videoNum) {
             });
         });
     } else {
-        showAlert(t.alert_no_feedback_to_copy || '⚠️ No feedback available to copy', 'warning');
+        showAlert((translations[currentLanguage]?.alert_no_feedback_to_copy) || '⚠️ No feedback available to copy', 'warning');
         logEvent('copy_feedback_no_content', {
             video_id: `video${videoNum}`,
             participant_name: currentParticipant
@@ -3752,7 +3752,7 @@ function handleRevise() {
     }
     
     document.getElementById('task-reflection-text')?.focus();
-    showAlert(t.alert_can_revise || 'You can now revise your reflection and generate new feedback.', 'info');
+    showAlert((translations[currentLanguage]?.alert_can_revise) || 'You can now revise your reflection and generate new feedback.', 'info');
     
     currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
     
@@ -3791,7 +3791,7 @@ function handleReviseForVideo(videoNum) {
     // Increment revision count
     currentTaskState.revisionCount = (currentTaskState.revisionCount || 0) + 1;
     
-    showAlert(t.alert_can_revise || 'You can now revise your reflection and generate new feedback.', 'info');
+    showAlert((translations[currentLanguage]?.alert_can_revise) || 'You can now revise your reflection and generate new feedback.', 'info');
     
     logEvent('click_revise', {
         video_id: `video${videoNum}`,
